@@ -27,9 +27,9 @@ import java.util.concurrent.Executors;
 public class ApiClient {
 
     private static final String TAG = "TeamHubApi";
-    public static final String BASE_URL = "https://hr.globizhub.com/api";
+    public static final String BASE_URL = "https://hr-management-globizhub.onrender.com";
 
-    public static final String DEFAULT_VALID_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAxIiwiZW1haWwiOiJhbGV4LnR1cm5lckBnbG9iaXpodWIuY29tIiwiY29tcGFueUlkIjoiY2x4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsInJvbGUiOiJFTVBMT1lFRSIsImV4cCI6MTk4NzY1NDMyMX0.aPBENdAsKoApXnfO5KNxWTY8QvB2ouUDjSZ-e_atuck";
+    public static final String DEFAULT_VALID_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMmYxODFkNi05Mzg3LTQ4YjctYWMwMC1mNDM1OGQzNTBmMDIiLCJlbWFpbCI6InNlYWxtYW5hc2g3QGdtYWlsLmNvbSIsImNvbXBhbnlJZCI6IjcwNzBjMmFkLTgzNTgtNDhhOC1iZWMyLWE1YjMzM2E1N2UxYiIsInJvbGUiOiJFTVBMT1lFRSIsImlhdCI6MTc5NDI5NjkyMCwiZXhwIjoxNzk0MzgzMzIwfQ.wldeC_UTAuL9UmWSRDGGFf9sjblFOjSuuW-OhtSwlYY";
 
     private static final String PREF_NAME = "TeamHubAuth";
     private static final String KEY_TOKEN = "access_token";
@@ -139,17 +139,17 @@ public class ApiClient {
         if (name != null && !name.trim().isEmpty() && !name.contains("@")) {
             return name.trim();
         }
-        return "Alex";
+        return "Charles";
     }
 
     public String getDesignation() {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_DESIGNATION, "Operations & Tech Lead");
+        return prefs.getString(KEY_DESIGNATION, "Developer");
     }
 
     public String getOrganization() {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_ORGANIZATION, "GlobizHub Inc.");
+        return prefs.getString(KEY_ORGANIZATION, "acmecorp");
     }
 
     public void recordLocalNotification(String title, String message) {
@@ -600,6 +600,27 @@ public class ApiClient {
     public void getUnreadNotifications(String token, ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/notifications/unread", token, callback);
+        });
+    }
+
+    // 9. Payslips
+    public void getMyPayslips(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/payroll/my-payslips", getToken(), callback);
+        });
+    }
+
+    // 10. Documents
+    public void getMyDocuments(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/documents/me", getToken(), callback);
+        });
+    }
+
+    // 11. Company Shifts
+    public void getCompanyShifts(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/schedules/shifts", getToken(), callback);
         });
     }
 

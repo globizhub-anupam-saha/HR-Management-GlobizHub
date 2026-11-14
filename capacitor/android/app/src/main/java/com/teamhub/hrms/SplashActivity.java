@@ -176,8 +176,8 @@ public class SplashActivity extends AppCompatActivity implements TextureView.Sur
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         } else {
             ApiClient client = ApiClient.getInstance(SplashActivity.this);
-            client.saveToken(ApiClient.DEFAULT_VALID_TOKEN, "alex.turner@globizhub.com", "EMPLOYEE");
-            client.saveUserProfile("Alex", "Lead Product Designer", "GlobizHub Technologies");
+            client.saveToken(ApiClient.DEFAULT_VALID_TOKEN, "sealmanash7@gmail.com", "EMPLOYEE");
+            client.saveUserProfile("Charles", "Developer", "acmecorp");
             intent = new Intent(SplashActivity.this, HomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         }

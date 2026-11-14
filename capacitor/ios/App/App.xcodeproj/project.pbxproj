@@ -34,6 +34,9 @@
 		A1B2C31F1FED79650016851F /* AppNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3201FED79650016851F /* AppNotificationManager.swift */; };
 		A1B2C3231FED79650016851F /* LeaveViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3241FED79650016851F /* LeaveViewController.swift */; };
 		A1B2C3251FED79650016851F /* TasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3261FED79650016851F /* TasksViewController.swift */; };
+		A1B2C3271FED79650016851F /* PayslipsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3281FED79650016851F /* PayslipsViewController.swift */; };
+		A1B2C3291FED79650016851F /* DocumentsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C32A1FED79650016851F /* DocumentsViewController.swift */; };
+		A1B2C32B1FED79650016851F /* ShiftsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C32C1FED79650016851F /* ShiftsViewController.swift */; };
 		A1B2C3211FED79650016851F /* bg_video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3221FED79650016851F /* bg_video.mp4 */; };
 /* End PBXBuildFile section */
 
@@ -67,6 +70,9 @@
 		A1B2C3201FED79650016851F /* AppNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotificationManager.swift; sourceTree = "<group>"; };
 		A1B2C3241FED79650016851F /* LeaveViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaveViewController.swift; sourceTree = "<group>"; };
 		A1B2C3261FED79650016851F /* TasksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksViewController.swift; sourceTree = "<group>"; };
+		A1B2C3281FED79650016851F /* PayslipsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayslipsViewController.swift; sourceTree = "<group>"; };
+		A1B2C32A1FED79650016851F /* DocumentsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentsViewController.swift; sourceTree = "<group>"; };
+		A1B2C32C1FED79650016851F /* ShiftsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiftsViewController.swift; sourceTree = "<group>"; };
 		A1B2C3221FED79650016851F /* bg_video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = bg_video.mp4; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -121,6 +127,9 @@
 				A1B2C3201FED79650016851F /* AppNotificationManager.swift */,
 				A1B2C3241FED79650016851F /* LeaveViewController.swift */,
 				A1B2C3261FED79650016851F /* TasksViewController.swift */,
+				A1B2C3281FED79650016851F /* PayslipsViewController.swift */,
+				A1B2C32A1FED79650016851F /* DocumentsViewController.swift */,
+				A1B2C32C1FED79650016851F /* ShiftsViewController.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -237,6 +246,9 @@
 				A1B2C31F1FED79650016851F /* AppNotificationManager.swift in Sources */,
 				A1B2C3231FED79650016851F /* LeaveViewController.swift in Sources */,
 				A1B2C3251FED79650016851F /* TasksViewController.swift in Sources */,
+				A1B2C3271FED79650016851F /* PayslipsViewController.swift in Sources */,
+				A1B2C3291FED79650016851F /* DocumentsViewController.swift in Sources */,
+				A1B2C32B1FED79650016851F /* ShiftsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

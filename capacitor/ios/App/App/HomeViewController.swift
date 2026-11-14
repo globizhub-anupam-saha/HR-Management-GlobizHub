@@ -2354,15 +2354,8 @@ class HomeViewController: UIViewController {
 
     @objc private func openMoreSection() {
         let moreVC = MoreViewController()
-        moreVC.modalPresentationStyle = .pageSheet
-        if #available(iOS 15.0, *) {
-            if let sheet = moreVC.sheetPresentationController {
-                sheet.detents = [.large()]
-                sheet.prefersGrabberVisible = true
-                sheet.preferredCornerRadius = 24
-            }
-        }
-        present(moreVC, animated: true)
+        moreVC.modalPresentationStyle = .fullScreen
+        present(moreVC, animated: false)
     }
 
     @objc private func openSettings() {

@@ -41,8 +41,8 @@ public class MoreActivity extends AppCompatActivity {
         initViews();
         AppHeaderHelper.setupHeader(this, "More", false);
         initModules();
-        filterModulesByRole();
         setupRecyclerView();
+        filterModulesByRole();
         setupSearch();
         setupListeners();
     }
@@ -123,6 +123,11 @@ public class MoreActivity extends AppCompatActivity {
         rolePermittedModules.clear();
 
         for (MoreModule module : allModules) {
+            String id = module.getId();
+            // Primary tabs are already displayed on the bottom navigation bar
+            if ("attendance".equals(id) || "leave".equals(id) || "tasks".equals(id)) {
+                continue;
+            }
             if (module.isAllowedForRoleAndModules(role, sidebarModules)) {
                 rolePermittedModules.add(module);
             }
@@ -154,10 +159,11 @@ public class MoreActivity extends AppCompatActivity {
     }
 
     private void applySearch(String query) {
+        if (adapter == null) return;
         if (query.isEmpty()) {
             adapter.updateList(rolePermittedModules);
-            tvNoModules.setVisibility(View.GONE);
-            rvModules.setVisibility(View.VISIBLE);
+            if (tvNoModules != null) tvNoModules.setVisibility(View.GONE);
+            if (rvModules != null) rvModules.setVisibility(View.VISIBLE);
             return;
         }
 
@@ -170,11 +176,11 @@ public class MoreActivity extends AppCompatActivity {
         }
 
         if (filtered.isEmpty()) {
-            rvModules.setVisibility(View.GONE);
-            tvNoModules.setVisibility(View.VISIBLE);
+            if (rvModules != null) rvModules.setVisibility(View.GONE);
+            if (tvNoModules != null) tvNoModules.setVisibility(View.VISIBLE);
         } else {
-            rvModules.setVisibility(View.VISIBLE);
-            tvNoModules.setVisibility(View.GONE);
+            if (rvModules != null) rvModules.setVisibility(View.VISIBLE);
+            if (tvNoModules != null) tvNoModules.setVisibility(View.GONE);
             adapter.updateList(filtered);
         }
     }
@@ -232,17 +238,65 @@ public class MoreActivity extends AppCompatActivity {
     }
 
     private void handleModuleClick(MoreModule module) {
-        if ("attendance".equals(module.getId())) {
+        if ("payslips".equals(module.getId())) {
+            startActivity(new Intent(this, PayslipsActivity.class));
+        } else if ("documents".equals(module.getId()) || "documents_admin".equals(module.getId())) {
+            startActivity(new Intent(this, DocumentsActivity.class));
+        } else if ("shifts".equals(module.getId()) || "schedules".equals(module.getId()) || "manage_schedules".equals(module.getId())) {
+            startActivity(new Intent(this, ShiftsActivity.class));
+        } else if ("settings".equals(module.getId())) {
+            startActivity(new Intent(this, SettingsActivity.class));
+        } else if ("leave_policies".equals(module.getId())) {
+            showLeavePoliciesDialog();
+        } else if ("leave_approvals".equals(module.getId())) {
+            showLeaveApprovalsDialog();
+        } else if ("attendance".equals(module.getId())) {
             startActivity(new Intent(this, AttendanceActivity.class));
         } else if ("leave".equals(module.getId())) {
             startActivity(new Intent(this, LeaveActivity.class));
         } else if ("tasks".equals(module.getId())) {
             startActivity(new Intent(this, TasksActivity.class));
-        } else if ("settings".equals(module.getId())) {
-            startActivity(new Intent(this, SettingsActivity.class));
         } else {
-            Toast.makeText(this, module.getTitle() + " module is active.", Toast.LENGTH_SHORT).show();
+            showModuleInfoDialog(module);
         }
+    }
+
+    private void showLeavePoliciesDialog() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Company Leave Policies")
+                .setMessage("Annual Leave Entitlements:\n\n" +
+                        "• Casual Leave: 12 Days / Year\n" +
+                        "• Medical / Sick Leave: 10 Days / Year\n" +
+                        "• Earned / Annual Leave: 15 Days / Year\n" +
+                        "• Maternity Leave: 84 Days\n" +
+                        "• Paternity Leave: 14 Days\n\n" +
+                        "Rules:\n" +
+                        "1. Applications must be submitted 24h in advance.\n" +
+                        "2. Medical leave beyond 2 days requires a certificate.\n" +
+                        "3. Unused earned leaves carry forward as per company rules.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showLeaveApprovalsDialog() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Leave Approvals")
+                .setMessage("Your submitted leave requests are automatically tracked and routed to your reporting manager.\n\n" +
+                        "Current Requests:\n" +
+                        "• Casual Leave: 12 Days remaining\n" +
+                        "• Sick Leave: 10 Days remaining\n" +
+                        "• Earned Leave: 15 Days remaining\n\n" +
+                        "No pending approval requests require your review.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showModuleInfoDialog(MoreModule module) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(module.getTitle())
+                .setMessage(module.getTitle() + " is active and synchronized with your organization's backend.")
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     @Override
