@@ -13,6 +13,7 @@ import {
   ReviewPositionChangeDto,
   ApplyPositionChangeDto,
 } from '../dto/position-change.dto';
+import { generateDepartmentScopedEmployeeCode } from '../../employee/utils/employee-code.util';
 
 @Injectable()
 export class EmployeePositionChangeService {
@@ -384,6 +385,18 @@ export class EmployeePositionChangeService {
       }
       if (change.proposedDepartmentId) {
         updateData.departmentId = change.proposedDepartmentId;
+        if (
+          employee.employeeCode &&
+          change.proposedDepartmentId !== employee.departmentId
+        ) {
+          updateData.employeeCode =
+            await generateDepartmentScopedEmployeeCode({
+              prisma: tx,
+              companyId,
+              departmentId: change.proposedDepartmentId,
+              excludeEmployeeId: employee.id,
+            });
+        }
       }
 
       await tx.employee.update({

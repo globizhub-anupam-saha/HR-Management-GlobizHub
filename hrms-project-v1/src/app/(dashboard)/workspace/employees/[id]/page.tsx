@@ -60,6 +60,9 @@ const employeeEditSchema = z.object({
   departmentId: z.string().optional().nullable(),
   designationId: z.string().optional().nullable(),
   employeeCode: z.string().optional().nullable(),
+  uanNumber: z.string().optional().nullable(),
+  esicIpNumber: z.string().optional().nullable(),
+  establishmentId: z.string().optional().nullable(),
 });
 
 type EmployeeEditFormValues = z.infer<typeof employeeEditSchema>;
@@ -92,6 +95,7 @@ export default function EmployeeDetailsPage() {
   const [managers, setManagers] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [designations, setDesignations] = useState<any[]>([]);
+  const [establishments, setEstablishments] = useState<any[]>([]);
 
   // Fetch dropdown lookup data
   useEffect(() => {
@@ -109,6 +113,11 @@ export default function EmployeeDetailsPage() {
       .get("/organization/designations")
       .then((res) => setDesignations(res.data))
       .catch((err) => console.error("Failed to load designations", err));
+
+    api
+      .get("/payroll/statutory/establishments")
+      .then((res) => setEstablishments(res.data))
+      .catch((err) => console.error("Failed to load establishments", err));
   }, []);
 
   // Fetch full employee details
@@ -133,12 +142,16 @@ export default function EmployeeDetailsPage() {
       departmentId: "none",
       designationId: "none",
       employeeCode: "",
+      uanNumber: "",
+      esicIpNumber: "",
+      establishmentId: "none",
     },
   });
 
   // Populate edit form once employee data arrives
   useEffect(() => {
     if (employee) {
+      const activeStatProfile = employee.statutoryProfiles?.[0];
       form.reset({
         firstName: employee.firstName || "",
         lastName: employee.lastName || "",
@@ -148,6 +161,9 @@ export default function EmployeeDetailsPage() {
         departmentId: employee.departmentId || employee.department?.id || "none",
         designationId: employee.designationId || employee.designation?.id || "none",
         employeeCode: employee.employeeCode || "",
+        uanNumber: employee.uanNumber || activeStatProfile?.epfoUan || "",
+        esicIpNumber: activeStatProfile?.esicIpNumber || "",
+        establishmentId: activeStatProfile?.establishmentId || "none",
       });
     }
   }, [employee, form]);
@@ -161,6 +177,9 @@ export default function EmployeeDetailsPage() {
         reportingManagerId: values.reportingManagerId === "none" || !values.reportingManagerId ? null : values.reportingManagerId,
         designationId: values.designationId === "none" || !values.designationId ? null : values.designationId,
         employeeCode: values.employeeCode ? values.employeeCode.trim() : null,
+        uanNumber: values.uanNumber ? values.uanNumber.trim() : null,
+        esicIpNumber: values.esicIpNumber ? values.esicIpNumber.trim() : null,
+        establishmentId: values.establishmentId === "none" || !values.establishmentId ? null : values.establishmentId,
       };
       return await employeesApi.update(employeeId, payload);
     },
@@ -414,6 +433,16 @@ export default function EmployeeDetailsPage() {
                   </span>
                 </div>
               )}
+
+              {/* UAN & ESIC Header Badges */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 px-2 py-0.5 rounded border border-indigo-200 text-[11px] font-mono">
+                  UAN: {employee.uanNumber || employee.statutoryProfiles?.[0]?.epfoUan || "Not Added"}
+                </span>
+                <span className="text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 text-[11px] font-mono">
+                  ESIC: {employee.statutoryProfiles?.[0]?.esicIpNumber || "Not Added"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -685,6 +714,93 @@ export default function EmployeeDetailsPage() {
                               ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* SECTION: Statutory Compliance (EPFO & ESIC) */}
+              <Card className="border-border shadow-sm rounded-2xl">
+                <CardHeader className="border-b border-border bg-muted/20 pb-4">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <CardTitle className="text-base font-bold text-foreground">Statutory Compliance (EPFO & ESIC)</CardTitle>
+                      <CardDescription className="text-xs">
+                        Configure Indian statutory compliance numbers for monthly return filings and challans. (Optional for new joiners)
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <FormField
+                    control={form.control}
+                    name="establishmentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-foreground">Registered Establishment</FormLabel>
+                        <Select value={field.value || "none"} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 rounded-lg bg-card border-border">
+                              <SelectValue placeholder="Select establishment">
+                                {(val) => {
+                                  if (val === "none" || !val) return "Default Establishment";
+                                  return establishments.find((e) => e.id === val)?.name || val;
+                               }}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">Default Establishment</SelectItem>
+                            {establishments.map((est) => (
+                              <SelectItem key={est.id} value={est.id}>
+                                {est.name} ({est.epfoEstablishmentCode || "No EPFO Code"})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="uanNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-foreground">EPFO UAN Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value ?? ""}
+                            maxLength={12}
+                            className="h-10 rounded-lg bg-card border-border font-mono text-xs"
+                            placeholder="12-digit UAN (Optional)"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="esicIpNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-foreground">ESIC IP Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value ?? ""}
+                            maxLength={17}
+                            className="h-10 rounded-lg bg-card border-border font-mono text-xs"
+                            placeholder="10-digit / 17-digit IP (Optional)"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

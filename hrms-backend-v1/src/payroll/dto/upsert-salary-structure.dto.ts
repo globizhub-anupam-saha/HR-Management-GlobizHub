@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsPositive, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsPositive, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -7,10 +7,14 @@ import { Type } from 'class-transformer';
  * employeeId) can be injected from the request body.
  */
 export class UpsertSalaryStructureDto {
+  @IsOptional()
+  @IsString()
+  employeeId?: string;
+
+  @IsOptional()
   @IsNumber()
-  @IsPositive()
   @Type(() => Number)
-  annualCTC: number;
+  annualCTC?: number;
 
   @IsNumber()
   @Min(0)
@@ -57,5 +61,8 @@ export class UpsertSalaryStructureDto {
   @Min(0)
   @Type(() => Number)
   otherAllowances?: number;
+
+  @IsOptional()
+  customComponents?: any;
 }
 

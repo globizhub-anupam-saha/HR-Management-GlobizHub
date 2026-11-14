@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Put,
   Body,
   Patch,
   UseGuards,
@@ -20,6 +21,7 @@ export class SettingsController {
   }
 
   @Patch()
+  @Put()
   async updateSettings(@Request() req, @Body() dto: any) {
     return this.settingsService.updateSettings(
       req.user.companyId,

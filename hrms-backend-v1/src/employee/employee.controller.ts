@@ -2,8 +2,9 @@ import {
   Controller,
   Get,
   Post,
-  Body,
+  Put,
   Patch,
+  Body,
   Param,
   Delete,
   UseGuards,
@@ -82,6 +83,7 @@ export class EmployeeController {
 
   // Update an employee (Admin feature)
   @Patch(':id')
+  @Put(':id')
   @RequirePermissions('employee.edit')
   async updateEmployee(
     @Request() req,

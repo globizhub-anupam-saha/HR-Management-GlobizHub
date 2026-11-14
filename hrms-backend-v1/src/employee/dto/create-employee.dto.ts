@@ -35,4 +35,16 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsString()
   reportingManagerId?: string;
+
+  @IsOptional()
+  @IsString()
+  uanNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  esicIpNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  establishmentId?: string;
 }

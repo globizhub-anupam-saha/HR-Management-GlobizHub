@@ -75,34 +75,39 @@ export function decrypt(
 
   // New GCM format: iv(12 bytes → 24 hex) : tag(16 bytes → 32 hex) : ciphertext
   if (parts.length === 3) {
-    const [ivHex, tagHex, cipherHex] = parts;
-    const iv = Buffer.from(ivHex, 'hex');
-    const tag = Buffer.from(tagHex, 'hex');
-    const decipher = createDecipheriv(
-      GCM_ALGORITHM,
-      getEncryptionKey(),
-      iv,
-    ) as any;
-    decipher.setAuthTag(tag);
-    // If the tag doesn't match (wrong key or tampered data) this will throw —
-    // that is intentional (fail-closed).
-    let decrypted = decipher.update(cipherHex, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+    try {
+      const [ivHex, tagHex, cipherHex] = parts;
+      const iv = Buffer.from(ivHex, 'hex');
+      const tag = Buffer.from(tagHex, 'hex');
+      const decipher = createDecipheriv(
+        GCM_ALGORITHM,
+        getEncryptionKey(),
+        iv,
+      ) as any;
+      decipher.setAuthTag(tag);
+      let decrypted = decipher.update(cipherHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } catch {
+      return encryptedText;
+    }
   }
 
   // Legacy CBC format: iv(16 bytes → 32 hex) : ciphertext
   // Kept for backward compatibility with existing DB rows.
   if (parts.length === 2) {
-    const [ivHex, cipherHex] = parts;
-    const iv = Buffer.from(ivHex, 'hex');
-    const decipher = createDecipheriv(CBC_ALGORITHM, getEncryptionKey(), iv);
-    // CBC has no authentication tag; decryption errors still throw from final().
-    let decrypted = decipher.update(cipherHex, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+    try {
+      const [ivHex, cipherHex] = parts;
+      const iv = Buffer.from(ivHex, 'hex');
+      const decipher = createDecipheriv(CBC_ALGORITHM, getEncryptionKey(), iv);
+      let decrypted = decipher.update(cipherHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } catch {
+      return encryptedText;
+    }
   }
 
-  // Unrecognized format — fail closed
-  throw new Error('decrypt: unrecognized ciphertext format');
+  // If not in encrypted format (e.g. plain text stored previously), return as-is
+  return encryptedText;
 }

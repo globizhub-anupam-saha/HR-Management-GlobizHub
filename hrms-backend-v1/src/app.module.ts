@@ -26,6 +26,7 @@ import { RecruitmentModule } from './recruitment/recruitment.module';
 import { TrainingModule } from './training/training.module';
 import { PlatformModule } from './platform/platform.module';
 import { SupportModule } from './support/support.module';
+import { CredentialModule } from './credential/credential.module';
 
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -94,6 +95,7 @@ import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
     TrainingModule,
     PlatformModule,
     SupportModule,
+    CredentialModule,
   ],
   controllers: [AppController],
   providers: [

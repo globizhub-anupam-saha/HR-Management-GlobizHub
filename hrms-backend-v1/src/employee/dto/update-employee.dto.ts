@@ -33,4 +33,16 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsString()
   employeeCode?: string | null;
+
+  @IsOptional()
+  @IsString()
+  uanNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  esicIpNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  establishmentId?: string;
 }

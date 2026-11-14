@@ -97,11 +97,6 @@ export class AttendanceCronService {
       }
 
       // 4. If they have a record, calculate Late Status, Working Hours, and Overtime
-      let finalStatus = record.status;
-      let totalHours = 0;
-      let overtimeHours = 0;
-      let isLate = false;
-
       // Find the shift info to evaluate times
       let shift: any = null;
       if (record.shiftId) {
@@ -120,28 +115,57 @@ export class AttendanceCronService {
       // Default fallback times if no shift found
       const shiftStartTimeStr = shift?.startTime || '09:00';
       const shiftEndTimeStr = shift?.endTime || '18:00';
-      const isNight = shift?.isNightShift || false;
+      const [startH, startM] = shiftStartTimeStr.split(':').map(Number);
+      const [endH, endM] = shiftEndTimeStr.split(':').map(Number);
+      const isNight =
+        record.isCrossMidnight || shift?.isNightShift || endH < startH;
       const grace = employee.company.settings?.gracePeriodMinutes ?? 15;
 
+      // CROSS-MIDNIGHT NIGHT SHIFT PROTECTION:
+      // If employee is on a night shift and currently clocked in (checkOutTime is null),
+      // their shift spans until tomorrow morning (e.g. 06:00 or 08:00).
+      // DO NOT force auto-checkout at 23:59! Allow them to complete their shift and clock out in the morning.
+      if (!record.checkOutTime && isNight) {
+        this.logger.log(
+          `Skipping midnight auto-checkout for employee ${employee.id}: Active night shift in progress.`,
+        );
+        continue;
+      }
+
+      let finalStatus = record.status;
+      let totalHours = 0;
+      let overtimeHours = 0;
+      let isLate = false;
+
       const shiftStart = new Date(today);
-      const [startH, startM] = shiftStartTimeStr.split(':').map(Number);
       shiftStart.setHours(startH, startM, 0, 0);
 
       // Determine default checkOutTime if not checked out (shift end time)
       const defaultCheckOut = new Date(today);
-      const [endH, endM] = shiftEndTimeStr.split(':').map(Number);
       defaultCheckOut.setHours(endH, endM, 0, 0);
-      if (isNight || endH < startH) {
+      if (isNight) {
         defaultCheckOut.setDate(defaultCheckOut.getDate() + 1);
       }
 
       const checkOutTime = record.checkOutTime || defaultCheckOut;
 
-      // Calculate Hours
-      if (record.checkInTime) {
+      // Calculate Hours - check sessions first if multi-session attendance was recorded
+      const sessions = await this.prisma.attendanceSession.findMany({
+        where: { attendanceId: record.id },
+      });
+
+      if (sessions.length > 0) {
+        const sumSessionHours = sessions.reduce(
+          (sum, s) => sum + (s.workingHours || 0),
+          0,
+        );
+        totalHours = Math.round(sumSessionHours * 100) / 100;
+      } else if (record.checkInTime) {
         const diffMs = checkOutTime.getTime() - record.checkInTime.getTime();
         totalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100; // Convert MS to Hours (e.g., 8.5)
+      }
 
+      if (record.checkInTime) {
         // Calculate if late
         const shiftStartWithGrace = new Date(shiftStart);
         shiftStartWithGrace.setMinutes(

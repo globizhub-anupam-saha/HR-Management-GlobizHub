@@ -12,7 +12,7 @@ export const employeesApi = {
   },
 
   update: async (employeeId: string, data: any) => {
-    const res = await api.put(`/employees/${employeeId}`, data);
+    const res = await api.patch(`/employees/${employeeId}`, data);
     return res.data;
   },
 

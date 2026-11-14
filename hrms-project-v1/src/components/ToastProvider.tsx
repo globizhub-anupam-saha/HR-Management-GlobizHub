@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {/* Top-center translucent pill (Apple HIG Dynamic Toast Pill) */}
       <div
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none w-full max-w-md px-4"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none w-full max-w-xl px-4"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -46,14 +46,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={item.id}
             role="status"
-            className="pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-full material-translucent border border-hairline border-separator shadow-[0_4px_16px_rgba(0,0,0,0.12)] text-foreground animate-in fade-in-0 slide-in-from-top-3 duration-200"
+            className="pointer-events-auto flex items-start sm:items-center gap-2.5 px-4 py-2.5 rounded-2xl material-translucent border border-hairline border-separator shadow-[0_4px_16px_rgba(0,0,0,0.12)] text-foreground animate-in fade-in-0 slide-in-from-top-3 duration-200 max-w-full"
           >
             {item.kind === "error" ? (
-              <AlertCircle className="size-4 shrink-0 text-destructive" />
+              <AlertCircle className="size-4 shrink-0 text-destructive mt-0.5 sm:mt-0" />
             ) : (
-              <CheckCircle2 className="size-4 shrink-0 text-status-green" />
+              <CheckCircle2 className="size-4 shrink-0 text-status-green mt-0.5 sm:mt-0" />
             )}
-            <p className="text-[13px] font-medium tracking-tight truncate max-w-[320px]">
+            <p className="text-[13px] font-medium tracking-tight break-words text-left max-w-[440px] sm:max-w-[500px]">
               {item.message}
             </p>
           </div>

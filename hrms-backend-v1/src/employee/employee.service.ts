@@ -12,6 +12,7 @@ import { randomBytes } from 'crypto';
 import { S3Service } from '../s3/s3.service';
 import { encrypt, decrypt } from '../common/utils/encryption.util';
 import { AuditService } from '../audit/audit.service';
+import { generateDepartmentScopedEmployeeCode } from './utils/employee-code.util';
 
 const SENSITIVE_FIELDS = [
   'bankName',
@@ -137,8 +138,45 @@ export class EmployeeService {
         ...(dto.reportingManagerId && {
           reportingManagerId: dto.reportingManagerId,
         }),
+        ...(dto.uanNumber && { uanNumber: encrypt(dto.uanNumber) }),
       },
     });
+
+    // Automatically create statutory profile if UAN / ESIC IP number is provided
+    if (dto.establishmentId || dto.esicIpNumber || dto.uanNumber) {
+      try {
+        let targetEstId = dto.establishmentId;
+        if (!targetEstId) {
+          let firstEst = await this.prisma.statutoryEstablishment.findFirst({
+            where: { companyId },
+          });
+          if (!firstEst) {
+            firstEst = await this.prisma.statutoryEstablishment.create({
+              data: {
+                companyId,
+                name: 'Default Establishment',
+                epfoEstablishmentCode: 'DEFAULT',
+                esicEmployerCode: 'DEFAULT',
+              },
+            });
+          }
+          targetEstId = firstEst?.id;
+        }
+
+        if (targetEstId) {
+          await this.prisma.employeeStatutoryProfile.create({
+            data: {
+              employeeId: newEmployee.id,
+              establishmentId: targetEstId,
+              epfoUan: dto.uanNumber || null,
+              esicIpNumber: dto.esicIpNumber || null,
+            },
+          });
+        }
+      } catch (statutoryError) {
+        console.error('Failed to auto-create statutory profile:', statutoryError);
+      }
+    }
 
     const magicLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/set-password?token=${rawInviteToken}`;
 
@@ -275,6 +313,12 @@ export class EmployeeService {
       throw new NotFoundException('Employee not found in your workspace');
     }
 
+    const isDepartmentChanging =
+      dto.departmentId !== undefined &&
+      dto.departmentId !== employee.departmentId;
+
+    let targetEmployeeCode = dto.employeeCode;
+
     if (
       dto.employeeCode !== undefined &&
       dto.employeeCode !== employee.employeeCode
@@ -293,13 +337,25 @@ export class EmployeeService {
             `Employee ID '${trimmedCode}' is already assigned to another employee.`,
           );
         }
-        dto.employeeCode = trimmedCode;
+        targetEmployeeCode = trimmedCode;
       } else {
-        dto.employeeCode = null;
+        targetEmployeeCode = null;
       }
+    } else if (isDepartmentChanging) {
+      // Automatically generate a new department-scoped ID when department changes
+      targetEmployeeCode = await generateDepartmentScopedEmployeeCode({
+        prisma: this.prisma,
+        companyId,
+        departmentId: dto.departmentId,
+        excludeEmployeeId: employeeId,
+      });
     }
 
-    const encryptedData = encryptPayload(dto);
+    const { esicIpNumber, establishmentId, ...restDto } = dto;
+    if (targetEmployeeCode !== undefined) {
+      (restDto as any).employeeCode = targetEmployeeCode;
+    }
+    const encryptedData = encryptPayload(restDto);
 
     const updated = await this.prisma.employee.update({
       where: { id: employeeId },
@@ -312,8 +368,78 @@ export class EmployeeService {
         phone: true,
         role: true,
         employeeCode: true,
+        uanNumber: true,
+        departmentId: true,
       },
     });
+
+    if (isDepartmentChanging) {
+      await this.auditService.logAction(
+        companyId,
+        actorId || null,
+        'UPDATE',
+        'Employee',
+        employeeId,
+        {
+          departmentId: employee.departmentId,
+          employeeCode: employee.employeeCode,
+        },
+        {
+          departmentId: dto.departmentId,
+          employeeCode: updated.employeeCode,
+        },
+      );
+    }
+
+    if (establishmentId !== undefined || esicIpNumber !== undefined || dto.uanNumber !== undefined) {
+      try {
+        let targetEstId = establishmentId;
+        if (!targetEstId) {
+          let firstEst = await this.prisma.statutoryEstablishment.findFirst({
+            where: { companyId },
+          });
+          if (!firstEst) {
+            firstEst = await this.prisma.statutoryEstablishment.create({
+              data: {
+                companyId,
+                name: 'Default Establishment',
+                epfoEstablishmentCode: 'DEFAULT',
+                esicEmployerCode: 'DEFAULT',
+              },
+            });
+          }
+          targetEstId = firstEst.id;
+        }
+
+        if (targetEstId) {
+          const existingProfile = await this.prisma.employeeStatutoryProfile.findFirst({
+            where: { employeeId },
+          });
+
+          if (existingProfile) {
+            await this.prisma.employeeStatutoryProfile.update({
+              where: { id: existingProfile.id },
+              data: {
+                ...(establishmentId ? { establishmentId: targetEstId } : {}),
+                epfoUan: dto.uanNumber !== undefined ? dto.uanNumber : existingProfile.epfoUan,
+                esicIpNumber: esicIpNumber !== undefined ? esicIpNumber : existingProfile.esicIpNumber,
+              },
+            });
+          } else {
+            await this.prisma.employeeStatutoryProfile.create({
+              data: {
+                employeeId,
+                establishmentId: targetEstId,
+                epfoUan: dto.uanNumber || null,
+                esicIpNumber: esicIpNumber || null,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to update employee statutory profile:', err);
+      }
+    }
 
     await this.auditService.logAction(
       companyId,
@@ -420,12 +546,57 @@ export class EmployeeService {
       data.gender = null;
     }
 
-    const encryptedData = encryptPayload(data);
+    const { esicIpNumber, ...restData } = data;
+    const encryptedData = encryptPayload(restData);
 
     const updated = await this.prisma.employee.update({
       where: { id: employeeId },
       data: encryptedData,
     });
+
+    if (data.uanNumber !== undefined || esicIpNumber !== undefined) {
+      try {
+        let firstEst = await this.prisma.statutoryEstablishment.findFirst({
+          where: { companyId: updated.companyId },
+        });
+        if (!firstEst) {
+          firstEst = await this.prisma.statutoryEstablishment.create({
+            data: {
+              companyId: updated.companyId,
+              name: 'Default Establishment',
+              epfoEstablishmentCode: 'DEFAULT',
+              esicEmployerCode: 'DEFAULT',
+            },
+          });
+        }
+        if (firstEst) {
+          const existingProfile = await this.prisma.employeeStatutoryProfile.findFirst({
+            where: { employeeId },
+          });
+
+          if (existingProfile) {
+            await this.prisma.employeeStatutoryProfile.update({
+              where: { id: existingProfile.id },
+              data: {
+                epfoUan: data.uanNumber !== undefined ? data.uanNumber : existingProfile.epfoUan,
+                esicIpNumber: esicIpNumber !== undefined ? esicIpNumber : existingProfile.esicIpNumber,
+              },
+            });
+          } else {
+            await this.prisma.employeeStatutoryProfile.create({
+              data: {
+                employeeId,
+                establishmentId: firstEst.id,
+                epfoUan: data.uanNumber || null,
+                esicIpNumber: esicIpNumber || null,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to sync self statutory profile:', err);
+      }
+    }
 
     await this.auditService.logAction(
       updated.companyId,
@@ -554,12 +725,26 @@ export class EmployeeService {
         skills: true,
         emergencyContacts: true,
         designation: true,
+        department: true,
+        reportingManager: true,
+        statutoryProfiles: {
+          include: {
+            establishment: true,
+          },
+        },
       },
     });
     if (!employee) {
       throw new NotFoundException('Employee not found in your workspace');
     }
-    return decryptEmployee(employee);
+    const decrypted = decryptEmployee(employee);
+    const activeStat = employee.statutoryProfiles?.[0];
+    return {
+      ...decrypted,
+      uanNumber: decrypted.uanNumber || activeStat?.epfoUan || null,
+      esicIpNumber: activeStat?.esicIpNumber || null,
+      establishmentId: activeStat?.establishmentId || null,
+    };
   }
 
   async removeSkill(employeeId: string, skillId: string) {

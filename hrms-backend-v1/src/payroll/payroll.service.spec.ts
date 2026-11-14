@@ -6,6 +6,10 @@ import { S3Service } from '../s3/s3.service';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
 
+import { Form16GeneratorService } from './tax/form16-generator.service';
+import { PayrollJvService } from './journal/payroll-jv.service';
+import { StatutoryCalculatorService } from './statutory-compliance/common/statutory-calculator.service';
+
 describe('PayrollService', () => {
   let service: PayrollService;
   const prisma = {
@@ -31,6 +35,15 @@ describe('PayrollService', () => {
     },
     holiday: {
       findMany: jest.fn(),
+    },
+    employeeTaxDeclaration: {
+      findFirst: jest.fn(),
+    },
+    employeeLoan: {
+      findFirst: jest.fn(),
+    },
+    employeeStatutoryProfile: {
+      findFirst: jest.fn(),
     },
   };
   const s3Service = {
@@ -65,6 +78,18 @@ describe('PayrollService', () => {
         {
           provide: EmailService,
           useValue: emailService,
+        },
+        {
+          provide: Form16GeneratorService,
+          useValue: { generateForm16: jest.fn(), generateForm24Q: jest.fn() },
+        },
+        {
+          provide: PayrollJvService,
+          useValue: { generatePayrollJv: jest.fn() },
+        },
+        {
+          provide: StatutoryCalculatorService,
+          useValue: { calculateAndSnapshot: jest.fn() },
         },
       ],
     }).compile();

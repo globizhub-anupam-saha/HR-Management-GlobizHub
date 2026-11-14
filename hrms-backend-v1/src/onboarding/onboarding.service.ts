@@ -9,6 +9,7 @@ import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 import { UpdateCaseStatusDto } from './dto/update-case-status.dto';
 import { AuditService } from '../audit/audit.service';
+import { generateDepartmentScopedEmployeeCode } from '../employee/utils/employee-code.util';
 
 const DEFAULT_ONBOARDING_TASKS = [
   {
@@ -406,73 +407,12 @@ export class OnboardingService {
       let generatedEmployeeCode = emp?.employeeCode;
 
       if (!generatedEmployeeCode && emp) {
-        const settings = (await this.prisma.companySettings.findUnique({
-          where: { companyId },
-        })) as any;
-
-        const compPrefix =
-          settings?.employeeIdPrefix ||
-          emp.company.name
-            .replace(/[^a-zA-Z0-9]/g, '')
-            .substring(0, 3)
-            .toUpperCase() ||
-          'EMP';
-
-        const deptPrefix = emp.department
-          ? emp.department.name
-              .replace(/[^a-zA-Z0-9]/g, '')
-              .substring(0, 3)
-              .toUpperCase() || 'GEN'
-          : 'GEN';
-
-        const existingEmployees = await this.prisma.employee.findMany({
-          where: {
-            companyId,
-            employeeCode: { not: null },
-          },
-          select: { employeeCode: true },
+        generatedEmployeeCode = await generateDepartmentScopedEmployeeCode({
+          prisma: this.prisma,
+          companyId,
+          departmentId: emp.departmentId,
+          excludeEmployeeId: emp.id,
         });
-
-        let maxNum = 0;
-        for (const e of existingEmployees) {
-          if (e.employeeCode) {
-            const match = e.employeeCode.match(/(\d+)$/);
-            if (match) {
-              const num = parseInt(match[1], 10);
-              if (!isNaN(num) && num > maxNum) {
-                maxNum = num;
-              }
-            } else {
-              const parts = e.employeeCode.split(/[-_./]/);
-              for (const part of parts) {
-                const num = parseInt(part, 10);
-                if (!isNaN(num) && num > maxNum) {
-                  maxNum = num;
-                }
-              }
-            }
-          }
-        }
-
-        const digits = settings?.employeeIdDigits || 3;
-        const sequentialNumber = String(maxNum + 1).padStart(digits, '0');
-        const format = settings?.employeeIdFormat || '{PREFIX}-{DEPT}-{NUMBER}';
-        const currentYear = new Date().getFullYear().toString();
-        const shortYear = currentYear.slice(-2);
-
-        let code = format
-          .replace(/\{PREFIX\}|\[PREFIX\]/gi, compPrefix)
-          .replace(/\{DEPT\}|\[DEPT\]/gi, deptPrefix)
-          .replace(/\{YEAR\}|\[YEAR\]/gi, currentYear)
-          .replace(/\{YY\}|\[YY\]/gi, shortYear);
-
-        if (/\{NUMBER\}|\[NUMBER\]/gi.test(code)) {
-          code = code.replace(/\{NUMBER\}|\[NUMBER\]/gi, sequentialNumber);
-        } else {
-          code = `${code}-${sequentialNumber}`;
-        }
-
-        generatedEmployeeCode = code;
       }
 
       await this.prisma.employee.update({

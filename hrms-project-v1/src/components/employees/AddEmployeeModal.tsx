@@ -41,6 +41,9 @@ const addEmployeeSchema = z.object({
   role: z.string().min(1, "Please select a role"),
   reportingManagerId: z.string().optional().nullable(),
   departmentId: z.string().optional().nullable(),
+  uanNumber: z.string().optional().nullable(),
+  esicIpNumber: z.string().optional().nullable(),
+  establishmentId: z.string().optional().nullable(),
 });
 
 export function AddEmployeeModal() {
@@ -48,6 +51,7 @@ export function AddEmployeeModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [managers, setManagers] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
+  const [establishments, setEstablishments] = useState<any[]>([]);
 
   const form = useForm<z.infer<typeof addEmployeeSchema>>({
     resolver: zodResolver(addEmployeeSchema),
@@ -58,6 +62,9 @@ export function AddEmployeeModal() {
       role: "",
       reportingManagerId: "",
       departmentId: "",
+      uanNumber: "",
+      esicIpNumber: "",
+      establishmentId: "",
     },
   });
 
@@ -70,6 +77,10 @@ export function AddEmployeeModal() {
       api.get("/organization/departments")
         .then((res) => setDepartments(res.data))
         .catch((err) => console.error("Failed to load departments", err));
+
+      api.get("/payroll/statutory/establishments")
+        .then((res) => setEstablishments(res.data))
+        .catch((err) => console.error("Failed to load establishments", err));
     }
   }, [open]);
 
@@ -80,6 +91,9 @@ export function AddEmployeeModal() {
         ...values,
         departmentId: values.departmentId === "none" || !values.departmentId ? null : values.departmentId,
         reportingManagerId: values.reportingManagerId === "none" || !values.reportingManagerId ? null : values.reportingManagerId,
+        establishmentId: values.establishmentId === "none" || !values.establishmentId ? null : values.establishmentId,
+        uanNumber: values.uanNumber ? values.uanNumber.trim() : null,
+        esicIpNumber: values.esicIpNumber ? values.esicIpNumber.trim() : null,
       };
 
       // Send the data using centralized employeesApi
@@ -103,7 +117,7 @@ export function AddEmployeeModal() {
       <DialogTrigger className="inline-flex h-9 items-center justify-center rounded-[10px] bg-primary px-3.5 text-[14px] font-medium whitespace-nowrap text-primary-foreground transition-all hover:bg-primary/90 apple-shadow-sm active:scale-[0.98]">
           <UserPlus className="mr-2 h-4 w-4" /> Add Employee
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Invite New Candidate</DialogTitle>
           <DialogDescription>
@@ -252,6 +266,95 @@ export function AddEmployeeModal() {
                 </FormItem>
               )}
             />
+
+            {/* Statutory Compliance Details */}
+            <div className="pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Statutory Compliance (PF & ESI)
+                </p>
+                <span className="text-[11px] text-slate-400 font-normal">Optional for new joiners</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mb-3">
+                If the employee is fresh/new and has not been allotted UAN or ESIC IP numbers yet, you can leave these blank. Either you or the employee can add them at any time after onboarding.
+              </p>
+
+              {establishments.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name="establishmentId"
+                  render={({ field }) => (
+                    <FormItem className="mb-3">
+                      <FormLabel className="text-xs">Registered Establishment</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || "none"}>
+                        <FormControl>
+                          <SelectTrigger className="w-full text-xs">
+                            <SelectValue placeholder="Assign Establishment (Optional)">
+                              {(value) => {
+                                if (value === "none" || !value) return "Default Establishment";
+                                const est = establishments.find((e) => e.id === value);
+                                return est?.name || value;
+                              }}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Default Establishment</SelectItem>
+                          {establishments.map((est) => (
+                            <SelectItem key={est.id} value={est.id}>
+                              {est.name} ({est.epfoEstablishmentCode || "No EPFO Code"})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="uanNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">EPFO UAN</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="12-digit UAN"
+                          maxLength={12}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          className="text-xs font-mono"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="esicIpNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">ESIC IP Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="IP / ESI Number"
+                          maxLength={17}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          className="text-xs font-mono"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" variant="default" size="default" disabled={isSubmitting}>

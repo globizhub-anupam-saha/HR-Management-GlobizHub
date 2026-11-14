@@ -89,6 +89,11 @@ export class UpdateMyProfileDto {
   @MaxLength(30)
   uanNumber?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  esicIpNumber?: string;
+
   // UI preferences
   @IsOptional()
   @IsString()

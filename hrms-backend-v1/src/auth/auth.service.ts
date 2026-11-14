@@ -14,6 +14,7 @@ import { SetPasswordDto } from './dto/set-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import * as crypto from 'crypto';
 import { EmailService } from '../email/email.service';
+import { decrypt } from '../common/utils/encryption.util';
 
 import { AuditService } from '../audit/audit.service';
 
@@ -639,6 +640,12 @@ export class AuthService {
           },
         },
         designation: true,
+        uanNumber: true,
+        statutoryProfiles: {
+          include: {
+            establishment: true,
+          },
+        },
         notificationSettings: true,
         devices: true,
         company: {
@@ -661,8 +668,13 @@ export class AuthService {
       ? `${backendUrl}${profile.profilePhoto}`
       : null;
 
+    const decryptedUan = profile.uanNumber ? decrypt(profile.uanNumber) : null;
+    const esicNumber = profile.statutoryProfiles?.[0]?.esicIpNumber || null;
+
     return {
       ...profile,
+      uanNumber: decryptedUan,
+      esicIpNumber: esicNumber,
       profileImage,
     };
   }

@@ -3,8 +3,10 @@
 import api, { API_BASE_URL } from "@/lib/api";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { payrollApi } from "@/lib/api/payroll";
 import {
   Calculator,
   Calendar as CalendarIcon,
@@ -15,9 +17,17 @@ import {
   Loader2,
   Plus,
   Search,
+  ShieldCheck,
   TrendingDown,
   TrendingUp,
   Users,
+  FileSpreadsheet,
+  AlertCircle,
+  Ban,
+  RefreshCw,
+  UserMinus,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,6 +97,27 @@ export default function HRPayrollDashboard() {
     taxDeduction: 0,
     professionalTax: 0,
   });
+  const [customSalaryComponents, setCustomSalaryComponents] = useState<any[]>([]);
+
+  // Hold / Release state
+  const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
+  const [holdRecordId, setHoldRecordId] = useState("");
+  const [holdReason, setHoldReason] = useState("");
+
+  // F&F Settlement state
+  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
+  const [settlementEmpId, setSettlementEmpId] = useState("");
+  const [settlementExitDate, setSettlementExitDate] = useState(new Date().toISOString().split("T")[0]);
+  const [settlementShortfall, setSettlementShortfall] = useState(0);
+  const [settlementBonus, setSettlementBonus] = useState(0);
+  const [settlementDeductions, setSettlementDeductions] = useState(0);
+  const [settlementRemarks, setSettlementRemarks] = useState("");
+  const [settlementData, setSettlementData] = useState<any>(null);
+  const [isCalculatingSettlement, setIsCalculatingSettlement] = useState(false);
+  const [isProcessingSettlement, setIsProcessingSettlement] = useState(false);
+
+  // Tax Declarations Verification dialog state
+  const [isTaxVerifModalOpen, setIsTaxVerifModalOpen] = useState(false);
 
   // Fetch Templates
   const { data: templates } = useQuery({
@@ -104,7 +135,12 @@ export default function HRPayrollDashboard() {
     mutationFn: async () => {
       await axios.post(
         `${API_URL}/payroll/salary-structure`,
-        { employeeId: empForSalary, ...salaryForm },
+        {
+          employeeId: empForSalary,
+          annualCTC: Number(annualCtc) || (salaryForm.basicSalary * 12) || 0,
+          ...salaryForm,
+          customComponents: customSalaryComponents,
+        },
         { headers: { Authorization: `Bearer ${getToken()}` } },
       );
     },
@@ -115,6 +151,10 @@ export default function HRPayrollDashboard() {
       setEmpForSalary("");
       setAnnualCtc("");
       setSelectedTemplateId("");
+      setCustomSalaryComponents([]);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.message || err.message || "Failed to assign salary structure");
     },
   });
 
@@ -190,6 +230,12 @@ export default function HRPayrollDashboard() {
             <Clock className="w-3 h-3 mr-1" /> Draft
           </Badge>
         );
+      case "HELD":
+        return (
+          <Badge className="bg-rose-50 text-rose-700 border-rose-200">
+            <AlertCircle className="w-3 h-3 mr-1" /> On Hold
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -213,6 +259,120 @@ export default function HRPayrollDashboard() {
       alert(error.response?.data?.message || "Failed to update status");
     },
   });
+
+  // Hold Payroll Mutation
+  const holdMutation = useMutation({
+    mutationFn: async () => {
+      return payrollApi.holdPayroll(holdRecordId, holdReason);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["companyPayroll", selectedMonth, selectedYear],
+      });
+      setIsHoldModalOpen(false);
+      setHoldRecordId("");
+      setHoldReason("");
+      alert("Payroll placed on hold.");
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.message || "Failed to hold payroll");
+    },
+  });
+
+  // Release Payroll Mutation
+  const releaseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return payrollApi.releasePayroll(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["companyPayroll", selectedMonth, selectedYear],
+      });
+      alert("Payroll released from hold and marked as APPROVED.");
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.message || "Failed to release payroll");
+    },
+  });
+
+  // Query Company Tax Declarations
+  const { data: companyTaxDeclarations, refetch: refetchTaxDecs } = useQuery({
+    queryKey: ["companyTaxDeclarations", selectedYear],
+    queryFn: async () => {
+      try {
+        const fy = `${selectedYear}-${Number(selectedYear) + 1}`;
+        return await payrollApi.listCompanyTaxDeclarations(fy);
+      } catch {
+        return [];
+      }
+    },
+    enabled: isTaxVerifModalOpen,
+  });
+
+  // Verify Tax Declaration Mutation
+  const verifyTaxMutation = useMutation({
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: "APPROVED" | "REJECTED"; rejectionReason?: string }) => {
+      return payrollApi.verifyTaxDeclaration(id, { status, rejectionReason });
+    },
+    onSuccess: () => {
+      refetchTaxDecs();
+      alert("Tax declaration status updated!");
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.message || "Failed to update tax declaration");
+    },
+  });
+
+  // Handle Calculate Settlement
+  const handleCalculateSettlement = async () => {
+    if (!settlementEmpId) {
+      alert("Please select an employee.");
+      return;
+    }
+    setIsCalculatingSettlement(true);
+    try {
+      const data = await payrollApi.calculateSettlement({
+        employeeId: settlementEmpId,
+        exitDate: settlementExitDate,
+        noticeShortfallDays: Number(settlementShortfall) || 0,
+        additionalBonus: Number(settlementBonus) || 0,
+        additionalDeductions: Number(settlementDeductions) || 0,
+        remarks: settlementRemarks,
+      });
+      setSettlementData(data);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Settlement calculation failed.");
+    } finally {
+      setIsCalculatingSettlement(false);
+    }
+  };
+
+  // Handle Process Settlement
+  const handleProcessSettlement = async () => {
+    if (!confirm("Are you sure you want to process Full & Final settlement? This will mark the employee as TERMINATED.")) {
+      return;
+    }
+    setIsProcessingSettlement(true);
+    try {
+      await payrollApi.processSettlement({
+        employeeId: settlementEmpId,
+        exitDate: settlementExitDate,
+        noticeShortfallDays: Number(settlementShortfall) || 0,
+        additionalBonus: Number(settlementBonus) || 0,
+        additionalDeductions: Number(settlementDeductions) || 0,
+        remarks: settlementRemarks,
+      });
+      alert("Full & Final Settlement completed successfully!");
+      setIsSettlementModalOpen(false);
+      setSettlementData(null);
+      setSettlementEmpId("");
+      queryClient.invalidateQueries({ queryKey: ["companyPayroll", selectedMonth, selectedYear] });
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to process settlement.");
+    } finally {
+      setIsProcessingSettlement(false);
+    }
+  };
 
   // Calculate Summary Stats
   const totalPayout =
@@ -258,9 +418,31 @@ export default function HRPayrollDashboard() {
           ? monthlyCtc * (template.profTaxFixed / 100)
           : template.profTaxFixed;
 
+        // Custom Components Calculation
+        let customEarningsTotal = 0;
+        const calculatedCustom = (Array.isArray(template.customComponents) ? template.customComponents : []).map((comp: any) => {
+          let calculatedValue = Number(comp.value) || 0;
+          if (comp.calculationType === "PERCENT_OF_CTC") {
+            calculatedValue = monthlyCtc * (Number(comp.value) / 100);
+          } else if (comp.calculationType === "PERCENT_OF_BASIC") {
+            calculatedValue = basic * (Number(comp.value) / 100);
+          }
+          calculatedValue = Math.round(calculatedValue);
+
+          if (comp.type === "EARNING") {
+            customEarningsTotal += calculatedValue;
+          }
+
+          return {
+            ...comp,
+            value: calculatedValue,
+          };
+        });
+        setCustomSalaryComponents(calculatedCustom);
+
         // Special Allowance is the "Balance" (Monthly CTC minus all other fixed components & PF)
         const fixedComponents =
-          basic + hra + conveyance + medical + pf;
+          basic + hra + conveyance + medical + pf + customEarningsTotal;
         const special = monthlyCtc - fixedComponents;
 
         // Auto-fill the form with calculations
@@ -307,8 +489,16 @@ export default function HRPayrollDashboard() {
           <p className="type-subhead text-label-secondary mt-1">Review, approve, and print employee payslips.</p>
         </div>
 
-        <div className="flex items-center gap-2 bg-card p-1.5 rounded-[12px] apple-shadow-card border-0 dark:border dark:border-hairline dark:border-separator">
-          <CalendarIcon className="w-5 h-5 text-slate-400 ml-2" />
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/workspace/payroll/statutory">
+            <Button variant="outline" className="gap-2 bg-card text-foreground border border-slate-200 apple-shadow-card">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+              Statutory Compliance (PF & ESI)
+            </Button>
+          </Link>
+
+          <div className="flex items-center gap-2 bg-card p-1.5 rounded-[12px] apple-shadow-card border-0 dark:border dark:border-hairline dark:border-separator">
+            <CalendarIcon className="w-5 h-5 text-slate-400 ml-2" />
           <Select
             value={selectedMonth}
             onValueChange={(val) => setSelectedMonth(val || "")}
@@ -347,6 +537,7 @@ export default function HRPayrollDashboard() {
               <SelectItem value="2026">2026</SelectItem>
             </SelectContent>
           </Select>
+          </div>
         </div>
       </div>
 
@@ -407,12 +598,93 @@ export default function HRPayrollDashboard() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2 flex-wrap">
+            {/* ACCOUNTING JOURNAL VOUCHER (JV) EXPORT */}
             <Button
               variant="outline"
-              className="h-9 text-slate-600 border-slate-200"
+              className="h-9 text-slate-700 border-slate-200 text-xs font-semibold"
+              onClick={async () => {
+                try {
+                  const res = await payrollApi.getJournalVoucher(Number(selectedMonth), Number(selectedYear), "csv");
+                  const url = window.URL.createObjectURL(new Blob([res.data]));
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.setAttribute("download", `payroll_jv_${selectedMonth}_${selectedYear}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                } catch (err: any) {
+                  let msg = "No payroll records found for this period. Please run payroll first.";
+                  if (err.response?.data instanceof Blob) {
+                    try {
+                      const text = await err.response.data.text();
+                      const parsed = JSON.parse(text);
+                      if (parsed.message) msg = parsed.message;
+                    } catch {}
+                  } else if (err.response?.data?.message) {
+                    msg = err.response.data.message;
+                  }
+                  alert(msg);
+                }
+              }}
             >
-              <Download className="w-4 h-4 mr-2" /> Export CSV
+              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> Accounting JV
+            </Button>
+
+            {/* FORM 24Q e-TDS EXPORT */}
+            <Button
+              variant="outline"
+              className="h-9 text-slate-700 border-slate-200 text-xs font-semibold"
+              onClick={async () => {
+                try {
+                  const m = Number(selectedMonth);
+                  const q = m <= 3 ? "Q4" : m <= 6 ? "Q1" : m <= 9 ? "Q2" : "Q3";
+                  const fy = `${selectedYear}-${Number(selectedYear) + 1}`;
+                  const res = await payrollApi.downloadForm24Q(q as any, fy);
+                  const url = window.URL.createObjectURL(new Blob([res.data]));
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.setAttribute("download", `FORM24Q_${fy}_${q}.txt`);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                } catch (err: any) {
+                  let msg = "Failed to export Form 24Q text file.";
+                  if (err.response?.data instanceof Blob) {
+                    try {
+                      const text = await err.response.data.text();
+                      const parsed = JSON.parse(text);
+                      if (parsed.message) msg = parsed.message;
+                    } catch {}
+                  } else if (err.response?.data?.message) {
+                    msg = err.response.data.message;
+                  }
+                  alert(msg);
+                }
+              }}
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> Form 24Q
+            </Button>
+
+            {/* TAX DECLARATIONS REVIEW BUTTON */}
+            <Button
+              variant="outline"
+              className="h-9 text-slate-700 border-slate-200 text-xs font-semibold"
+              onClick={() => setIsTaxVerifModalOpen(true)}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-amber-600" /> IT Declarations
+            </Button>
+
+            {/* FULL & FINAL SETTLEMENT BUTTON */}
+            <Button
+              variant="outline"
+              className="h-9 text-rose-700 border-rose-200 hover:bg-rose-50 text-xs font-semibold"
+              onClick={() => {
+                setSettlementData(null);
+                setIsSettlementModalOpen(true);
+              }}
+            >
+              <UserMinus className="w-3.5 h-3.5 mr-1.5" /> F&F Settlement
             </Button>
 
             {/* NEW SET SALARY BUTTON (MODIFIED & RESPONSIVE) */}
@@ -600,6 +872,39 @@ export default function HRPayrollDashboard() {
                           />
                         </div>
                       </div>
+
+                      {/* Custom Components section in Assign Salary Modal */}
+                      {customSalaryComponents.length > 0 && (
+                        <div className="pt-2 border-t border-slate-100 space-y-2">
+                          <label className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+                            Custom Template Components
+                          </label>
+                          <div className="space-y-1.5">
+                            {customSalaryComponents.map((comp, idx) => (
+                              <div key={comp.id || idx} className="flex justify-between items-center bg-slate-50 p-2 rounded text-xs border border-slate-200">
+                                <span className="font-medium text-slate-700 flex items-center gap-1.5">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${comp.type === "EARNING" ? "bg-emerald-500" : "bg-rose-500"}`} />
+                                  {comp.name} ({comp.type === "EARNING" ? "+ Earning" : "- Deduction"}):
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[11px] text-slate-400 font-bold">₹</span>
+                                  <Input
+                                    type="number"
+                                    value={comp.value}
+                                    onChange={(e) => {
+                                      const newVal = Number(e.target.value);
+                                      setCustomSalaryComponents((prev) =>
+                                        prev.map((c, i) => (i === idx ? { ...c, value: newVal } : c))
+                                      );
+                                    }}
+                                    className="w-24 h-7 text-xs font-semibold bg-white"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -760,13 +1065,13 @@ export default function HRPayrollDashboard() {
                     {formatCurrency(record.netSalary)}
                   </TableCell>
                   <TableCell>{getStatusBadge(record.status)}</TableCell>
-                  <TableCell className="text-right flex justify-end gap-2">
+                  <TableCell className="text-right flex justify-end gap-1.5 flex-wrap">
                     {/* Approve Button (Only show if DRAFT) */}
                     {record.status === "DRAFT" && (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           statusMutation.mutate({
@@ -776,7 +1081,59 @@ export default function HRPayrollDashboard() {
                         }}
                         disabled={statusMutation.isPending}
                       >
-                        <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Approve
+                      </Button>
+                    )}
+
+                    {/* Mark Paid Button (Show if APPROVED) */}
+                    {record.status === "APPROVED" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          statusMutation.mutate({
+                            id: record.id,
+                            status: "PAID",
+                          });
+                        }}
+                        disabled={statusMutation.isPending}
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1" /> Mark Paid
+                      </Button>
+                    )}
+
+                    {/* Hold Button (Show if DRAFT or APPROVED) */}
+                    {["DRAFT", "APPROVED"].includes(record.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-amber-700 border-amber-300 hover:bg-amber-50 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHoldRecordId(record.id);
+                          setHoldReason("");
+                          setIsHoldModalOpen(true);
+                        }}
+                      >
+                        <Ban className="w-3.5 h-3.5 mr-1" /> Hold
+                      </Button>
+                    )}
+
+                    {/* Release Button (Show if HELD) */}
+                    {record.status === "HELD" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          releaseMutation.mutate(record.id);
+                        }}
+                        disabled={releaseMutation.isPending}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 mr-1" /> Release
                       </Button>
                     )}
 
@@ -784,13 +1141,13 @@ export default function HRPayrollDashboard() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-indigo-600 hover:bg-indigo-50"
+                      className="text-indigo-600 hover:bg-indigo-50 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPayslip(record); // This triggers the Modal!
                       }}
                     >
-                      <FileText className="w-4 h-4 mr-2" /> Payslip
+                      <FileText className="w-3.5 h-3.5 mr-1" /> Payslip
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -1055,6 +1412,254 @@ export default function HRPayrollDashboard() {
               }}
             >
               <Download className="w-4 h-4 mr-2" /> Download / Print PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* HOLD SALARY DIALOG */}
+      <Dialog open={isHoldModalOpen} onOpenChange={setIsHoldModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-amber-700">
+              <Ban className="w-5 h-5 mr-2" /> Place Salary on Hold
+            </DialogTitle>
+            <DialogDescription>
+              Holding salary prevents disbursement during pending verification, notice periods, or clearance.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-3">
+            <label className="text-xs font-semibold text-slate-700">Hold Reason / Remarks</label>
+            <Input
+              placeholder="e.g. Pending asset clearance / attendance dispute"
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsHoldModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={() => holdMutation.mutate()}
+              disabled={holdMutation.isPending}
+            >
+              {holdMutation.isPending ? "Holding..." : "Confirm Hold"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* FULL & FINAL SETTLEMENT (F&F) DIALOG */}
+      <Dialog open={isSettlementModalOpen} onOpenChange={setIsSettlementModalOpen}>
+        <DialogContent className="max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-rose-700">
+              <UserMinus className="w-5 h-5 mr-2" /> Full & Final Settlement (F&F Engine)
+            </DialogTitle>
+            <DialogDescription>
+              Calculate gratuity, leave encashment, notice period recovery, and finalize severance payout.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-3 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Select Resigning Employee</label>
+                <Select value={settlementEmpId} onValueChange={(val) => setSettlementEmpId(val || "")}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Choose employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees?.map((emp: any) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName} ({emp.employeeCode || "N/A"})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Exit Date</label>
+                <Input
+                  type="date"
+                  className="h-9 text-xs"
+                  value={settlementExitDate}
+                  onChange={(e) => setSettlementExitDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Notice Shortfall Days</label>
+                <Input
+                  type="number"
+                  className="h-9 text-xs"
+                  value={settlementShortfall}
+                  onChange={(e) => setSettlementShortfall(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Additional Bonus (₹)</label>
+                <Input
+                  type="number"
+                  className="h-9 text-xs"
+                  value={settlementBonus}
+                  onChange={(e) => setSettlementBonus(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Other Deductions (₹)</label>
+                <Input
+                  type="number"
+                  className="h-9 text-xs"
+                  value={settlementDeductions}
+                  onChange={(e) => setSettlementDeductions(Number(e.target.value))}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCalculateSettlement}
+                disabled={isCalculatingSettlement || !settlementEmpId}
+              >
+                {isCalculatingSettlement ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Calculator className="w-3.5 h-3.5 mr-1.5" />}
+                Calculate Severance Breakdown
+              </Button>
+            </div>
+
+            {settlementData && (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <span className="font-bold text-slate-900">Service Tenure:</span>
+                  <span className="font-semibold">{settlementData.employee?.tenureYears} Years</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-slate-500">Prorated Pay (Exit Month):</p>
+                    <p className="font-bold text-emerald-600">₹{settlementData.earnings?.proratedSalary}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Leave Encashment ({settlementData.earnings?.unusedPaidLeaveDays} Days):</p>
+                    <p className="font-bold text-emerald-600">₹{settlementData.earnings?.leaveEncashment}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Gratuity (Payment of Gratuity Act):</p>
+                    <p className="font-bold text-emerald-600">₹{settlementData.earnings?.gratuity}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Notice Recovery Shortfall:</p>
+                    <p className="font-bold text-rose-600">- ₹{settlementData.recoveries?.noticeRecovery}</p>
+                  </div>
+                </div>
+                <div className="p-3 bg-indigo-50 border border-indigo-200 rounded flex justify-between items-center font-bold text-sm text-indigo-900">
+                  <span>Net Settlement Payable:</span>
+                  <span className="text-base">₹{settlementData.netSettlementAmount}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSettlementModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={handleProcessSettlement}
+              disabled={isProcessingSettlement || !settlementData}
+            >
+              {isProcessingSettlement ? "Processing..." : "Finalize & Terminate Employee"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* TAX DECLARATIONS VERIFICATION DIALOG */}
+      <Dialog open={isTaxVerifModalOpen} onOpenChange={setIsTaxVerifModalOpen}>
+        <DialogContent className="max-w-3xl bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-indigo-700">
+              <ShieldCheck className="w-5 h-5 mr-2" /> Income Tax (IT) Declarations & Proofs Review
+            </DialogTitle>
+            <DialogDescription>
+              Review employee declarations for Section 80C, 80D, 24b, and HRA rent receipts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3">
+            {companyTaxDeclarations?.length === 0 ? (
+              <p className="text-center py-8 text-slate-400">No declarations submitted for review.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Regime</TableHead>
+                    <TableHead className="text-right">Sec 80C</TableHead>
+                    <TableHead className="text-right">Sec 80D</TableHead>
+                    <TableHead className="text-right">Rent Paid</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {companyTaxDeclarations?.map((dec: any) => (
+                    <TableRow key={dec.id}>
+                      <TableCell className="font-medium text-xs">
+                        {dec.employee?.firstName} {dec.employee?.lastName}
+                        <div className="text-[11px] text-slate-400">{dec.employee?.employeeCode}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{dec.regime}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-xs">₹{dec.section80C || 0}</TableCell>
+                      <TableCell className="text-right text-xs">₹{dec.section80D || 0}</TableCell>
+                      <TableCell className="text-right text-xs">₹{dec.annualRentPaid || 0}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            dec.status === "APPROVED"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : dec.status === "REJECTED"
+                              ? "bg-rose-100 text-rose-800"
+                              : "bg-amber-100 text-amber-800"
+                          }
+                        >
+                          {dec.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50 text-xs"
+                          onClick={() => verifyTaxMutation.mutate({ id: dec.id, status: "APPROVED" })}
+                          disabled={dec.status === "APPROVED"}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-rose-700 border-rose-300 hover:bg-rose-50 text-xs"
+                          onClick={() => verifyTaxMutation.mutate({ id: dec.id, status: "REJECTED", rejectionReason: "Documents incomplete" })}
+                          disabled={dec.status === "REJECTED"}
+                        >
+                          Reject
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTaxVerifModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

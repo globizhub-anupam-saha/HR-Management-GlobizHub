@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   UseGuards,
@@ -10,6 +11,7 @@ import {
   ParseIntPipe,
   Query,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import type { Response as ExpressResponse } from 'express';
 import { PayrollService } from './payroll.service';
@@ -20,6 +22,11 @@ import { UpsertSalaryStructureDto } from './dto/upsert-salary-structure.dto';
 import { GenerateBatchPayrollDto } from './dto/generate-batch-payroll.dto';
 import { CalculateCtcDto } from './dto/calculate-ctc.dto';
 import { FinalSettlementDto } from './dto/final-settlement.dto';
+import {
+  UpsertTaxDeclarationDto,
+  VerifyTaxDeclarationDto,
+} from './dto/tax-declaration.dto';
+import { CreateLoanDto, UpdateLoanStatusDto } from './dto/employee-loan.dto';
 
 @Controller('payroll')
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -129,19 +136,30 @@ export class PayrollController {
     );
   }
 
-  // HR/Admin: Set an employee's salary structure
-  @Post('salary-structure')
+  // HR/Admin: Get an employee's salary structure
+  @Get('salary-structure/:employeeId')
+  @RequirePermissions('payroll.view')
+  async getSalaryStructure(
+    @Request() req,
+    @Param('employeeId') employeeId: string,
+  ) {
+    return this.payrollService.getSalaryStructure(req.user.companyId, employeeId);
+  }
+
+  // HR/Admin: Set an employee's salary structure (supports both /salary-structure and /salary-structure/:employeeId)
+  @Post(['salary-structure', 'salary-structure/:employeeId'])
   @RequirePermissions('payroll.manage')
   async setSalaryStructure(
     @Request() req,
-    @Body('employeeId') employeeId: string,
+    @Param('employeeId') paramEmpId: string,
+    @Body('employeeId') bodyEmpId: string,
     @Body() dto: UpsertSalaryStructureDto,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const targetEmpId = paramEmpId || bodyEmpId || (dto as any)?.employeeId;
     const { employeeId: _id, ...salaryData } = dto as any;
     return this.payrollService.upsertSalaryStructure(
       req.user.companyId,
-      employeeId,
+      targetEmpId,
       salaryData,
       req.user.sub,
     );
@@ -177,6 +195,7 @@ export class PayrollController {
   }
 
   @Patch('templates/:id')
+  @Put('templates/:id')
   @RequirePermissions('payroll.manage')
   async updateTemplate(
     @Request() req,
@@ -187,6 +206,282 @@ export class PayrollController {
       req.user.companyId,
       id,
       body,
+    );
+  }
+
+  @Delete('templates/:id')
+  @RequirePermissions('payroll.manage')
+  async deleteTemplate(
+    @Request() req,
+    @Param('id') id: string,
+  ) {
+    return this.payrollService.deleteSalaryTemplate(
+      req.user.companyId,
+      id,
+    );
+  }
+
+  // ==========================================
+  // FULL & FINAL SETTLEMENT (F&F)
+  // ==========================================
+  @Post('settlement/calculate')
+  @RequirePermissions('payroll.manage')
+  async calculateSettlement(@Request() req, @Body() dto: FinalSettlementDto) {
+    return this.payrollService.calculateFinalSettlement(
+      req.user.companyId,
+      dto,
+    );
+  }
+
+  @Post('settlement/process')
+  @RequirePermissions('payroll.manage')
+  async processSettlement(@Request() req, @Body() dto: FinalSettlementDto) {
+    return this.payrollService.processFinalSettlement(
+      req.user.companyId,
+      dto,
+      req.user.sub,
+    );
+  }
+
+  // ==========================================
+  // SALARY HOLD & RELEASE
+  // ==========================================
+  @Patch(':id/hold')
+  @RequirePermissions('payroll.manage')
+  async holdPayroll(
+    @Request() req,
+    @Param('id') id: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.payrollService.holdPayrollRecord(
+      req.user.companyId,
+      id,
+      reason,
+      req.user.sub,
+    );
+  }
+
+  @Patch(':id/release')
+  @RequirePermissions('payroll.manage')
+  async releasePayroll(@Request() req, @Param('id') id: string) {
+    return this.payrollService.releasePayrollRecord(
+      req.user.companyId,
+      id,
+      req.user.sub,
+    );
+  }
+
+  // ==========================================
+  // INCOME TAX & IT DECLARATIONS
+  // ==========================================
+  @Post('tax-declarations')
+  async upsertTaxDeclaration(
+    @Request() req,
+    @Body() dto: UpsertTaxDeclarationDto,
+  ) {
+    return this.payrollService.upsertTaxDeclaration(
+      req.user.companyId,
+      req.user.sub,
+      dto,
+      req.user.sub,
+    );
+  }
+
+  @Get('tax-declarations/my')
+  async getMyTaxDeclaration(
+    @Request() req,
+    @Query('financialYear') financialYear: string,
+  ) {
+    const fy = financialYear || '2026-2027';
+    return this.payrollService.getTaxDeclaration(
+      req.user.companyId,
+      req.user.sub,
+      fy,
+    );
+  }
+
+  @Get('tax-declarations/company')
+  @RequirePermissions('payroll.view')
+  async listCompanyTaxDeclarations(
+    @Request() req,
+    @Query('financialYear') financialYear?: string,
+  ) {
+    return this.payrollService.listCompanyTaxDeclarations(
+      req.user.companyId,
+      financialYear,
+    );
+  }
+
+  @Patch('tax-declarations/:id/verify')
+  @RequirePermissions('payroll.manage')
+  async verifyTaxDeclaration(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: VerifyTaxDeclarationDto,
+  ) {
+    return this.payrollService.verifyTaxDeclaration(
+      req.user.companyId,
+      id,
+      dto,
+      req.user.sub,
+    );
+  }
+
+  // ==========================================
+  // FORM 16 & FORM 24Q
+  // ==========================================
+  @Get('form16/my')
+  async getMyForm16(
+    @Request() req,
+    @Query('financialYear') financialYear: string,
+  ) {
+    const fy = financialYear || '2026-2027';
+    return this.payrollService.getForm16(req.user.companyId, req.user.sub, fy);
+  }
+
+  @Get('form16/:employeeId')
+  @RequirePermissions('payroll.view')
+  async getEmployeeForm16(
+    @Request() req,
+    @Param('employeeId') employeeId: string,
+    @Query('financialYear') financialYear: string,
+  ) {
+    const fy = financialYear || '2026-2027';
+    return this.payrollService.getForm16(req.user.companyId, employeeId, fy);
+  }
+
+  @Get('form24q')
+  @RequirePermissions('payroll.manage')
+  async downloadForm24Q(
+    @Request() req,
+    @Query('quarter') quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4',
+    @Query('financialYear') financialYear: string,
+    @Response() res: ExpressResponse,
+  ) {
+    const q = quarter || 'Q4';
+    const fy = financialYear || '2026-2027';
+    const result = await this.payrollService.getForm24Q(
+      req.user.companyId,
+      q,
+      fy,
+    );
+
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
+    return res.status(200).send(result.content);
+  }
+
+  // ==========================================
+  // LOANS & SALARY ADVANCES
+  // ==========================================
+  @Post('loans')
+  @RequirePermissions('payroll.manage')
+  async createLoan(@Request() req, @Body() dto: CreateLoanDto) {
+    return this.payrollService.createLoan(
+      req.user.companyId,
+      dto,
+      req.user.sub,
+    );
+  }
+
+  @Get('loans/my')
+  async getMyLoans(@Request() req) {
+    return this.payrollService.getMyLoans(req.user.sub);
+  }
+
+  @Get('loans/company')
+  @RequirePermissions('payroll.view')
+  async listCompanyLoans(
+    @Request() req,
+    @Query('status') status?: string,
+    @Query('employeeId') employeeId?: string,
+  ) {
+    return this.payrollService.listCompanyLoans(
+      req.user.companyId,
+      status,
+      employeeId,
+    );
+  }
+
+  @Patch('loans/:id/status')
+  @RequirePermissions('payroll.manage')
+  async updateLoanStatus(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: UpdateLoanStatusDto,
+  ) {
+    return this.payrollService.updateLoanStatus(
+      req.user.companyId,
+      id,
+      dto,
+      req.user.sub,
+    );
+  }
+
+  // ==========================================
+  // ACCOUNTING JOURNAL VOUCHER (JV)
+  // ==========================================
+  @Get('journal-voucher')
+  @RequirePermissions('payroll.manage')
+  async getPayrollJv(
+    @Request() req,
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+    @Query('format') format: string,
+    @Response() res: ExpressResponse,
+  ) {
+    const jv = await this.payrollService.generatePayrollJv(
+      req.user.companyId,
+      month,
+      year,
+    );
+
+    if (format === 'csv') {
+      const filename = `payroll_jv_${String(month).padStart(2, '0')}_${year}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"`,
+      );
+      return res.status(200).send(jv.csvContent);
+    }
+
+    return res.status(200).json(jv);
+  }
+
+  // ==========================================
+  // SECTION 194J CONSULTANT / DOCTOR PAYOUTS
+  // ==========================================
+  @Get('consultant/payouts')
+  @RequirePermissions('payroll.view')
+  async getConsultantPayouts(
+    @Request() req,
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+  ) {
+    return this.payrollService.getConsultantPayouts(
+      req.user.companyId,
+      month,
+      year,
+    );
+  }
+
+  @Get('consultant/:employeeId/form16a')
+  @RequirePermissions('payroll.view')
+  async getConsultantForm16A(
+    @Request() req,
+    @Param('employeeId') employeeId: string,
+    @Query('financialYear') financialYear: string,
+    @Query('quarter', ParseIntPipe) quarter: number,
+  ) {
+    return this.payrollService.generateForm16A(
+      req.user.companyId,
+      employeeId,
+      financialYear || '2026-2027',
+      quarter || 1,
     );
   }
 }

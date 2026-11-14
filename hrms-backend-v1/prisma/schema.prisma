@@ -1,6 +1,6 @@
 generator client {
   provider            = "prisma-client"
-  output              = "../generated/prisma"
+  output = "../generated/prisma"
   importFileExtension = ""
   moduleFormat        = "cjs"
 }
@@ -24,6 +24,27 @@ enum EmployeeRole {
   OWNER
   MANAGER
   EMPLOYEE
+}
+
+enum WorkerType {
+  SALARIED
+  CONSULTANT
+  CONTRACT_LABOUR
+}
+
+enum CredentialType {
+  MEDICAL_COUNCIL_REGISTRATION
+  NURSING_COUNCIL_REGISTRATION
+  PHARMACY_COUNCIL_REGISTRATION
+  DENTAL_COUNCIL_REGISTRATION
+  LIFE_SUPPORT_BLS
+  LIFE_SUPPORT_ACLS
+  PALS
+  ATLS
+  RADIATION_SAFETY
+  BOARD_SPECIALIZATION
+  CLINICAL_PRIVILEGE
+  OTHER
 }
 
 // 2. The Core Company (Tenant) Table
@@ -51,6 +72,9 @@ model Company {
   updatedAt    DateTime         @updatedAt
 
   // Existing Relations
+  statutoryEstablishments StatutoryEstablishment[]
+  statutoryReturns        StatutoryReturn[]
+  statutoryContributions  StatutoryContribution[]
   employees         Employee[]
   departments       Department[]
   roles             Role[]
@@ -124,6 +148,10 @@ model Company {
   supportTickets       SupportTicket[]
   platformAuditLogs    PlatformAuditLog[]
 
+  taxDeclarations      EmployeeTaxDeclaration[]
+  employeeLoans        EmployeeLoan[]
+  credentials          ProfessionalCredential[]
+
   @@index([status, createdAt])
   @@index([subscription, status])
 }
@@ -184,6 +212,15 @@ model Employee {
   salaryStructure SalaryStructure?
   payrollRecords  PayrollRecord[]
   documents       Document[]
+  statutoryProfiles      EmployeeStatutoryProfile[]
+  statutoryContributions StatutoryContribution[]
+  taxDeclarations        EmployeeTaxDeclaration[]
+  employeeLoans          EmployeeLoan[]
+  credentials            ProfessionalCredential[]
+
+  workerType             WorkerType @default(SALARIED)
+  tdsSection             String?    @default("192") // "192" for Salaried, "194J" for Consultants
+  tdsRate                Float?     @default(10) // 10% for 194J professional fees
 
   // Add these for Password Reset
   resetPasswordToken   String?
@@ -369,6 +406,8 @@ model CompanySettings {
   enableMockLocation   Boolean  @default(true) // Block fake GPS apps
   requireSelfie        Boolean  @default(false)
   oneDevicePerEmployee Boolean  @default(true)
+  allowMultiPunch      Boolean  @default(false) // When false (e.g. IT 9-5), prevents second clock-in after checkout
+  enableSplitShifts    Boolean  @default(false) // Enables multi-session split shifts
 
   // Shift Settings
   officeStartTime        String @default("09:00")
@@ -461,6 +500,10 @@ model Attendance {
   shiftSwapRequestId String?
   shiftSwapRequest   ShiftSwapRequest?  @relation(fields: [shiftSwapRequestId], references: [id])
 
+  isCrossMidnight    Boolean            @default(false)
+  shiftDate          DateTime?
+  sessions           AttendanceSession[]
+
   @@index([employeeId, companyId, date])
   @@index([companyId, date])
 }
@@ -532,6 +575,8 @@ model Shift {
   startTime    String // e.g., "09:00"
   endTime      String // e.g., "17:00"
   isNightShift Boolean    @default(false)
+  allowMultiPunch Boolean @default(false) // Whether split shifts or multiple sessions are allowed
+  isSplitShift    Boolean @default(false)
   schedules    Schedule[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -541,6 +586,21 @@ model Shift {
   targetSwaps            ShiftSwapRequest[]        @relation("TargetShift")
   overrideOriginals      ShiftAssignmentOverride[] @relation("OverrideOriginalShift")
   overrideShifts         ShiftAssignmentOverride[] @relation("OverrideShift")
+}
+
+model AttendanceSession {
+  id                 String     @id @default(uuid())
+  attendanceId       String
+  attendance         Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  sessionIndex       Int        @default(1)
+  checkInTime        DateTime
+  checkOutTime       DateTime?
+  workingHours       Float?     @default(0)
+  verificationMethod String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([attendanceId])
 }
 
 model Schedule {
@@ -804,6 +864,14 @@ model SalaryStructure {
   taxDeduction   Float @default(0) // Standard Tax / TDS
   professionalTax     Float    @default(0) // NEW
 
+  // Dynamic custom allowances and deductions stored as JSON
+  customComponents    Json?
+
+  // 194J Consultant / Doctor Compensation
+  retainerFee              Float    @default(0) // Fixed monthly retainer for consultants/doctors
+  opdConsultationRate      Float    @default(0) // Variable per-OPD fee
+  surgeriesSharePercentage Float    @default(0) // Surgery/procedure revenue share %
+
   effectiveDate DateTime @default(now())
 
   createdAt DateTime @default(now())
@@ -837,7 +905,20 @@ model PayrollRecord {
   deductions Float
   netSalary  Float
 
-  status String @default("DRAFT") // DRAFT, APPROVED, PAID
+  status String @default("DRAFT") // DRAFT, APPROVED, PAID, HELD, CANCELLED
+  isHeld Boolean @default(false)
+  holdReason String?
+  releasedAt DateTime?
+  releasedById String?
+  loanDeductions Float @default(0)
+  tdsDeduction Float @default(0)
+
+  // Doctor / Consultant Section 194J Support
+  workerType       WorkerType @default(SALARIED)
+  tdsSection       String     @default("192") // "192" or "194J"
+  tdsRate          Float?     @default(10) // 10% under Section 194J
+  formType         String     @default("FORM_16") // "FORM_16" or "FORM_16A"
+  professionalFees Float      @default(0) // Gross professional fees for 194J
 
   // We store the full detailed breakdown as JSON so the PDF Payslip never changes, 
   // even if the employee's SalaryStructure is updated years later!
@@ -848,6 +929,8 @@ model PayrollRecord {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  statutoryContributions StatutoryContribution[]
 
   // Crucial: Prevent running payroll twice for the same employee in the same month
   @@unique([employeeId, month, year])
@@ -1066,6 +1149,9 @@ model SalaryTemplate {
   isMedicalPercent    Boolean  @default(false)
   profTaxFixed        Float    @default(200)
   isProfTaxPercent    Boolean  @default(false)
+
+  // Custom flexible components (Array of { id, name, type: 'EARNING' | 'DEDUCTION', calculationType: 'PERCENT_OF_CTC' | 'PERCENT_OF_BASIC' | 'FIXED', value: number })
+  customComponents    Json?
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -2637,4 +2723,267 @@ model DailyPlatformSnapshot {
   churnedCount        Int
   storageBytesUsed    BigInt   @default(0)
   createdAt           DateTime @default(now())
+}
+
+
+// ---------- Statutory Compliance Models ----------
+
+model StatutoryEstablishment {
+  id                    String                   @id @default(uuid())
+  companyId             String
+  name                  String
+  epfoEstablishmentCode String?
+  epfoExtension         String?
+  esicEmployerCode      String?
+  registrationDate      DateTime?
+
+  company          Company                    @relation(fields: [companyId], references: [id])
+  configurations   StatutoryConfiguration[]
+  rules            StatutoryRule[]
+  employeeProfiles EmployeeStatutoryProfile[]
+  contributions    StatutoryContribution[]
+  returns          StatutoryReturn[]
+
+  @@unique([companyId, name])
+}
+
+model StatutoryConfiguration {
+  id                String   @id @default(uuid())
+  establishmentId   String
+  exemptionCategory String?
+  registrationType  String?
+
+  establishment StatutoryEstablishment @relation(fields: [establishmentId], references: [id])
+
+  @@unique([establishmentId])
+}
+
+model StatutoryRule {
+  id              String    @id @default(uuid())
+  establishmentId String
+  category        String // PF, EPS, EDLI, Administrative, ESI, etc.
+  rate            Decimal // e.g., 0.12 for 12%
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+
+  establishment StatutoryEstablishment @relation(fields: [establishmentId], references: [id])
+
+  @@unique([establishmentId, category, effectiveFrom])
+}
+
+model EmployeeStatutoryProfile {
+  id              String    @id @default(uuid())
+  employeeId      String
+  establishmentId String
+  epfoUan         String?
+  esicIpNumber    String?
+  effectiveFrom   DateTime  @default(now())
+  effectiveTo     DateTime?
+
+  employee      Employee               @relation(fields: [employeeId], references: [id])
+  establishment StatutoryEstablishment @relation(fields: [establishmentId], references: [id])
+
+  @@unique([employeeId, establishmentId, effectiveFrom])
+}
+
+model StatutoryContribution {
+  id              String   @id @default(uuid())
+  companyId       String
+  payrollRunId    String
+  employeeId      String
+  establishmentId String
+  category        String // PF, EPS, EDLI, ESI, etc.
+  employeeAmount  Decimal
+  employerAmount  Decimal
+  month           DateTime // first day of month
+  version         Int // immutable calculation version
+
+  company       Company                @relation(fields: [companyId], references: [id])
+  payrollRun    PayrollRecord          @relation(fields: [payrollRunId], references: [id])
+  employee      Employee               @relation(fields: [employeeId], references: [id])
+  establishment StatutoryEstablishment @relation(fields: [establishmentId], references: [id])
+
+  @@unique([companyId, payrollRunId, employeeId, category, month, version])
+}
+
+model StatutoryReturn {
+  id              String   @id @default(uuid())
+  companyId       String
+  establishmentId String
+  month           DateTime // first day of month
+  type            String // PF or ESI
+  version         Int // supports revised returns
+  generatedAt     DateTime @default(now())
+  filePath        String // private storage location
+  status          String   @default("draft") // draft, uploaded, portal_accepted, rejected, etc.
+
+  company         Company                   @relation(fields: [companyId], references: [id])
+  establishment   StatutoryEstablishment    @relation(fields: [establishmentId], references: [id])
+  submissions     StatutorySubmission[]
+  challans        StatutoryChallan[]
+  reconciliations StatutoryReconciliation[]
+}
+
+model StatutorySubmission {
+  id              String   @id @default(uuid())
+  returnId        String
+  submittedAt     DateTime @default(now())
+  portalReference String // acknowledgement number from portal
+  documentPath    String // receipt or acknowledgment PDF (private)
+  status          String   @default("pending") // pending, accepted, rejected
+
+  return StatutoryReturn @relation(fields: [returnId], references: [id])
+}
+
+model StatutoryChallan {
+  id            String   @id @default(uuid())
+  returnId      String
+  challanNumber String
+  trrn          String?
+  amount        Decimal
+  dueDate       DateTime
+  status        String   @default("generated") // generated, awaiting_payment, paid, rejected
+  receiptPath   String?
+
+  return   StatutoryReturn    @relation(fields: [returnId], references: [id])
+  payments StatutoryPayment[]
+}
+
+model StatutoryPayment {
+  id               String   @id @default(uuid())
+  challanId        String
+  paymentReference String // e.g., EPFO transaction ID or bank reference
+  amount           Decimal
+  currency         String   @default("INR")
+  paymentDate      DateTime
+  method           String // NET_BANKING, UPI, etc.
+  status           String   @default("recorded") // recorded, verified, failed
+
+  challan StatutoryChallan @relation(fields: [challanId], references: [id])
+}
+
+// Reconciliation records linking returns with computed discrepancies
+model StatutoryReconciliation {
+  id            String   @id @default(uuid())
+  returnId      String
+  status        String // PENDING, MATCHED, MISMATCH
+  notes         String?
+  discrepancies Json? // structured diff of contributions vs challans
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  return StatutoryReturn @relation(fields: [returnId], references: [id])
+}
+
+// ---------- Income Tax & IT Declaration Models ----------
+
+model EmployeeTaxDeclaration {
+  id                     String    @id @default(uuid())
+  companyId              String
+  employeeId             String
+  financialYear          String // e.g. "2026-2027"
+  regime                 String    @default("NEW") // "OLD" or "NEW"
+  section80C             Float     @default(0) // total claimed up to 1,50,000
+  section80CDetails      Json?     // { ppf, elss, lic, epf, tuitionFees, homeLoanPrincipal, nsc, others }
+  section80D             Float     @default(0) // health insurance
+  section80DDetails      Json?     // { selfAndFamily, parents, parentsSeniorCitizen, preventiveHealthCheckup }
+  section24b             Float     @default(0) // Home loan interest (max 2,00,000 for self-occupied in Old Regime)
+  section80E             Float     @default(0) // Higher education loan interest
+  section80G             Float     @default(0) // Charitable donations
+  otherExemptions        Float     @default(0) // Other Chapter VI-A deductions (80CCD(1B), etc.)
+  annualRentPaid         Float     @default(0) // For HRA exemption
+  landlordPan            String?
+  landlordName           String?
+  rentalAddress          String?
+  isMetro                Boolean   @default(false)
+  status                 String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  rejectionReason        String?
+  proofDocuments         Json?     // Array of { title, category, fileUrl, amount, verified }
+  verifiedById           String?
+  verifiedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, financialYear])
+}
+
+// ---------- Loans & Salary Advances Models ----------
+
+model EmployeeLoan {
+  id                  String          @id @default(uuid())
+  companyId           String
+  employeeId          String
+  type                String          @default("SALARY_ADVANCE") // "SALARY_ADVANCE", "PERSONAL_LOAN", "EMERGENCY_LOAN"
+  principalAmount     Float
+  interestRate        Float           @default(0) // annual interest rate %
+  tenureMonths        Int             @default(1)
+  monthlyEmi          Float
+  disbursedDate       DateTime?
+  deductionStartMonth Int?            // 1-12
+  deductionStartYear  Int?            // e.g. 2026
+  status              String          @default("PENDING") // PENDING, APPROVED, ACTIVE, PAID_OFF, REJECTED
+  totalPaid           Float           @default(0)
+  remainingBalance    Float
+  reason              String?
+  rejectionReason     String?
+  approvedById        String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  employee   Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company    Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  repayments LoanRepayment[]
+}
+
+model LoanRepayment {
+  id              String        @id @default(uuid())
+  loanId          String
+  payrollRecordId String?
+  amount          Float
+  principalPaid   Float
+  interestPaid    Float
+  month           Int
+  year            Int
+  repaymentDate   DateTime      @default(now())
+  status          String        @default("PAID") // PAID, WAIVED
+
+  loan EmployeeLoan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// MEDICAL & PROFESSIONAL CREDENTIALS MODULE
+// ==========================================
+
+model ProfessionalCredential {
+  id                 String          @id @default(uuid())
+  companyId          String
+  company            Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId         String
+  employee           Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  title              String          // e.g., "State Medical Council Registration"
+  credentialType     CredentialType  // MEDICAL_COUNCIL_REGISTRATION, LIFE_SUPPORT_BLS, etc.
+  registrationNumber String          // Registration / License / Certificate Number
+  issuingAuthority   String          // e.g., "Delhi Medical Council", "American Heart Association"
+  issueDate          DateTime?
+  expiryDate         DateTime?       // Null for permanent licenses
+  doesNotExpire      Boolean         @default(false)
+
+  verificationStatus String          @default("PENDING") // PENDING, VERIFIED, REJECTED
+  verifiedById       String?
+  verifiedAt         DateTime?
+  rejectionReason    String?
+
+  documentUrl        String?         // Uploaded certificate document link
+  notes              String?
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([companyId, employeeId])
+  @@index([companyId, expiryDate])
+  @@index([credentialType])
 }

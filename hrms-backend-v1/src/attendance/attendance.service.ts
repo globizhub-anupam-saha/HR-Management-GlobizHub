@@ -43,33 +43,27 @@ export class AttendanceService {
     dto: ClockInDto,
     userIp: string,
   ) {
+    const now = new Date();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // 1. Prevent duplicate clock-in
-    const existingRecord = await this.prisma.attendance.findFirst({
+    // 1. Check for any unclosed clock-in session across the last 28 hours (including cross-midnight shifts)
+    const twentyEightHoursAgo = new Date(Date.now() - 28 * 60 * 60 * 1000);
+    const unclosedRecord = await this.prisma.attendance.findFirst({
       where: {
         employeeId,
         companyId,
-        date: {
-          gte: today,
-          lte: endOfDay,
-        },
+        checkOutTime: null,
+        createdAt: { gte: twentyEightHoursAgo },
       },
     });
 
-    if (existingRecord && !existingRecord.checkOutTime) {
+    if (unclosedRecord) {
       throw new BadRequestException(
         'You are already clocked in. Please clock out first before starting a new session.',
-      );
-    }
-
-    if (existingRecord && existingRecord.checkOutTime) {
-      throw new BadRequestException(
-        'You have already completed your attendance for today.',
       );
     }
 
@@ -162,39 +156,145 @@ export class AttendanceService {
       shiftId = schedule?.shiftId || null;
     }
 
-    // 6. Create attendance record
+    // Fetch Shift Details to evaluate Night Shift & Multi-Punch rules
+    let shift: any = null;
+    if (shiftId) {
+      shift = await this.prisma.shift.findUnique({
+        where: { id: shiftId },
+      });
+    }
+
+    let isNightShift = shift?.isNightShift ?? false;
+    if (shift?.startTime && shift?.endTime) {
+      const [startH] = shift.startTime.split(':').map(Number);
+      const [endH] = shift.endTime.split(':').map(Number);
+      if (endH < startH) {
+        isNightShift = true;
+      }
+    }
+
+    // Evaluate multi-punch permission:
+    // IT company 9-to-5 policy has allowMultiPunch = false (default).
+    // Hospital / split shifts have allowMultiPunch = true on company or shift.
+    const isMultiPunchAllowed =
+      (settings as any).allowMultiPunch === true ||
+      shift?.allowMultiPunch === true ||
+      shift?.isSplitShift === true;
+
+    // 6. Check if an attendance record already exists for today
+    const existingRecord = await this.prisma.attendance.findFirst({
+      where: {
+        employeeId,
+        companyId,
+        date: {
+          gte: today,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        sessions: true,
+      },
+    });
+
+    if (existingRecord) {
+      // If employee already completed attendance today and multi-punch is NOT allowed (e.g., IT 9-5 fixed schedule)
+      if (!isMultiPunchAllowed) {
+        throw new BadRequestException(
+          'You have already completed your attendance for today.',
+        );
+      }
+
+      // Multi-punch IS allowed (Hospital / Split shift / Emergency call-back):
+      // Add a new session to the existing day's attendance record
+      const sessionCount = await this.prisma.attendanceSession.count({
+        where: { attendanceId: existingRecord.id },
+      });
+      const newSessionIndex = sessionCount + 1;
+
+      const newSession = await this.prisma.attendanceSession.create({
+        data: {
+          attendanceId: existingRecord.id,
+          sessionIndex: newSessionIndex,
+          checkInTime: now,
+          verificationMethod,
+        },
+      });
+
+      const updatedAttendance = await this.prisma.attendance.update({
+        where: { id: existingRecord.id },
+        data: {
+          checkOutTime: null, // Open new active session
+          status: 'PRESENT',
+        },
+        include: {
+          sessions: {
+            orderBy: { sessionIndex: 'asc' },
+          },
+        },
+      });
+
+      return {
+        message: `Successfully clocked in for session #${newSessionIndex} via ${verificationMethod}`,
+        attendance: updatedAttendance,
+        session: newSession,
+      };
+    }
+
+    // 7. First clock-in of the day: create attendance record and session #1
     const attendance = await this.prisma.attendance.create({
       data: {
         employeeId,
         companyId,
-        date: new Date(),
-        checkInTime: new Date(),
+        date: today,
+        shiftDate: today,
+        checkInTime: now,
         status: 'PRESENT',
         verificationMethod,
         shiftId,
         shiftSwapRequestId,
+        isCrossMidnight: isNightShift,
+      },
+    });
+
+    const firstSession = await this.prisma.attendanceSession.create({
+      data: {
+        attendanceId: attendance.id,
+        sessionIndex: 1,
+        checkInTime: now,
+        verificationMethod,
       },
     });
 
     return {
       message: `Successfully clocked in via ${verificationMethod}`,
       attendance,
+      session: firstSession,
     };
   }
 
   async clockOut(employeeId: string, companyId: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    // Search within 28 hours to cover cross-midnight night shifts (e.g., 20:00 yesterday to 08:00 today)
+    const twentyEightHoursAgo = new Date(Date.now() - 28 * 60 * 60 * 1000);
 
     const record = await this.prisma.attendance.findFirst({
       where: {
         employeeId,
         companyId,
         checkOutTime: null,
-        date: {
-          gte: today,
+        createdAt: {
+          gte: twentyEightHoursAgo,
         },
       },
+      include: {
+        shift: true,
+        sessions: {
+          where: { checkOutTime: null },
+          orderBy: { sessionIndex: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!record) {
@@ -203,16 +303,78 @@ export class AttendanceService {
       );
     }
 
+    let sessionHours = 0;
+
+    // 1. Close active session if exists
+    if (record.sessions && record.sessions.length > 0) {
+      const activeSession = record.sessions[0];
+      const diffMs = now.getTime() - activeSession.checkInTime.getTime();
+      sessionHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+
+      await this.prisma.attendanceSession.update({
+        where: { id: activeSession.id },
+        data: {
+          checkOutTime: now,
+          workingHours: sessionHours,
+        },
+      });
+    }
+
+    // 2. Aggregate cumulative working hours across all sessions for this shift/date
+    const allSessions = await this.prisma.attendanceSession.findMany({
+      where: { attendanceId: record.id },
+    });
+
+    let totalWorkingHours = 0;
+    if (allSessions.length > 0) {
+      totalWorkingHours = allSessions.reduce(
+        (acc, s) => acc + (s.workingHours || 0),
+        0,
+      );
+      totalWorkingHours = Math.round(totalWorkingHours * 100) / 100;
+    } else {
+      const fallbackMs =
+        now.getTime() - (record.checkInTime?.getTime() || now.getTime());
+      totalWorkingHours =
+        Math.round((fallbackMs / (1000 * 60 * 60)) * 100) / 100;
+    }
+
+    // 3. Overtime calculation
+    let overtimeHours = 0;
+    if (record.shift) {
+      const [startH, startM] = record.shift.startTime.split(':').map(Number);
+      const [endH, endM] = record.shift.endTime.split(':').map(Number);
+      const start = startH + startM / 60;
+      let end = endH + endM / 60;
+      if (record.shift.isNightShift || end < start) {
+        end += 24;
+      }
+      const shiftDuration = Math.round((end - start) * 100) / 100;
+      if (totalWorkingHours > shiftDuration) {
+        overtimeHours =
+          Math.round((totalWorkingHours - shiftDuration) * 100) / 100;
+      }
+    }
+
     const updated = await this.prisma.attendance.update({
       where: { id: record.id },
       data: {
-        checkOutTime: new Date(),
+        checkOutTime: now,
+        workingHours: totalWorkingHours,
+        overtimeHours,
+      },
+      include: {
+        sessions: {
+          orderBy: { sessionIndex: 'asc' },
+        },
       },
     });
 
     return {
       message: 'Successfully clocked out!',
       data: updated,
+      sessionHours,
+      totalWorkingHours,
     };
   }
 
@@ -224,6 +386,9 @@ export class AttendanceService {
       },
       include: {
         shift: true,
+        sessions: {
+          orderBy: { sessionIndex: 'asc' },
+        },
         shiftSwapRequest: {
           include: {
             requester: {

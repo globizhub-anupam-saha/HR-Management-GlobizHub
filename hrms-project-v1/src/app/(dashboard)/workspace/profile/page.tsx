@@ -67,6 +67,8 @@ export default function EmployeeProfileSettings() {
         department: user.department?.name || "Not Assigned",
         designation: user.role || "Not Assigned",
         joiningDate: user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : "Not Assigned",
+        uanNumber: user.uanNumber || "",
+        esicIpNumber: user.esicIpNumber || "",
       });
       setPreviewImage(user.profileImage || null);
     }
@@ -99,6 +101,12 @@ export default function EmployeeProfileSettings() {
       submitData.append("phone", formData.phone);
       submitData.append("bloodGroup", formData.bloodGroup);
       submitData.append("gender", formData.gender);
+      if (formData.uanNumber !== undefined) {
+        submitData.append("uanNumber", formData.uanNumber);
+      }
+      if (formData.esicIpNumber !== undefined) {
+        submitData.append("esicIpNumber", formData.esicIpNumber);
+      }
 
       if (selectedFile) {
         submitData.append("profileImage", selectedFile);
@@ -408,6 +416,46 @@ export default function EmployeeProfileSettings() {
                       <option value="FEMALE">Female</option>
                       <option value="OTHER">Other</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* STATUTORY COMPLIANCE IDENTIFIERS */}
+                <div className="border-t border-slate-100 pt-6 mt-4">
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-slate-800">Statutory & Retirement Compliance (EPFO & ESIC)</h3>
+                    <p className="text-xs text-slate-500">
+                      Enter your Indian Provident Fund UAN and ESIC IP numbers once issued. These will be automatically mapped to your company statutory filings.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 flex items-center justify-between">
+                        <span>EPFO UAN (Universal Account Number)</span>
+                        <span className="text-xs text-slate-400 font-normal">Optional</span>
+                      </label>
+                      <Input
+                        name="uanNumber"
+                        placeholder="12-digit UAN"
+                        maxLength={12}
+                        value={formData.uanNumber || ""}
+                        onChange={handleChange}
+                        className="bg-white font-mono text-xs"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 flex items-center justify-between">
+                        <span>ESIC IP (Insurance Number)</span>
+                        <span className="text-xs text-slate-400 font-normal">Optional</span>
+                      </label>
+                      <Input
+                        name="esicIpNumber"
+                        placeholder="10-digit / 17-digit IP Number"
+                        maxLength={17}
+                        value={formData.esicIpNumber || ""}
+                        onChange={handleChange}
+                        className="bg-white font-mono text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
 
