@@ -103,14 +103,14 @@ describe('AuthService', () => {
     const password = 'SuperAdminPassword123!';
     prisma.platformUser.findUnique.mockResolvedValue({
       id: 'platform-user-1',
-      email: 'superadmin@teamhub.saas',
+      email: 'superadmin@globizhr.com',
       password: await bcrypt.hash(password, 10),
       role: 'SUPER_ADMIN',
       isActive: true,
     });
     jwt.signAsync.mockResolvedValue('platform-token');
 
-    const result = await service.login('superadmin@teamhub.saas', password);
+    const result = await service.login('superadmin@globizhr.com', password);
 
     expect(result.portal).toBe('PLATFORM_ADMIN');
     expect(result.targetUrl).toBe('/platform-admin/dashboard');

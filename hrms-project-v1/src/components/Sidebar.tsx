@@ -293,7 +293,7 @@ export default function Sidebar({
                 <Sparkles className="size-4 text-primary" />
               </div>
               <span className="text-[15px] font-semibold tracking-tight text-foreground">
-                TeamHub HRMS
+                GlobizHR
               </span>
             </div>
 

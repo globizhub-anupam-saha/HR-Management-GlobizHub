@@ -84,7 +84,7 @@ export default function LoginPage() {
             <Building2 className="size-7 stroke-[1.5]" />
           </div>
           <h1 className="type-title-2 font-bold text-foreground text-center tracking-tight">
-            Sign in to TeamHub
+            Sign in to GlobizHR
           </h1>
           <p className="type-subhead text-label-secondary text-center mt-1">
             Access your workspace or administrator dashboard.

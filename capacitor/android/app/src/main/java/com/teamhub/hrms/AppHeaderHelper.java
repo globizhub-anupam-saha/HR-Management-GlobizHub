@@ -57,7 +57,7 @@ public class AppHeaderHelper {
         // 3. Brand & Page Title
         TextView tvBrand = activity.findViewById(R.id.tvHeaderBrand);
         if (tvBrand != null) {
-            tvBrand.setText("TEAMHUB");
+            tvBrand.setText("GLOBIZHR");
         }
 
         TextView tvTitle = activity.findViewById(R.id.tvHeaderTitle);

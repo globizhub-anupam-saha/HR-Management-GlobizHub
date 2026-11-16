@@ -81,7 +81,7 @@ describe('PlatformBillingService', () => {
         dueDate: '2026-12-31T00:00:00.000Z',
       },
       'admin-1',
-      'superadmin@teamhub.saas',
+      'superadmin@globizhr.com',
     );
 
     expect(prisma.invoice.create).toHaveBeenCalled();

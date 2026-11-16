@@ -14,7 +14,7 @@ export class EmailService {
   async sendPasswordResetEmail(email: string, resetUrl: string) {
     try {
       const fromEmail =
-        process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'TeamHub HRMS <onboarding@resend.dev>';
+        process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <onboarding@resend.dev>';
       const { error } = await this.resend.emails.send({
         from: fromEmail,
         to: email,
@@ -59,7 +59,7 @@ export class EmailService {
   ) {
     const magicLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/set-password?token=${inviteToken}`;
     const fromEmail =
-      process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'TeamHub HRMS <onboarding@resend.dev>';
+      process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <onboarding@resend.dev>';
     try {
       const { error } = await this.resend.emails.send({
         from: fromEmail,
@@ -67,7 +67,7 @@ export class EmailService {
         subject: 'Welcome to the Team! Set your password',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #10b981;">Welcome to TeamHub, ${firstName}!</h2>
+            <h2 style="color: #10b981;">Welcome to GlobizHR, ${firstName}!</h2>
             <p>You have been invited to join your company's HRMS workspace.</p>
             ${employeeCode ? `<p>Your official Employee ID is: <strong>${employeeCode}</strong></p>` : `<p>Your official Employee ID will be assigned upon completion and verification of your onboarding checklist.</p>`}
             <p>Please click the secure link below to set your permanent password and complete your onboarding.</p>
@@ -99,7 +99,7 @@ export class EmailService {
     portalUrl?: string;
   }) {
     const fromEmail =
-      process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'TeamHub HRMS <payroll@resend.dev>';
+      process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <payroll@resend.dev>';
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December',

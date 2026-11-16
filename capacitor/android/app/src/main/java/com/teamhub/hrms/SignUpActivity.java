@@ -682,7 +682,7 @@ public class SignUpActivity extends AppCompatActivity {
 
                     new AlertDialog.Builder(SignUpActivity.this)
                             .setTitle("Workspace Configured!")
-                            .setMessage("Your company workspace and organization have been created successfully in the live TeamHub database. Please sign in with your administrator credentials.")
+                            .setMessage("Your company workspace and organization have been created successfully in the live GlobizHR database. Please sign in with your administrator credentials.")
                             .setPositiveButton("Go to Sign In", (dialog, which) -> {
                                 Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
                                 intent.putExtra(SignInActivity.EXTRA_PREFILL_EMAIL, adminEmail);

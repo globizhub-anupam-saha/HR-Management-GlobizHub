@@ -43,8 +43,8 @@ export default function LandingPage() {
 
   const faqs = [
     {
-      q: "What core features are included in TeamHub HRMS?",
-      a: "TeamHub unifies your complete workforce operations: Employee Directory with Role-Based Access Control, Attendance & Overtime tracking, Leave approvals with holiday calendars, Shift scheduling & peer shift swaps, 1-click Payroll with downloadable payslips, Employee Onboarding with document verification, Task management, and Company announcements.",
+      q: "What core features are included in GlobizHR?",
+      a: "GlobizHR unifies your complete workforce operations: Employee Directory with Role-Based Access Control, Attendance & Overtime tracking, Leave approvals with holiday calendars, Shift scheduling & peer shift swaps, 1-click Payroll with downloadable payslips, Employee Onboarding with document verification, Task management, and Company announcements.",
     },
     {
       q: "How does the Payroll engine calculate salaries and deductions?",
@@ -52,15 +52,15 @@ export default function LandingPage() {
     },
     {
       q: "Can employees request shift swaps with their colleagues?",
-      a: "Yes! TeamHub includes a native Shift Swap module. Employees can view team rosters, propose a shift swap with a co-worker, and route the exchange to their manager for final sign-off.",
+      a: "Yes! GlobizHR includes a native Shift Swap module. Employees can view team rosters, propose a shift swap with a co-worker, and route the exchange to their manager for final sign-off.",
     },
     {
       q: "How does the Attendance and Overtime system work?",
-      a: "Employees clock in and out directly via web or mobile. TeamHub automatically computes daily working hours, break durations, and overtime thresholds, updating monthly payroll records in real time.",
+      a: "Employees clock in and out directly via web or mobile. GlobizHR automatically computes daily working hours, break durations, and overtime thresholds, updating monthly payroll records in real time.",
     },
     {
       q: "How is company and employee data secured?",
-      a: "TeamHub implements strict Role-Based Access Control (RBAC), password hashing, secure cloud storage for documents, and immutable administrative audit logs that record every change across your organization.",
+      a: "GlobizHR implements strict Role-Based Access Control (RBAC), password hashing, secure cloud storage for documents, and immutable administrative audit logs that record every change across your organization.",
     },
     {
       q: "Can employees access self-service features on mobile?",
@@ -90,7 +90,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
-                TeamHub <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary/20 text-foreground rounded-md border border-primary/40 uppercase">HRMS</span>
+                GlobizHR
               </span>
             </div>
           </Link>
@@ -972,7 +972,7 @@ export default function LandingPage() {
           </h2>
 
           <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Join modern organizations that manage attendance, leaves, shifts, and payroll effortlessly with TeamHub HRMS.
+            Join modern organizations that manage attendance, leaves, shifts, and payroll effortlessly with GlobizHR.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto sm:max-w-none">
@@ -1016,7 +1016,7 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <span className="text-white text-xl font-extrabold tracking-tight">
-                  TeamHub <span className="text-primary text-xs font-bold px-1.5 py-0.5 bg-primary/20 rounded">HRMS</span>
+                  GlobizHR
                 </span>
               </div>
 
@@ -1077,7 +1077,7 @@ export default function LandingPage() {
 
           {/* Bottom Bar */}
           <div className="mt-12 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-            <p>© {new Date().getFullYear()} TeamHub HRMS. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} GlobizHR. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <span className="hover:text-primary cursor-pointer transition-colors">Privacy Policy</span>
               <span className="hover:text-primary cursor-pointer transition-colors">Terms of Service</span>

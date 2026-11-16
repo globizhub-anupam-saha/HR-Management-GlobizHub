@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.teamhub.hrms',
-  appName: 'TeamHub HRMS: ',
+  appName: 'GlobizHR',
   webDir: 'out'
 };
 

@@ -74,7 +74,7 @@ export function PlatformHeader() {
         <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-muted/60 border border-border">
           <User className="size-3.5 text-primary shrink-0" />
           <span className="text-xs font-medium text-foreground max-w-[130px] sm:max-w-[200px] truncate">
-            {user?.email || "superadmin@teamhub.saas"}
+            {user?.email || "superadmin@globizhr.com"}
           </span>
         </div>
 

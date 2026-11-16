@@ -13,7 +13,7 @@ describe('PlatformUsersService', () => {
         findMany: jest.fn().mockResolvedValue([
           {
             id: 'u-1',
-            email: 'superadmin@teamhub.saas',
+            email: 'superadmin@globizhr.com',
             firstName: 'Super',
             lastName: 'Admin',
             role: 'SUPER_ADMIN',
@@ -23,7 +23,7 @@ describe('PlatformUsersService', () => {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({
           id: 'u-2',
-          email: 'support@teamhub.saas',
+          email: 'support@globizhr.com',
           firstName: 'Support',
           lastName: 'Officer',
           role: 'SUPPORT_ADMIN',
@@ -62,18 +62,18 @@ describe('PlatformUsersService', () => {
   it('should create new platform administrator and hash password', async () => {
     const res = await service.create(
       {
-        email: 'support@teamhub.saas',
+        email: 'support@globizhr.com',
         password: 'Password123!',
         firstName: 'Support',
         lastName: 'Officer',
         role: 'SUPPORT_ADMIN' as any,
       },
       'admin-1',
-      'superadmin@teamhub.saas',
+      'superadmin@globizhr.com',
     );
 
     expect(prisma.platformUser.create).toHaveBeenCalled();
-    expect(res.email).toBe('support@teamhub.saas');
+    expect(res.email).toBe('support@globizhr.com');
   });
 
   it('should update platform role and audit change', async () => {
@@ -86,7 +86,7 @@ describe('PlatformUsersService', () => {
       'u-1',
       'PLATFORM_ADMIN' as any,
       'admin-1',
-      'superadmin@teamhub.saas',
+      'superadmin@globizhr.com',
     );
 
     expect(prisma.platformUser.update).toHaveBeenCalled();

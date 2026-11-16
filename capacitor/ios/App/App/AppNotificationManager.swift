@@ -101,7 +101,7 @@ class AppNotificationManager {
             if !ingested.contains(id) {
                 ingested.insert(id)
                 hasNew = true
-                let title = (obj["title"] as? String) ?? "TeamHub Update"
+                let title = (obj["title"] as? String) ?? "GlobizHR Update"
                 let body = (obj["message"] as? String) ?? (obj["body"] as? String) ?? "You have a new update."
                 sendNotification(title: title, body: body)
             }

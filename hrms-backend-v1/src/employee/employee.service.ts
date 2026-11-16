@@ -209,14 +209,14 @@ export class EmployeeService {
 
     try {
       const fromEmail =
-        process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'TeamHub HRMS <onboarding@resend.dev>';
+        process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <onboarding@resend.dev>';
       const { data, error } = await this.resend.emails.send({
         from: fromEmail,
         to: dto.email,
         subject: 'Welcome to the Team! Set your password',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #10b981;">Welcome to TeamHub, ${dto.firstName}!</h2>
+            <h2 style="color: #10b981;">Welcome to GlobizHR, ${dto.firstName}!</h2>
             <p>You have been invited to join your company's HRMS workspace.</p>
             <p>Your official Employee ID will be generated upon completion and verification of your onboarding checklist.</p>
             <p>Please click the secure link below to set your permanent password and complete your onboarding.</p>
@@ -826,7 +826,7 @@ export class EmployeeService {
     const fromEmail =
       process.env.RESEND_FROM_EMAIL ||
       process.env.SENDER_EMAIL ||
-      'TeamHub HRMS <onboarding@resend.dev>';
+      'GlobizHR <onboarding@resend.dev>';
 
     try {
       await this.resend.emails.send({
@@ -1166,7 +1166,7 @@ export class EmployeeService {
     const fromEmail =
       process.env.RESEND_FROM_EMAIL ||
       process.env.SENDER_EMAIL ||
-      'TeamHub HRMS <onboarding@resend.dev>';
+      'GlobizHR <onboarding@resend.dev>';
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
     for (const row of candidates) {
@@ -1268,7 +1268,7 @@ export class EmployeeService {
             subject: 'Welcome to the Team! Set your password',
             html: `
               <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #10b981;">Welcome to TeamHub, ${firstName}!</h2>
+                <h2 style="color: #10b981;">Welcome to GlobizHR, ${firstName}!</h2>
                 <p>You have been invited to join your company's HRMS workspace.</p>
                 <p>Your official Employee ID will be generated upon completion and verification of your onboarding checklist.</p>
                 <p>Please click the secure link below to set your permanent password and complete your onboarding.</p>

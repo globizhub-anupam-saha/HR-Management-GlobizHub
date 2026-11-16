@@ -14,7 +14,7 @@ describe('PlatformMonitoringService', () => {
         findMany: jest.fn().mockResolvedValue([
           {
             id: 'audit-1',
-            actorEmail: 'superadmin@teamhub.saas',
+            actorEmail: 'superadmin@globizhr.com',
             actorRole: 'SUPER_ADMIN',
             action: 'ORG_SUSPEND',
             targetEntity: 'Company',

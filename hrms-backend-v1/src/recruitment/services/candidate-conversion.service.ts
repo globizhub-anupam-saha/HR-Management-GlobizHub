@@ -383,7 +383,7 @@ export class CandidateConversionService {
 
     try {
       const fromEmail =
-        process.env.RESEND_FROM_EMAIL || 'TeamHub HRMS <onboarding@resend.dev>';
+        process.env.RESEND_FROM_EMAIL || 'GlobizHR <onboarding@resend.dev>';
       await this.resend.emails.send({
         from: fromEmail,
         to: application.candidate.email,

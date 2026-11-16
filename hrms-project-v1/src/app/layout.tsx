@@ -14,23 +14,23 @@ const poppins = Poppins({
 // Professional SEO & OpenGraph Metadata
 export const metadata: Metadata = {
   title: {
-    default: "TeamHub HRMS — Modern Workforce & Payroll Engine",
-    template: "%s | TeamHub HRMS",
+    default: "GlobizHR — Modern Workforce & Payroll Engine",
+    template: "%s | GlobizHR",
   },
   description: "Enterprise human resource management system featuring automated payroll, smart attendance tracking, leave policies, and secure employee directories.",
   keywords: ["HRMS", "Payroll Software", "Attendance Tracking", "HR Management", "Next.js HRMS"],
-  authors: [{ name: "TeamHub Engineering" }],
+  authors: [{ name: "GlobizHR Engineering" }],
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://teamhub-hrms.com",
-    title: "TeamHub HRMS — Modern Workforce & Payroll Engine",
+    url: "https://globizhr.com",
+    title: "GlobizHR — Modern Workforce & Payroll Engine",
     description: "Manage your people, not just your paperwork. Unified payroll, attendance, and team success.",
-    siteName: "TeamHub HRMS",
+    siteName: "GlobizHR",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TeamHub HRMS",
+    title: "GlobizHR",
     description: "Enterprise human resource management system.",
   },
 };

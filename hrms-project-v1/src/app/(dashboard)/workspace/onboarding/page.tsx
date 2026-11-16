@@ -739,7 +739,7 @@ export default function OnboardingPage() {
                   <div>
                     <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md">
                       <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                      Welcome to TeamHub!
+                      Welcome to GlobizHR!
                     </div>
                     <h2 className="mt-2 text-2xl font-extrabold sm:text-3xl">
                       {myCase.employee.firstName}, let's get you set up!
