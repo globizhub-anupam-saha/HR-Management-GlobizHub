@@ -17,7 +17,7 @@ import java.util.Locale;
 public class AppHeaderHelper {
 
     /**
-     * Configures the unified TeamHub header on any activity.
+     * Configures the unified GlobizHR header on any activity.
      *
      * @param activity      The host activity
      * @param screenTitle   The name of the module/screen (e.g., "Dashboard", "Attendance", "More", etc.)
@@ -32,7 +32,7 @@ public class AppHeaderHelper {
     }
 
     /**
-     * Configures the unified TeamHub header with an optional custom back listener.
+     * Configures the unified GlobizHR header with an optional custom back listener.
      */
     public static void setupHeader(
             AppCompatActivity activity,
@@ -57,7 +57,7 @@ public class AppHeaderHelper {
         // 3. Brand & Page Title
         TextView tvBrand = activity.findViewById(R.id.tvHeaderBrand);
         if (tvBrand != null) {
-            tvBrand.setText("TEAMHUB");
+            tvBrand.setText("GLOBIZHR");
         }
 
         TextView tvTitle = activity.findViewById(R.id.tvHeaderTitle);

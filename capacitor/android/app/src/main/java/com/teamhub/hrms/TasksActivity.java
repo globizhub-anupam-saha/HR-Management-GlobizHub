@@ -18,7 +18,7 @@ public class TasksActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tasks);
 
-        // Unified TeamHub Header
+        // Unified GlobizHR Header
         AppHeaderHelper.setupHeader(this, "Tasks", false);
 
         setupBottomNav();

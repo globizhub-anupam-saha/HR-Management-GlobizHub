@@ -23,7 +23,7 @@
             android:layout_height="56dp"
             android:src="@drawable/splash_logo"
             android:scaleType="fitCenter"
-            android:contentDescription="TeamHub Logo" />
+            android:contentDescription="GlobizHR Logo" />
 
         <!-- Title: Sign in -->
         <TextView
@@ -37,13 +37,13 @@
             android:textStyle="bold"
             android:fontFamily="sans-serif-black" />
 
-        <!-- Subtitle: to access TeamHub -->
+        <!-- Subtitle: to access GlobizHR -->
         <TextView
             android:id="@+id/tvAccessSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="to access TeamHub"
+            android:text="to access GlobizHR"
             android:textColor="#374151"
             android:textSize="17sp" />
 
@@ -230,7 +230,7 @@
             android:padding="8dp"
             android:clickable="true"
             android:focusable="true"
-            android:text="Don't have a TeamHub account? Sign up now"
+            android:text="Don't have a GlobizHR account? Sign up now"
             android:textColor="#374151"
             android:textSize="14sp" />
 

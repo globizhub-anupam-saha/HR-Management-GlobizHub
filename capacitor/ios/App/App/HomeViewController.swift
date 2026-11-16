@@ -294,7 +294,7 @@ class HomeViewController: UIViewController {
         headerTextStack.translatesAutoresizingMaskIntoConstraints = false
         topBarContainer.addSubview(headerTextStack)
 
-        brandSubtitleLabel.text = "TEAMHUB"
+        brandSubtitleLabel.text = "GLOBIZHR"
         brandSubtitleLabel.font = .systemFont(ofSize: 11, weight: .heavy)
         brandSubtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         headerTextStack.addArrangedSubview(brandSubtitleLabel)

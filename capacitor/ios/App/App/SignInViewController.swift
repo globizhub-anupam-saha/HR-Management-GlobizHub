@@ -44,7 +44,7 @@ class SignInViewController: UIViewController {
     private let subtitleLabel: UILabel = {
         let lbl = UILabel()
         lbl.translatesAutoresizingMaskIntoConstraints = false
-        lbl.text = "to access TeamHub"
+        lbl.text = "to access GlobizHR"
         lbl.font = UIFont.systemFont(ofSize: 17, weight: .regular)
         lbl.textColor = UIColor(red: 55/255, green: 65/255, blue: 81/255, alpha: 1.0)
         return lbl
@@ -234,7 +234,7 @@ class SignInViewController: UIViewController {
         lbl.font = UIFont.systemFont(ofSize: 14)
         lbl.textColor = UIColor(red: 55/255, green: 65/255, blue: 81/255, alpha: 1.0)
 
-        let fullText = "Don't have a TeamHub account? Sign up now"
+        let fullText = "Don't have a GlobizHR account? Sign up now"
         let attributedString = NSMutableAttributedString(string: fullText)
         if let range = fullText.range(of: "Sign up now") {
             let nsRange = NSRange(range, in: fullText)
@@ -401,7 +401,7 @@ class SignInViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
 
-            // Subtitle: to access TeamHub
+            // Subtitle: to access GlobizHR
             subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
             subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
             subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),

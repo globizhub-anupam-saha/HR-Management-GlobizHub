@@ -183,7 +183,7 @@ public class SignInActivity extends AppCompatActivity {
     }
 
     private void setupFooterLink() {
-        String footerText = "Don't have a TeamHub account? Sign up now";
+        String footerText = "Don't have a GlobizHR account? Sign up now";
         SpannableString ss = new SpannableString(footerText);
         int linkStart = footerText.indexOf("Sign up now");
         if (linkStart != -1) {

@@ -49,7 +49,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
 
     private var currentStep: Step = .companyDetails
 
-    // Brand color: TeamHub vibrant blue #0056fd
+    // Brand color: GlobizHR vibrant blue #0056fd
     static let brandBlue = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
     static let brandBlueSecondary = UIColor(red: 0/255, green: 93/255, blue: 253/255, alpha: 1.0)
     static let brandGradientEnd = UIColor(red: 1/255, green: 116/255, blue: 255/255, alpha: 1.0)
@@ -468,7 +468,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         if !invites.isEmpty { payload["inviteEmails"] = invites }
 
         // Show Loading Alert
-        let loadingAlert = UIAlertController(title: "Configuring Workspace", message: "Creating company and organization in TeamHub database...", preferredStyle: .alert)
+        let loadingAlert = UIAlertController(title: "Configuring Workspace", message: "Creating company and organization in GlobizHR database...", preferredStyle: .alert)
         present(loadingAlert, animated: true, completion: nil)
 
         AuthService.shared.registerWizard(payload: payload) { [weak self] result in
@@ -478,7 +478,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
                 case .success:
                     let alert = UIAlertController(
                         title: "Workspace Configured!",
-                        message: "Your company workspace and organization have been created successfully in the live TeamHub database. Please sign in with your administrator credentials.",
+                        message: "Your company workspace and organization have been created successfully in the live GlobizHR database. Please sign in with your administrator credentials.",
                         preferredStyle: .alert
                     )
                     alert.addAction(UIAlertAction(title: "Go to Sign In", style: .default, handler: { [weak self] _ in
@@ -1131,7 +1131,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
 
         let cardDesc = UILabel()
         cardDesc.translatesAutoresizingMaskIntoConstraints = false
-        cardDesc.text = "Directory invitations and employee logins can also be uploaded via CSV or Excel anytime from your TeamHub Admin Console."
+        cardDesc.text = "Directory invitations and employee logins can also be uploaded via CSV or Excel anytime from your GlobizHR Admin Console."
         cardDesc.font = UIFont.systemFont(ofSize: 12)
         cardDesc.textColor = UIColor(red: 107/255, green: 114/255, blue: 128/255, alpha: 1.0)
         cardDesc.numberOfLines = 0

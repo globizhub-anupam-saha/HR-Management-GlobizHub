@@ -18,7 +18,7 @@ public class LeaveActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_leave);
 
-        // Unified TeamHub Header
+        // Unified GlobizHR Header
         AppHeaderHelper.setupHeader(this, "Leaves", false);
 
         setupBottomNav();

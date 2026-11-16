@@ -1382,7 +1382,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Directory invitations and employee logins can also be uploaded via CSV or Excel anytime from your TeamHub Admin Console."
+                        android:text="Directory invitations and employee logins can also be uploaded via CSV or Excel anytime from your GlobizHR Admin Console."
                         android:textColor="#6B7280"
                         android:textSize="12sp" />
                 </LinearLayout>

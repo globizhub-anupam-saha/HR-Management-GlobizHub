@@ -52,7 +52,7 @@ public class AppNotificationManager {
             if (manager != null) {
                 NotificationChannel channel = new NotificationChannel(
                         CHANNEL_ID,
-                        "TeamHub Notifications",
+                        "GlobizHR Notifications",
                         NotificationManager.IMPORTANCE_HIGH
                 );
                 channel.setDescription("Real-time notifications for shifts, attendance, and team announcements");
@@ -208,7 +208,7 @@ public class AppNotificationManager {
             if (!ingested.contains(id)) {
                 ingested.add(id);
                 hasNew = true;
-                String title = obj.optString("title", "TeamHub Update");
+                String title = obj.optString("title", "GlobizHR Update");
                 String message = obj.optString("message", obj.optString("body", "You have a new update."));
                 sendNotification(context, title, message);
             }

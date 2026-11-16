@@ -167,7 +167,7 @@ class DocumentsViewController: UIViewController, UITableViewDataSource, UITableV
         headerStack.spacing = 1
         leftStack.addArrangedSubview(headerStack)
 
-        brandSubtitleLabel.text = "TEAMHUB"
+        brandSubtitleLabel.text = "GLOBIZHR"
         brandSubtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         brandSubtitleLabel.font = .systemFont(ofSize: 10, weight: .bold)
         headerStack.addArrangedSubview(brandSubtitleLabel)
