@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.teamhub.hrms.network.ApiClient;
+import com.globiz.hr.network.ApiClient;
 
 import java.util.Locale;
 

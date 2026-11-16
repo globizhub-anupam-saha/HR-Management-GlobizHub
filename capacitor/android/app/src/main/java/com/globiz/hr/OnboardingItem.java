@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 public class OnboardingItem {
     private final int imageResId;

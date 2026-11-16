@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -50,7 +50,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
-import com.teamhub.hrms.network.ApiClient;
+import com.globiz.hr.network.ApiClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

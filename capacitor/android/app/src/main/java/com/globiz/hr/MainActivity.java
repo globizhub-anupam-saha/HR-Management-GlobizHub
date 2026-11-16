@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,7 +7,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.getcapacitor.BridgeActivity;
-import com.teamhub.hrms.network.ApiClient;
+import com.globiz.hr.network.ApiClient;
 
 public class MainActivity extends BridgeActivity {
 

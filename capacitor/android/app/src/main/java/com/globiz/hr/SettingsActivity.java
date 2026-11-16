@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -16,7 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.teamhub.hrms.network.ApiClient;
+import com.globiz.hr.network.ApiClient;
 
 import org.json.JSONObject;
 

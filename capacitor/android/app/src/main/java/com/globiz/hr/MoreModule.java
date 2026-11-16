@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.teamhub.hrms.network.ApiClient;
+import com.globiz.hr.network.ApiClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

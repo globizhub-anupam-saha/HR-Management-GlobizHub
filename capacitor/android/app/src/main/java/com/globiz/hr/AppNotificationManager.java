@@ -1,4 +1,4 @@
-package com.teamhub.hrms;
+package com.globiz.hr;
 
 import android.Manifest;
 import android.app.Activity;
@@ -20,7 +20,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
-import com.teamhub.hrms.network.ApiClient;
+import com.globiz.hr.network.ApiClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -40,7 +40,7 @@ public class AppNotificationManager {
     public static final String PREF_NAME = "TeamHubAuth";
     public static final String KEY_PUSH_NOTIFICATION = "pref_push_notification";
     private static final String KEY_INGESTED_IDS = "ingested_remote_notification_ids";
-    public static final String ACTION_NOTIFICATION_RECEIVED = "com.teamhub.hrms.NOTIFICATION_RECEIVED";
+    public static final String ACTION_NOTIFICATION_RECEIVED = "com.globiz.hr.NOTIFICATION_RECEIVED";
 
     /**
      * Initializes the high-priority notification channel for Android O (8.0) and above.

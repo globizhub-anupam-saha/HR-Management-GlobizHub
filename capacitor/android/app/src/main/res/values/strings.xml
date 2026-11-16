@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">GlobizHR</string>
     <string name="title_activity_main">GlobizHR</string>
-    <string name="package_name">com.teamhub.hrms</string>
-    <string name="custom_url_scheme">com.teamhub.hrms</string>
+    <string name="package_name">com.globiz.hr</string>
+    <string name="custom_url_scheme">com.globiz.hr</string>
 </resources>
