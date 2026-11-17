@@ -11,6 +11,17 @@ export interface WizardInvitedEmployee {
   role?: string;
 }
 
+export interface WizardBranch {
+  id?: string;
+  name: string;
+  type?: 'HEADQUARTERS' | 'BRANCH' | 'REGIONAL' | 'REMOTE';
+  country?: string;
+  state?: string;
+  city?: string;
+  address?: string;
+  isHeadquarters?: boolean;
+}
+
 // Define the shape of our massive data collection
 interface SetupWizardData {
   // Step 1: Basic Info
@@ -25,6 +36,8 @@ interface SetupWizardData {
   adminEmail: string;
   adminPhone: string;
   adminPassword: string;
+  adminEmailVerified?: boolean;
+  emailVerified?: boolean;
   holidayRegion: string;
   departments: string[];
   roles: string[];
@@ -32,6 +45,7 @@ interface SetupWizardData {
   leavePolicies: string[];
   shifts: string[];
   branches: string[];
+  branchDetails?: WizardBranch[];
   inviteEmails: string;
   invitedEmployees: WizardInvitedEmployee[];
   
@@ -100,8 +114,30 @@ const initialData: SetupWizardData = {
     "Flexible"
   ],
   branches: [
-    "Head Office", 
-    "Remote"
+    "Headquarters (Mumbai)", 
+    "Bengaluru Tech Hub"
+  ],
+  branchDetails: [
+    {
+      id: "1",
+      name: "Corporate Headquarters",
+      type: "HEADQUARTERS",
+      country: "India",
+      state: "Maharashtra",
+      city: "Mumbai",
+      address: "Bandra Kurla Complex",
+      isHeadquarters: true,
+    },
+    {
+      id: "2",
+      name: "Bengaluru Tech Hub",
+      type: "BRANCH",
+      country: "India",
+      state: "Karnataka",
+      city: "Bengaluru",
+      address: "Koramangala",
+      isHeadquarters: false,
+    },
   ],
   inviteEmails: "",
   invitedEmployees: [],

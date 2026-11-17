@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This SOP defines the standard process for validating the full recruitment lifecycle in TeamHub HRMS, from requisition creation to employee onboarding. It is intended for business users, QA testers, and HR operations teams who are not expected to have technical knowledge.
+This SOP defines the standard process for validating the full recruitment lifecycle in GlobizHR, from requisition creation to employee onboarding. It is intended for business users, QA testers, and HR operations teams who are not expected to have technical knowledge.
 
 ## 2. Scope
 

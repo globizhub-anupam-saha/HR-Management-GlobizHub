@@ -279,7 +279,7 @@ export function EmployeeDashboardView() {
               </CardContent>
             </div>
             <div className="p-6 pt-0">
-              <p className="text-[11px] text-muted-foreground/60 text-center font-medium">TeamHub HRMS System v1.0</p>
+              <p className="text-[11px] text-muted-foreground/60 text-center font-medium">GlobizHR System v1.0</p>
             </div>
           </Card>
         </div>

@@ -1,6 +1,6 @@
-# TeamHub Mobile – Native Projects (iOS & Android)
+# GlobizHR Mobile – Native Projects (iOS & Android)
 
-Native mobile project structure for **TeamHub HRMS**, initialized cleanly with Capacitor to manage native platforms for **iOS** and **Android**.
+Native mobile project structure for **GlobizHR**, initialized cleanly with Capacitor to manage native platforms for **iOS** and **Android**.
 
 ## Project Structure
 

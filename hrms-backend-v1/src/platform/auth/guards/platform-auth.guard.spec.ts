@@ -58,7 +58,7 @@ describe('PlatformAuthGuard', () => {
     });
     prismaService.platformUser.findUnique.mockResolvedValue({
       id: 'platform-user-1',
-      email: 'superadmin@teamhub.saas',
+      email: 'superadmin@globizhr.com',
       role: 'SUPER_ADMIN',
       isActive: true,
     });

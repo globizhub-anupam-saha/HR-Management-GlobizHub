@@ -1,6 +1,6 @@
-# TeamHub HRMS — Apple Design System & UI Guidelines (HIG)
+# GlobizHR — Apple Design System & UI Guidelines (HIG)
 
-This document establishes the official visual, interaction, and component guidelines for the TeamHub HRMS application across web (desktop and tablet) and Capacitor Android mobile environments, adhering to Apple Human Interface Guidelines (iOS 17+ and macOS Sonoma).
+This document establishes the official visual, interaction, and component guidelines for the GlobizHR application across web (desktop and tablet) and Capacitor Android mobile environments, adhering to Apple Human Interface Guidelines (iOS 17+ and macOS Sonoma).
 
 ---
 

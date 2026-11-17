@@ -52,7 +52,7 @@ async function callGeminiLLM(
   role: string,
   apiKey: string
 ): Promise<CopilotResponse | null> {
-  const systemInstruction = `You are Gpilot, the AI assistant for TeamHub HRMS. 
+  const systemInstruction = `You are Gpilot, the AI assistant for GlobizHR. 
 You guide users step-by-step through using this HRMS platform.
 The user is currently on route: "${currentRoute}".
 Their role is: "${role}".
@@ -126,7 +126,7 @@ async function callOpenAILLM(
   role: string,
   apiKey: string
 ): Promise<CopilotResponse | null> {
-  const systemInstruction = `You are Gpilot, the AI assistant for TeamHub HRMS. Guide users step-by-step.
+  const systemInstruction = `You are Gpilot, the AI assistant for GlobizHR. Guide users step-by-step.
 Current route: "${currentRoute}", User Role: "${role}".
 Respond in JSON format:
 {

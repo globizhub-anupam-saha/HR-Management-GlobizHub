@@ -60,7 +60,7 @@ class SplashViewController: UIViewController {
     private let titleLabel: UILabel = {
         let lbl = UILabel()
         lbl.translatesAutoresizingMaskIntoConstraints = false
-        lbl.text = "TeamHub"
+        lbl.text = "GlobizHR"
         // Uses the exact system bold font used across the app (matches employee dashboard hero greeting)
         lbl.font = UIFont.systemFont(ofSize: 32, weight: .bold)
         lbl.textColor = .white

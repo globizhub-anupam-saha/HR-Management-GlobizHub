@@ -133,7 +133,7 @@ describe('PlatformOrgService', () => {
         'org-1',
         { status: 'SUSPENDED', reason: 'Non-payment' },
         'admin-1',
-        'superadmin@teamhub.saas',
+        'superadmin@globizhr.com',
       );
 
       expect(updated.status).toBe('SUSPENDED');
@@ -159,7 +159,7 @@ describe('PlatformOrgService', () => {
         'org-1',
         { reason: 'Customer ticket #102 payroll error', durationMinutes: 30 },
         'admin-1',
-        'superadmin@teamhub.saas',
+        'superadmin@globizhr.com',
       );
 
       expect(session.diagnosticToken).toBe('mock_diagnostic_session_token');

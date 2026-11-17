@@ -7,13 +7,13 @@ export default function EmailTemplatesPage() {
     {
       name: "Tenant Welcome & Onboarding Activation",
       key: "TENANT_WELCOME",
-      subject: "Welcome to TeamHub HRMS — Complete Your Company Setup",
+      subject: "Welcome to GlobizHR — Complete Your Company Setup",
       category: "Lifecycle",
     },
     {
       name: "Invoice Issued & Payment Due",
       key: "INVOICE_ISSUED",
-      subject: "New TeamHub Invoice {{invoice_number}} Available",
+      subject: "New GlobizHR Invoice {{invoice_number}} Available",
       category: "Billing",
     },
     {
@@ -31,7 +31,7 @@ export default function EmailTemplatesPage() {
     {
       name: "Trial Ending in 3 Days Reminder",
       key: "TRIAL_EXPIRING",
-      subject: "Your TeamHub 14-Day Free Trial Ends Soon",
+      subject: "Your GlobizHR 14-Day Free Trial Ends Soon",
       category: "Growth",
     },
   ];

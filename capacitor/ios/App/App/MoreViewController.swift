@@ -212,7 +212,7 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         topBarContainer.addSubview(brandHeaderStack)
 
         let appLabel = UILabel()
-        appLabel.text = "TEAMHUB"
+        appLabel.text = "GLOBIZHR"
         appLabel.font = .systemFont(ofSize: 11, weight: .heavy)
         appLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         brandHeaderStack.addArrangedSubview(appLabel)

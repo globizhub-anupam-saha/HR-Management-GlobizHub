@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This Standard Operating Procedure (SOP) defines the validation and verification process for the **Universal Training, Competency & Career Development Module** in **TeamHub HRMS**. 
+This Standard Operating Procedure (SOP) defines the validation and verification process for the **Universal Training, Competency & Career Development Module** in **GlobizHR**. 
 
 It governs the complete business lifecycle of workforce development across diverse industries (Healthcare, Information Technology, Manufacturing, Education, Banking, Logistics, Hospitality, etc.):
 1. Identifying training needs and skill gaps.

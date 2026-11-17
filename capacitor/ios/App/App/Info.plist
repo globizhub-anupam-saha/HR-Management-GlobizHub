@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>TeamHub</string>
+        <string>GlobizHR</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -67,10 +67,10 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>TeamHub HRMS requires camera access for employee profile pictures and document verification.</string>
+	<string>GlobizHR requires camera access for employee profile pictures and document verification.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>TeamHub HRMS requires location access to verify attendance check-in locations.</string>
+	<string>GlobizHR requires location access to verify attendance check-in locations.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>TeamHub HRMS uses Face ID for fast and secure biometric login.</string>
+	<string>GlobizHR uses Face ID for fast and secure biometric login.</string>
 </dict>
 </plist>

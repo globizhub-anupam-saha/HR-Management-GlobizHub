@@ -215,7 +215,7 @@ export const HRMS_MODULE_GUIDES: ModuleGuide[] = [
       {
         keywords: ["deductions", "pf", "provident fund", "tax", "tds", "professional tax", "pt"],
         answer:
-          "Statutory deductions in TeamHub HRMS:\n- **Provident Fund (PF)**: Typically 12% of Basic Salary (with employer matching).\n- **Professional Tax (PT)**: State-regulated tier deduction (e.g. ₹200/month).\n- **TDS / Income Tax**: Deducted based on selected tax regime and declared investments.\n- Formulas are customizable under **Settings -> Payroll**.",
+          "Statutory deductions in GlobizHR:\n- **Provident Fund (PF)**: Typically 12% of Basic Salary (with employer matching).\n- **Professional Tax (PT)**: State-regulated tier deduction (e.g. ₹200/month).\n- **TDS / Income Tax**: Deducted based on selected tax regime and declared investments.\n- Formulas are customizable under **Settings -> Payroll**.",
         action: { label: "Manage Salary Templates", url: "/workspace/settings/payroll" },
       },
       {
@@ -345,7 +345,7 @@ export const HRMS_MODULE_GUIDES: ModuleGuide[] = [
       {
         keywords: ["clearance", "exit clearance", "it clearance", "finance clearance", "handover", "laptop return"],
         answer:
-          "TeamHub HRMS requires multi-department exit clearances before offboarding:\n1. **IT Clearance**: Return of company laptop, access revoke, and security sign-off.\n2. **Finance Clearance**: Travel expense claims settled, corporate credit card cleared, loan recovery.\n3. **HR Clearance**: Exit interview completed, non-disclosure agreement (NDA) reaffirmed.\n4. **Admin Clearance**: ID badge and physical office access cards returned.",
+          "GlobizHR requires multi-department exit clearances before offboarding:\n1. **IT Clearance**: Return of company laptop, access revoke, and security sign-off.\n2. **Finance Clearance**: Travel expense claims settled, corporate credit card cleared, loan recovery.\n3. **HR Clearance**: Exit interview completed, non-disclosure agreement (NDA) reaffirmed.\n4. **Admin Clearance**: ID badge and physical office access cards returned.",
         action: { label: "Manage Clearances", url: "/workspace/resignation" },
       },
       {
@@ -378,7 +378,7 @@ export const HRMS_MODULE_GUIDES: ModuleGuide[] = [
       {
         keywords: ["promotion", "automatic promotion", "career", "position change", "strict non-automatic"],
         answer:
-          "**Strict Non-Automatic Promotion Rule**:\nUnder TeamHub HRMS governance, completing a training program or earning a top assessment score **never automatically changes an employee's designation, grade, or salary**.\n\nCareer outcomes require a separate, governed **Employee Position Change** workflow that must be reviewed and approved by Department Heads, HR, and Finance.",
+          "**Strict Non-Automatic Promotion Rule**:\nUnder GlobizHR governance, completing a training program or earning a top assessment score **never automatically changes an employee's designation, grade, or salary**.\n\nCareer outcomes require a separate, governed **Employee Position Change** workflow that must be reviewed and approved by Department Heads, HR, and Finance.",
         action: { label: "View Training Governance", url: "/workspace/training" },
       },
       {
@@ -520,7 +520,7 @@ export const HRMS_MODULE_GUIDES: ModuleGuide[] = [
       {
         keywords: ["role", "permissions", "rbac", "admin access", "hr permissions", "access control"],
         answer:
-          "Roles & Permissions Matrix in TeamHub HRMS:\n- **ADMIN**: Complete system control, billing, audit logs, and settings.\n- **HR_MANAGER**: Employee records, onboarding, leave/attendance approvals, payroll runs, recruitment.\n- **DEPARTMENT_MANAGER**: Approves direct report leaves, attendance regularizations, and submits training recommendations.\n- **EMPLOYEE**: Self-service portal (apply leaves, clock attendance, view payslips, raise support tickets).",
+          "Roles & Permissions Matrix in GlobizHR:\n- **ADMIN**: Complete system control, billing, audit logs, and settings.\n- **HR_MANAGER**: Employee records, onboarding, leave/attendance approvals, payroll runs, recruitment.\n- **DEPARTMENT_MANAGER**: Approves direct report leaves, attendance regularizations, and submits training recommendations.\n- **EMPLOYEE**: Self-service portal (apply leaves, clock attendance, view payslips, raise support tickets).",
         action: { label: "Manage Roles & Permissions", url: "/workspace/settings" },
       },
       {
@@ -650,7 +650,7 @@ export function matchHRMSKnowledge(
   if (isGreeting) {
     if (currentModule) {
       return {
-        reply: `👋 **Hi there! I am Gpilot, your TeamHub HRMS assistant.**\n\nYou are currently on the **${currentModule.name}** page.\n\n${currentModule.summary}\n\nHere are the most common tasks you can do here:`,
+        reply: `👋 **Hi there! I am Gpilot, your GlobizHR assistant.**\n\nYou are currently on the **${currentModule.name}** page.\n\n${currentModule.summary}\n\nHere are the most common tasks you can do here:`,
         suggestedActions: [
           { label: `Explore ${currentModule.name}`, url: currentModule.path },
         ],
@@ -660,7 +660,7 @@ export function matchHRMSKnowledge(
     }
 
     return {
-      reply: `👋 **Hello! I am Gpilot, your TeamHub AI Assistant.**\n\nI can guide you step-by-step through any task in the HRMS—from onboarding and leave applications to payroll runs, shifts, and document verification.\n\nWhat would you like help with today?`,
+      reply: `👋 **Hello! I am Gpilot, your GlobizHR AI Assistant.**\n\nI can guide you step-by-step through any task in the HRMS—from onboarding and leave applications to payroll runs, shifts, and document verification.\n\nWhat would you like help with today?`,
       suggestedActions: [
         { label: "Employees Directory", url: "/workspace/employees" },
         { label: "Apply for Leave", url: "/workspace/leave" },
@@ -744,7 +744,7 @@ export function matchHRMSKnowledge(
       ];
 
   return {
-    reply: `I couldn't find an exact match for **"${query}"**, but here are key modules you can explore in TeamHub HRMS:\n\n- **Employees & Directory**: Add employees, import from CSV/Excel, verify KYC documents.\n- **Leave & Attendance**: Apply for time off, manage shifts, clock in/out, and regularize punches.\n- **Payroll & Payslips**: Configure CTC templates, run monthly payroll, and download payslip PDFs.\n- **Recruitment & Onboarding**: Post job openings, manage candidate pipeline, and assign new joiner checklists.\n- **Training & Career**: Enroll cohorts, track skill assessments, and manage certifications.\n- **Resignation & Clearances**: Notice period calculation and multi-department exit sign-offs.\n- **Settings**: Company profile, holiday calendar, salary templates, and security audit logs.\n\nClick any suggested question below or pick a module to navigate!`,
+    reply: `I couldn't find an exact match for **"${query}"**, but here are key modules you can explore in GlobizHR:\n\n- **Employees & Directory**: Add employees, import from CSV/Excel, verify KYC documents.\n- **Leave & Attendance**: Apply for time off, manage shifts, clock in/out, and regularize punches.\n- **Payroll & Payslips**: Configure CTC templates, run monthly payroll, and download payslip PDFs.\n- **Recruitment & Onboarding**: Post job openings, manage candidate pipeline, and assign new joiner checklists.\n- **Training & Career**: Enroll cohorts, track skill assessments, and manage certifications.\n- **Resignation & Clearances**: Notice period calculation and multi-department exit sign-offs.\n- **Settings**: Company profile, holiday calendar, salary templates, and security audit logs.\n\nClick any suggested question below or pick a module to navigate!`,
     suggestedActions: [
       { label: "Go to Dashboard", url: "/workspace/dashboard" },
       { label: "Help & Support Desk", url: "/workspace/support" },

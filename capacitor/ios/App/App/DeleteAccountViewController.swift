@@ -57,7 +57,7 @@ class DeleteAccountViewController: UIViewController {
         headerStack.translatesAutoresizingMaskIntoConstraints = false
         leftStack.addArrangedSubview(headerStack)
 
-        brandSubtitleLabel.text = "TEAMHUB"
+        brandSubtitleLabel.text = "GLOBIZHR"
         brandSubtitleLabel.font = .systemFont(ofSize: 11, weight: .heavy)
         brandSubtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         headerStack.addArrangedSubview(brandSubtitleLabel)

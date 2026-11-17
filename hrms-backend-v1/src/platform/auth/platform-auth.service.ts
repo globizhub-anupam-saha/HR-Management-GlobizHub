@@ -35,8 +35,8 @@ export class PlatformAuthService {
       });
 
       if (superAdminCount === 0) {
-        const defaultEmail = process.env.PLATFORM_ADMIN_EMAIL || 'superadmin@teamhub.saas';
-        const defaultPassword = process.env.PLATFORM_ADMIN_PASSWORD || 'SuperAdmin@TeamHub2026!';
+        const defaultEmail = process.env.PLATFORM_ADMIN_EMAIL || 'superadmin@globizhr.com';
+        const defaultPassword = process.env.PLATFORM_ADMIN_PASSWORD || 'SuperAdmin@GlobizHR2026!';
         const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
         await this.prisma.platformUser.create({

@@ -903,7 +903,7 @@ function SidebarPreview({ enabledModules, designationColor }: { enabledModules: 
         {/* Brand */}
         <div className="pb-2 mb-2 border-b border-border">
           <span className="text-xs font-bold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
-            TeamHub HRMS
+            GlobizHR
           </span>
         </div>
 

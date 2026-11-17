@@ -19,9 +19,9 @@ export default function PlatformSettingsPage() {
 
   const [form, setForm] = useState({
     // General
-    platformName: "TeamHub HRMS SaaS",
-    supportEmail: "support@teamhub.saas",
-    marketingUrl: "https://teamhub.saas",
+    platformName: "GlobizHR SaaS",
+    supportEmail: "support@globizhr.com",
+    marketingUrl: "https://globizhr.com",
     defaultCurrency: "INR",
     timezone: "UTC",
 
@@ -38,8 +38,8 @@ export default function PlatformSettingsPage() {
     smtpPort: 587,
     smtpUser: "apikey",
     smtpPassword: "••••••••••••••••",
-    emailFromName: "TeamHub SaaS Notifications",
-    emailFromAddress: "notifications@teamhub.saas",
+    emailFromName: "GlobizHR Notifications",
+    emailFromAddress: "notifications@globizhr.com",
 
     // Security
     requirePlatformMfa: true,
@@ -50,7 +50,7 @@ export default function PlatformSettingsPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("teamhub_platform_settings");
+      const saved = localStorage.getItem("globizhr_platform_settings");
       if (saved) {
         setForm((prev) => ({ ...prev, ...JSON.parse(saved) }));
       }
@@ -62,7 +62,7 @@ export default function PlatformSettingsPage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      localStorage.setItem("teamhub_platform_settings", JSON.stringify(form));
+      localStorage.setItem("globizhr_platform_settings", JSON.stringify(form));
     } catch (e) {
       // ignore
     }

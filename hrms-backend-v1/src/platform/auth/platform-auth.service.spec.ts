@@ -65,7 +65,7 @@ describe('PlatformAuthService', () => {
       const hashedPassword = await bcrypt.hash('CorrectPassword!', 10);
       prisma.platformUser.findUnique.mockResolvedValue({
         id: 'super-admin-1',
-        email: 'superadmin@teamhub.saas',
+        email: 'superadmin@globizhr.com',
         password: hashedPassword,
         role: 'SUPER_ADMIN',
         isActive: true,
@@ -73,7 +73,7 @@ describe('PlatformAuthService', () => {
       prisma.platformUser.update.mockResolvedValue({});
 
       const result = await service.login({
-        email: 'superadmin@teamhub.saas',
+        email: 'superadmin@globizhr.com',
         password: 'CorrectPassword!',
       });
 

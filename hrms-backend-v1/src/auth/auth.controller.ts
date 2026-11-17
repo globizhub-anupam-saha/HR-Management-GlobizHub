@@ -17,6 +17,8 @@ import { AuthGuard } from './auth.guard';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CheckRegistrationEmailDto } from './dto/check-registration-email.dto';
+import { SendRegistrationOtpDto } from './dto/send-registration-otp.dto';
+import { VerifyRegistrationOtpDto } from './dto/verify-registration-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -32,6 +34,18 @@ export class AuthController {
   @Post('check-registration-email')
   async checkRegistrationEmail(@Body() dto: CheckRegistrationEmailDto) {
     return this.authService.checkRegistrationEmail(dto.email);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('send-registration-otp')
+  async sendRegistrationOtp(@Body() dto: SendRegistrationOtpDto) {
+    return this.authService.sendRegistrationOtp(dto.email);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('verify-registration-otp')
+  async verifyRegistrationOtp(@Body() dto: VerifyRegistrationOtpDto) {
+    return this.authService.verifyRegistrationOtp(dto.email, dto.otp);
   }
 
   // S-09: Strict throttle — 5 attempts per minute to mitigate brute force

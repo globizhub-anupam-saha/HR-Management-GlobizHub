@@ -185,7 +185,7 @@ export function PlatformSidebar({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold tracking-tight text-foreground block leading-tight">
-                  TeamHub
+                  GlobizHR
                 </span>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 uppercase tracking-wide">
                   Super Admin

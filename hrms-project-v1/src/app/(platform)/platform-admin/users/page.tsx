@@ -473,7 +473,7 @@ export default function PlatformUsersPage() {
                 <input
                   type="email"
                   required
-                  placeholder="e.g. sarah.j@teamhub.saas"
+                  placeholder="e.g. sarah.j@globizhr.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl bg-background border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-xs"

@@ -298,10 +298,10 @@ public class HomeActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     NOTIFICATION_CHANNEL_ID,
-                    "TeamHub Attendance",
+                    "GlobizHR Attendance",
                     NotificationManager.IMPORTANCE_HIGH
             );
-            channel.setDescription("TeamHub attendance shift updates and punch notifications");
+            channel.setDescription("GlobizHR attendance shift updates and punch notifications");
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);

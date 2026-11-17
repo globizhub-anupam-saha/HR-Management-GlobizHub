@@ -1,6 +1,6 @@
-# TeamHub HRMS - Human Resource Management System
+# GlobizHR - Human Resource Management System
 
-A modern, production-ready full-stack application for managing human resources. TeamHub HRMS provides a comprehensive suite of tools for handling employee data, attendance, payroll, leave management, shift scheduling, and more.
+A modern, production-ready full-stack application for managing human resources. GlobizHR provides a comprehensive suite of tools for handling employee data, attendance, payroll, leave management, shift scheduling, and more.
 
 ## 🚀 Tech Stack
 
