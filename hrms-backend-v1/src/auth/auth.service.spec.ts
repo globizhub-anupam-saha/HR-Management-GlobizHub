@@ -21,12 +21,19 @@ describe('AuthService', () => {
     company: {
       create: jest.fn(),
     },
+    emailOtp: {
+      findFirst: jest.fn(),
+      deleteMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
   };
   const jwt = {
     signAsync: jest.fn(),
   };
   const emailService = {
     sendPasswordResetEmail: jest.fn(),
+    sendRegistrationOtpEmail: jest.fn().mockResolvedValue({}),
   };
   const auditService = {
     logAction: jest.fn(),
@@ -204,6 +211,115 @@ describe('AuthService', () => {
       await expect(
         service.resetPassword('valid-token', 'short'),
       ).rejects.toThrow('Password must be at least 8 characters long');
+    });
+  });
+
+  describe('sendRegistrationOtp', () => {
+    it('generates, hashes, stores OTP and sends email', async () => {
+      prisma.employee.findUnique.mockResolvedValue(null);
+      prisma.emailOtp.findFirst.mockResolvedValue(null);
+      prisma.emailOtp.deleteMany.mockResolvedValue({});
+      prisma.emailOtp.create.mockResolvedValue({});
+
+      const result = await service.sendRegistrationOtp('newuser@example.com');
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Verification code sent');
+      expect(prisma.emailOtp.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: 'newuser@example.com',
+          otpHash: expect.any(String),
+          verified: false,
+        }),
+      });
+      expect(emailService.sendRegistrationOtpEmail).toHaveBeenCalledWith(
+        'newuser@example.com',
+        expect.stringMatching(/^\d{6}$/),
+      );
+    });
+
+    it('throws ConflictException if email is already registered', async () => {
+      prisma.employee.findUnique.mockResolvedValue({ id: 'emp-1' });
+
+      await expect(
+        service.sendRegistrationOtp('existing@example.com'),
+      ).rejects.toThrow('An account already exists with this email address');
+    });
+
+    it('throttles if OTP was requested less than 45s ago', async () => {
+      prisma.employee.findUnique.mockResolvedValue(null);
+      prisma.emailOtp.findFirst.mockResolvedValue({
+        id: 'otp-1',
+        createdAt: new Date(Date.now() - 10 * 1000), // 10s ago
+      });
+
+      await expect(
+        service.sendRegistrationOtp('newuser@example.com'),
+      ).rejects.toThrow('Please wait');
+    });
+  });
+
+  describe('verifyRegistrationOtp', () => {
+    it('verifies valid OTP successfully', async () => {
+      const crypto = require('crypto');
+      const testOtp = '123456';
+      const otpHash = crypto.createHash('sha256').update(testOtp).digest('hex');
+
+      prisma.emailOtp.findFirst.mockResolvedValue({
+        id: 'otp-1',
+        email: 'user@example.com',
+        otpHash,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        attempts: 0,
+      });
+      prisma.emailOtp.update.mockResolvedValue({});
+
+      const res = await service.verifyRegistrationOtp('user@example.com', testOtp);
+
+      expect(res.success).toBe(true);
+      expect(res.verified).toBe(true);
+      expect(prisma.emailOtp.update).toHaveBeenCalledWith({
+        where: { id: 'otp-1' },
+        data: { verified: true },
+      });
+    });
+
+    it('rejects incorrect OTP and increments attempt count', async () => {
+      const crypto = require('crypto');
+      const testOtp = '123456';
+      const otpHash = crypto.createHash('sha256').update(testOtp).digest('hex');
+
+      prisma.emailOtp.findFirst.mockResolvedValue({
+        id: 'otp-1',
+        email: 'user@example.com',
+        otpHash,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        attempts: 0,
+      });
+      prisma.emailOtp.update.mockResolvedValue({});
+
+      await expect(
+        service.verifyRegistrationOtp('user@example.com', '999999'),
+      ).rejects.toThrow('Incorrect verification code');
+
+      expect(prisma.emailOtp.update).toHaveBeenCalledWith({
+        where: { id: 'otp-1' },
+        data: { attempts: { increment: 1 } },
+      });
+    });
+
+    it('rejects expired OTP', async () => {
+      prisma.emailOtp.findFirst.mockResolvedValue({
+        id: 'otp-1',
+        email: 'user@example.com',
+        otpHash: 'somehash',
+        expiresAt: new Date(Date.now() - 1000),
+        attempts: 0,
+      });
+
+      await expect(
+        service.verifyRegistrationOtp('user@example.com', '123456'),
+      ).rejects.toThrow('Verification code has expired');
     });
   });
 });

@@ -5,6 +5,8 @@ import {
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -38,6 +40,127 @@ export class AuthService {
     });
 
     return { available: !existingUser };
+  }
+
+  async sendRegistrationOtp(email: string) {
+    if (!email || typeof email !== 'string') {
+      throw new BadRequestException('A valid email address is required');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Check if email is already in use by an existing employee
+    const existingUser = await this.prisma.employee.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new ConflictException('An account already exists with this email address');
+    }
+
+    // 2. Cooldown check: prevent requesting resend within 45 seconds
+    const recentOtp = await this.prisma.emailOtp.findFirst({
+      where: {
+        email: normalizedEmail,
+        createdAt: { gte: new Date(Date.now() - 45 * 1000) },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (recentOtp) {
+      const waitSeconds = Math.max(
+        1,
+        Math.ceil((recentOtp.createdAt.getTime() + 45 * 1000 - Date.now()) / 1000),
+      );
+      throw new HttpException(
+        `Please wait ${waitSeconds}s before requesting a new verification code`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    // 3. Generate secure 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // 4. Invalidate old unverified OTPs for this email and save new one
+    await this.prisma.emailOtp.deleteMany({
+      where: { email: normalizedEmail, verified: false },
+    });
+
+    await this.prisma.emailOtp.create({
+      data: {
+        email: normalizedEmail,
+        otpHash,
+        expiresAt,
+        verified: false,
+        attempts: 0,
+      },
+    });
+
+    // 5. Send Email via Resend
+    await this.emailService.sendRegistrationOtpEmail(normalizedEmail, otp);
+    this.logger.log(`[Registration OTP] Generated verification code for ${normalizedEmail}: ${otp}`);
+
+    return {
+      success: true,
+      message: 'Verification code sent to your email address',
+      expiresInSeconds: 600,
+      ...(process.env.NODE_ENV !== 'production' ? { debugOtp: otp } : {}),
+    };
+  }
+
+  async verifyRegistrationOtp(email: string, otp: string) {
+    if (!email || !otp) {
+      throw new BadRequestException('Email and 6-digit OTP code are required');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.trim();
+
+    const record = await this.prisma.emailOtp.findFirst({
+      where: {
+        email: normalizedEmail,
+        verified: false,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!record) {
+      throw new BadRequestException('No pending verification code found. Please request a new code.');
+    }
+
+    if (new Date() > record.expiresAt) {
+      throw new BadRequestException('Verification code has expired. Please request a new code.');
+    }
+
+    if (record.attempts >= 5) {
+      throw new BadRequestException('Too many incorrect attempts. Please request a new verification code.');
+    }
+
+    // Check hash
+    const inputHash = crypto.createHash('sha256').update(cleanOtp).digest('hex');
+    if (inputHash !== record.otpHash) {
+      await this.prisma.emailOtp.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } },
+      });
+      const remaining = 5 - (record.attempts + 1);
+      throw new BadRequestException(
+        `Incorrect verification code. ${remaining > 0 ? `${remaining} attempts remaining.` : 'Code locked.'}`,
+      );
+    }
+
+    // Mark as verified
+    await this.prisma.emailOtp.update({
+      where: { id: record.id },
+      data: { verified: true },
+    });
+
+    return {
+      success: true,
+      verified: true,
+      message: 'Email verified successfully!',
+    };
   }
 
   async registerWizard(dto: RegisterWizardDto) {

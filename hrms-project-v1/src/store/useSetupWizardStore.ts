@@ -25,6 +25,8 @@ interface SetupWizardData {
   adminEmail: string;
   adminPhone: string;
   adminPassword: string;
+  adminEmailVerified?: boolean;
+  emailVerified?: boolean;
   holidayRegion: string;
   departments: string[];
   roles: string[];

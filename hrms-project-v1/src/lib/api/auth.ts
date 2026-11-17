@@ -30,5 +30,15 @@ export const authApi = {
     const res = await api.post("/auth/set-password", data);
     return res.data;
   },
+
+  sendRegistrationOtp: async (email: string) => {
+    const res = await api.post("/auth/send-registration-otp", { email });
+    return res.data;
+  },
+
+  verifyRegistrationOtp: async (email: string, otp: string) => {
+    const res = await api.post("/auth/verify-registration-otp", { email, otp });
+    return res.data;
+  },
 };
 

@@ -51,6 +51,49 @@ export class EmailService {
     }
   }
 
+  async sendRegistrationOtpEmail(email: string, otp: string) {
+    try {
+      const fromEmail =
+        process.env.RESEND_FROM_EMAIL ||
+        process.env.SENDER_EMAIL ||
+        'GlobizHR <onboarding@resend.dev>';
+      const { error } = await this.resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: `${otp} is your GlobizHR Verification Code`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1e293b; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+            <div style="background-color: #0f172a; color: #ffffff; padding: 24px 32px; text-align: center;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">GlobizHR</h1>
+              <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 13px;">Organization Setup Verification</p>
+            </div>
+            <div style="padding: 32px 28px;">
+              <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 0;">Verify Your Email Address</h2>
+              <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                Welcome to GlobizHR! Use the 6-digit verification code below to verify your email address and continue setting up your organization:
+              </p>
+              <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 20px; text-align: center; margin: 24px 0;">
+                <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0056fd; font-family: monospace;">${otp}</span>
+              </div>
+              <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin: 0;">
+                This code will expire in <strong>10 minutes</strong>. If you did not initiate this setup request, you can safely ignore this email.
+              </p>
+            </div>
+            <div style="background-color: #f8fafc; padding: 16px 28px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8;">
+              © ${new Date().getFullYear()} GlobizHR. All rights reserved.
+            </div>
+          </div>
+        `,
+      });
+
+      if (error) {
+        console.error('Failed to send registration OTP email via Resend:', error);
+      }
+    } catch (error) {
+      console.error('Failed to send registration OTP email via Resend:', error);
+    }
+  }
+
   async sendEmployeeInvitationEmail(
     email: string,
     firstName: string,
