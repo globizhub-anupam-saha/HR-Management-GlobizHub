@@ -282,7 +282,20 @@ export class AuthService {
             })) || [],
         },
         branches: {
-          create: dto.branches?.map((name) => ({ name })) || [],
+          create:
+            dto.branchDetails && dto.branchDetails.length > 0
+              ? dto.branchDetails.map((b) => ({
+                  name:
+                    b.name?.trim() ||
+                    (b.isHeadquarters ? 'Headquarters' : 'Branch'),
+                  address:
+                    [b.address, b.city, b.state, b.country]
+                      .filter(Boolean)
+                      .map((s) => String(s).trim())
+                      .filter((s) => s.length > 0)
+                      .join(', ') || null,
+                }))
+              : dto.branches?.map((name) => ({ name })) || [],
         },
         leavePolicies: {
           create:

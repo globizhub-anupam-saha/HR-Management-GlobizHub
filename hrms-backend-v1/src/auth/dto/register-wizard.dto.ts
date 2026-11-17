@@ -17,6 +17,16 @@ export class InvitedEmployeeDto {
   @IsString() @IsOptional() role?: string;
 }
 
+export class BranchDetailDto {
+  @IsString() name: string;
+  @IsString() @IsOptional() type?: string;
+  @IsString() @IsOptional() country?: string;
+  @IsString() @IsOptional() state?: string;
+  @IsString() @IsOptional() city?: string;
+  @IsString() @IsOptional() address?: string;
+  @IsOptional() isHeadquarters?: boolean;
+}
+
 export class RegisterWizardDto {
   @IsString() companyName: string;
   @IsString() @IsOptional() industry?: string;
@@ -47,6 +57,11 @@ export class RegisterWizardDto {
   @IsArray() @IsString({ each: true }) @IsOptional() leavePolicies?: string[];
   @IsArray() @IsString({ each: true }) @IsOptional() shifts?: string[];
   @IsArray() @IsString({ each: true }) @IsOptional() branches?: string[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BranchDetailDto)
+  @IsOptional()
+  branchDetails?: BranchDetailDto[];
 
   @IsString() @IsOptional() holidayRegion?: string;
   @IsString() @IsOptional() inviteEmails?: string;

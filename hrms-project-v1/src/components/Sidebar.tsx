@@ -23,6 +23,7 @@ import {
   GraduationCap,
   Sparkles,
   Network,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 import { useViewMode } from "@/context/ViewModeContext";
@@ -211,6 +212,13 @@ export default function Sidebar({
           icon: CheckSquare,
         },
         {
+          key: "billing",
+          name: "Subscription & Billing",
+          href: "/workspace/settings/billing",
+          icon: CreditCard,
+          adminOnly: true,
+        },
+        {
           key: "settings",
           name: "Settings",
           href: "/workspace/settings",
@@ -230,6 +238,9 @@ export default function Sidebar({
     }
 
     // Direct access check via permissions
+    if (item.key === "billing") {
+      return isAdminOrHR;
+    }
     if (sidebarModuleKeys.includes(item.key)) return true;
 
     // Admin has access to standard modules
