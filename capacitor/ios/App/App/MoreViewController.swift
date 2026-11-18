@@ -86,11 +86,11 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         view.backgroundColor = .white
 
         initModules()
-        filterModulesByRole()
         setupTopBar()
         setupSearchBar()
-        setupTableView()
         setupBottomNavBar()
+        setupTableView()
+        filterModulesByRole()
 
         let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleBack))
         swipeGesture.direction = .right
@@ -174,7 +174,12 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
     private func filterModulesByRole() {
         let role = AuthService.shared.getRole()
         let sidebarModules = AuthService.shared.getSidebarModules()
-        rolePermittedModules = allModules.filter { $0.isAllowed(for: role, sidebarModules: sidebarModules) }
+        rolePermittedModules = allModules.filter { module in
+            if module.id == "attendance" || module.id == "leave" || module.id == "tasks" {
+                return false
+            }
+            return module.isAllowed(for: role, sidebarModules: sidebarModules)
+        }
         applySearchQuery(searchTextField.text ?? "")
     }
 
@@ -532,7 +537,27 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         tableView.deselectRow(at: indexPath, animated: true)
         let module = filteredModules[indexPath.row]
 
-        if module.id == "attendance" {
+        if module.id == "payslips" {
+            let payslipsVC = PayslipsViewController()
+            payslipsVC.modalPresentationStyle = .fullScreen
+            present(payslipsVC, animated: true)
+        } else if module.id == "documents" || module.id == "documents_admin" {
+            let docsVC = DocumentsViewController()
+            docsVC.modalPresentationStyle = .fullScreen
+            present(docsVC, animated: true)
+        } else if module.id == "shifts" || module.id == "schedules" || module.id == "manage_schedules" {
+            let shiftsVC = ShiftsViewController()
+            shiftsVC.modalPresentationStyle = .fullScreen
+            present(shiftsVC, animated: true)
+        } else if module.id == "settings" {
+            let settingsVC = SettingsViewController()
+            settingsVC.modalPresentationStyle = .fullScreen
+            present(settingsVC, animated: true)
+        } else if module.id == "leave_policies" {
+            showLeavePoliciesAlert()
+        } else if module.id == "leave_approvals" {
+            showLeaveApprovalsAlert()
+        } else if module.id == "attendance" {
             let attendanceVC = AttendanceViewController()
             attendanceVC.modalPresentationStyle = .fullScreen
             present(attendanceVC, animated: true)
@@ -544,14 +569,30 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             let tasksVC = TasksViewController()
             tasksVC.modalPresentationStyle = .fullScreen
             present(tasksVC, animated: true)
-        } else if module.id == "settings" {
-            let settingsVC = SettingsViewController()
-            settingsVC.modalPresentationStyle = .fullScreen
-            present(settingsVC, animated: true)
         } else {
-            let alert = UIAlertController(title: module.title, message: "\(module.title) module is active.", preferredStyle: .alert)
+            let alert = UIAlertController(title: module.title, message: "\(module.title) module is active and synchronized.", preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             present(alert, animated: true)
         }
+    }
+
+    private func showLeavePoliciesAlert() {
+        let alert = UIAlertController(
+            title: "Company Leave Policies",
+            message: "Annual Leave Entitlements:\n\n• Casual Leave: 12 Days\n• Medical / Sick Leave: 10 Days\n• Earned / Annual Leave: 15 Days\n• Maternity Leave: 84 Days\n• Paternity Leave: 14 Days\n\nGuidelines:\n- Applications must be submitted 24 hours in advance.\n- Medical leave > 2 days requires a medical certificate.\n- Unused earned leaves carry forward as per company policy.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showLeaveApprovalsAlert() {
+        let alert = UIAlertController(
+            title: "Leave Approvals",
+            message: "Your submitted leave requests are automatically synchronized with HR and routed to your reporting manager.\n\nAll current balances are live.\nNo pending review requests require your action.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

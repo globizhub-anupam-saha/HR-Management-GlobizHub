@@ -2,7 +2,7 @@ import UIKit
 import UserNotifications
 
 /**
- * Centralized push and in-app notification manager for TeamHub iOS.
+ * Centralized push and in-app notification manager for GlobizHR iOS.
  * Handles system tray push notifications, real-time in-app records,
  * UNUserNotificationCenter authorization, badge synchronization, and user preferences.
  */

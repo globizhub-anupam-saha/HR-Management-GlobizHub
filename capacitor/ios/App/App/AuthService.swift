@@ -28,8 +28,8 @@ enum AuthError: LocalizedError {
 
 class AuthService {
     static let shared = AuthService()
-    static let defaultValidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAxIiwiZW1haWwiOiJhbGV4LnR1cm5lckBnbG9iaXpodWIuY29tIiwiY29tcGFueUlkIjoiY2x4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsInJvbGUiOiJFTVBMT1lFRSIsImV4cCI6MTk4NzY1NDMyMX0.aPBENdAsKoApXnfO5KNxWTY8QvB2ouUDjSZ-e_atuck"
-    private let baseURL = "https://hr.globizhub.com/api"
+    static let defaultValidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMmYxODFkNi05Mzg3LTQ4YjctYWMwMC1mNDM1OGQzNTBmMDIiLCJlbWFpbCI6InNlYWxtYW5hc2g3QGdtYWlsLmNvbSIsImNvbXBhbnlJZCI6IjcwNzBjMmFkLTgzNTgtNDhhOC1iZWMyLWE1YjMzM2E1N2UxYiIsInJvbGUiOiJFTVBMT1lFRSIsImlhdCI6MTc5NDI5NjkyMCwiZXhwIjoxNzk0MzgzMzIwfQ.wldeC_UTAuL9UmWSRDGGFf9sjblFOjSuuW-OhtSwlYY"
+    private let baseURL = "https://hr-management-globizhub.onrender.com"
 
     private let tokenKey = "TeamHubAuth_Token"
     private let emailKey = "TeamHubAuth_Email"
@@ -702,6 +702,21 @@ class AuthService {
     // MARK: - Notifications
     func getUnreadNotifications(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
         getJsonArray(endpoint: "/notifications/unread", completion: completion)
+    }
+
+    // MARK: - Payslips
+    func getMyPayslips(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        getJsonArray(endpoint: "/payroll/my-payslips", completion: completion)
+    }
+
+    // MARK: - Documents
+    func getMyDocuments(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        getJsonArray(endpoint: "/documents/me", completion: completion)
+    }
+
+    // MARK: - Shifts
+    func getCompanyShifts(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        getJsonArray(endpoint: "/schedules/shifts", completion: completion)
     }
 
     private func getJsonArray(endpoint: String, completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {

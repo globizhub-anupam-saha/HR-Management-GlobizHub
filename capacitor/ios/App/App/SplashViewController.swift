@@ -237,8 +237,8 @@ class SplashViewController: UIViewController {
         let nextVC: UIViewController
         #if targetEnvironment(simulator)
         if !AuthService.shared.isLoggedIn {
-            AuthService.shared.saveAuth(token: AuthService.defaultValidToken, email: "alex.turner@globizhub.com", role: "EMPLOYEE")
-            AuthService.shared.saveUserProfile(firstName: "Alex", designation: "Lead Product Designer", organization: "GlobizHub Technologies")
+            AuthService.shared.saveAuth(token: AuthService.defaultValidToken, email: "sealmanash7@gmail.com", role: "EMPLOYEE")
+            AuthService.shared.saveUserProfile(firstName: "Sealmanash", designation: "Operations & Tech Lead", organization: "GlobizHub Technologies")
         }
         nextVC = HomeViewController()
         #else

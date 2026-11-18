@@ -1,0 +1,110 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="100dp"
+    android:viewportWidth="120"
+    android:viewportHeight="100">
+
+    <!-- Subtle cloud accent -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M80,82a10,10 0 0,1 18,0z" />
+    <path
+        android:fillColor="#F1F5F9"
+        android:pathData="M95,78a8,8 0 0,1 14,0z" />
+
+    <!-- Sleeve / Arm -->
+    <path
+        android:fillColor="#BFDBFE"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M78,80 L88,100 L115,100 L104,74 Z" />
+
+    <!-- Cuff Button -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M98,90a2,2 0 1,0 0.1,0z" />
+
+    <!-- Clock Top Crown / Stem -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M65,18 L69,18 L69,22 L65,22 Z" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M63,16 L71,16 L71,18 L63,18 Z" />
+
+    <!-- Clock Body Outer Circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="2.2"
+        android:pathData="M67,22 A24,24 0 1,1 66.9,22 Z" />
+
+    <!-- Clock Inner Face -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M67,25 A21,21 0 1,1 66.9,25 Z" />
+
+    <!-- Clock Center Pin -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M67,46a2.2,2.2 0 1,0 0.1,0z" />
+
+    <!-- Clock Hour & Minute Hands (Pointing to 10:10) -->
+    <path
+        android:strokeColor="#0F172A"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M67,46 L58,37" />
+    <path
+        android:strokeColor="#0F172A"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M67,46 L76,33" />
+
+    <!-- Clock Tick Marks -->
+    <path
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M67,26 L67,28 M67,64 L67,66 M47,46 L49,46 M85,46 L87,46" />
+
+    <!-- Hand & Fingers Gripping Clock -->
+    <!-- Palm / Back of hand -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M64,65 C68,69 76,73 80,78 L74,83 C70,78 64,74 60,70 Z" />
+
+    <!-- Thumb gripping left side -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M52,60 C48,58 46,51 46,46 C46,43 48,43 50,45 C52,47 54,54 57,59 Z" />
+
+    <!-- Fingers gripping bottom-right -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M78,56 C79,52 82,52 83,55 C84,58 83,63 80,68 C76,73 73,74 72,73 C71,71 73,66 75,63 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M75,62 C76,59 78,59 79,61 C80,64 79,68 76,72" />
+
+</vector>

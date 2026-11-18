@@ -8,7 +8,7 @@ Native mobile project structure for **GlobizHR**, initialized cleanly with Capac
 capacitor/
 ├── android/                         # Native Android Studio Project (Java & XML)
 │   ├── app/src/main/AndroidManifest.xml
-│   ├── app/src/main/java/com/teamhub/hrms/MainActivity.java
+│   ├── app/src/main/java/com/globiz/hr/MainActivity.java
 │   └── app/src/main/res/layout/activity_main.xml
 ├── ios/                             # Native Xcode Project (Swift)
 │   ├── App/App.xcodeproj            # Xcode project (Swift Package Manager)

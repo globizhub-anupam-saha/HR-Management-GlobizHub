@@ -49,7 +49,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
 
     private var currentStep: Step = .companyDetails
 
-    // Brand color: TeamHub vibrant blue #0056fd
+    // Brand color: GlobizHR vibrant blue #0056fd
     static let brandBlue = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
     static let brandBlueSecondary = UIColor(red: 0/255, green: 93/255, blue: 253/255, alpha: 1.0)
     static let brandGradientEnd = UIColor(red: 1/255, green: 116/255, blue: 255/255, alpha: 1.0)

@@ -22,7 +22,7 @@
             android:paddingStart="12dp"
             android:paddingEnd="16dp">
 
-            <!-- Left: Back Button + TEAMHUB & Notifications Title -->
+            <!-- Left: Back Button + GLOBIZHR & Notifications Title -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
