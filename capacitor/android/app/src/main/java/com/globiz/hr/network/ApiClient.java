@@ -374,6 +374,46 @@ public class ApiClient {
         });
     }
 
+    // 3A. Send Registration Email OTP
+    public void sendRegistrationOtp(String email, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("email", email.trim().toLowerCase());
+                postJson("/auth/send-registration-otp", body, null, callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to send verification code: " + e.getMessage(), 0);
+            }
+        });
+    }
+
+    // 3B. Verify Registration Email OTP
+    public void verifyRegistrationOtp(String email, String otp, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("email", email.trim().toLowerCase());
+                body.put("otp", otp.trim());
+                postJson("/auth/verify-registration-otp", body, null, callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to verify code: " + e.getMessage(), 0);
+            }
+        });
+    }
+
+    // 3C. Check Registration Email Availability
+    public void checkRegistrationEmail(String email, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("email", email.trim().toLowerCase());
+                postJson("/auth/check-registration-email", body, null, callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to check email: " + e.getMessage(), 0);
+            }
+        });
+    }
+
     // 4. Get Current Profile
     public void getProfile(ApiCallback<JSONObject> callback) {
         getProfile(getToken(), callback);

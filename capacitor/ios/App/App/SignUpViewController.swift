@@ -180,6 +180,42 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
     private let adminFirstNameField = SignUpViewController.makeInputField(placeholder: "John")
     private let adminLastNameField = SignUpViewController.makeInputField(placeholder: "Doe")
     private let adminEmailField = SignUpViewController.makeInputField(placeholder: "john.doe@acmecorp.com", keyboardType: .emailAddress)
+
+    // Step 1B OTP Verification
+    private var isAdminEmailVerified = false
+    private let sendAdminOtpButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.setTitle("Send Code", for: .normal)
+        btn.setTitleColor(SignUpViewController.brandBlue, for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+        btn.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+        btn.layer.cornerRadius = 14
+        btn.layer.borderWidth = 1
+        btn.layer.borderColor = UIColor(red: 191/255, green: 219/255, blue: 254/255, alpha: 1.0).cgColor
+        btn.contentEdgeInsets = UIEdgeInsets(top: 5, left: 12, bottom: 5, right: 12)
+        return btn
+    }()
+    private let adminOtpStatusLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        lbl.text = "Verify email with a 6-digit code"
+        lbl.font = .systemFont(ofSize: 12, weight: .regular)
+        lbl.textColor = UIColor(red: 107/255, green: 114/255, blue: 128/255, alpha: 1.0)
+        return lbl
+    }()
+    private let adminOtpCodeField = SignUpViewController.makeInputField(placeholder: "123456", keyboardType: .numberPad)
+    private let verifyAdminOtpButton = SignUpViewController.makePrimaryButton(title: "Verify")
+    private let adminOtpContainer: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.backgroundColor = UIColor(red: 249/255, green: 250/255, blue: 251/255, alpha: 1.0)
+        v.layer.cornerRadius = 12
+        v.isHidden = true
+        return v
+    }()
+    private var adminOtpTimer: Timer?
+    private var adminOtpCooldown = 0
     private let adminPhoneField = SignUpViewController.makeInputField(placeholder: "98765 43210", keyboardType: .phonePad)
     private var adminPhoneCodeButton: UIButton!
     private let adminPasswordField = SignUpViewController.makeInputField(placeholder: "••••••••", isSecure: true)
@@ -463,6 +499,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         if !companySize.isEmpty { payload["companySize"] = companySize }
         if !aPhone.isEmpty { payload["adminPhone"] = fullAdminPhone }
         if !adminPass.isEmpty { payload["adminPassword"] = adminPass }
+        payload["adminEmailVerified"] = isAdminEmailVerified
 
         let invites = inviteEmailsTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !invites.isEmpty { payload["inviteEmails"] = invites }
@@ -476,19 +513,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
             loadingAlert.dismiss(animated: true) {
                 switch result {
                 case .success:
-                    let alert = UIAlertController(
-                        title: "Workspace Configured!",
-                        message: "Your company workspace and organization have been created successfully in the live GlobizHR database. Please sign in with your administrator credentials.",
-                        preferredStyle: .alert
-                    )
-                    alert.addAction(UIAlertAction(title: "Go to Sign In", style: .default, handler: { [weak self] _ in
-                        guard let self = self else { return }
-                        if let presenting = self.presentingViewController as? SignInViewController {
-                            presenting.prefillEmail = finalAdminEmail
-                        }
-                        self.dismiss(animated: true, completion: nil)
-                    }))
-                    self.present(alert, animated: true, completion: nil)
+                    self.showRegistrationSuccessModal(email: finalAdminEmail)
 
                 case .failure(let error):
                     let alert = UIAlertController(title: "Registration Failed", message: error.localizedDescription, preferredStyle: .alert)
@@ -696,6 +721,28 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         let passLabel = makeFieldLabel("Admin Password *")
         let cpassLabel = makeFieldLabel("Confirm Password *")
 
+        // Setup OTP header row
+        sendAdminOtpButton.addTarget(self, action: #selector(didTapSendAdminOtp), for: .touchUpInside)
+        let otpHeaderRow = UIStackView(arrangedSubviews: [adminOtpStatusLabel, sendAdminOtpButton])
+        otpHeaderRow.translatesAutoresizingMaskIntoConstraints = false
+        otpHeaderRow.axis = .horizontal
+        otpHeaderRow.alignment = .center
+        otpHeaderRow.distribution = .equalSpacing
+
+        // Setup OTP input container
+        verifyAdminOtpButton.addTarget(self, action: #selector(didTapVerifyAdminOtp), for: .touchUpInside)
+        let otpInputRow = UIStackView(arrangedSubviews: [adminOtpCodeField, verifyAdminOtpButton])
+        otpInputRow.translatesAutoresizingMaskIntoConstraints = false
+        otpInputRow.axis = .horizontal
+        otpInputRow.spacing = 8
+        otpInputRow.distribution = .fillProportionally
+
+        let otpInnerStack = UIStackView(arrangedSubviews: [otpInputRow])
+        otpInnerStack.translatesAutoresizingMaskIntoConstraints = false
+        otpInnerStack.axis = .vertical
+        otpInnerStack.spacing = 6
+        adminOtpContainer.addSubview(otpInnerStack)
+
         let buttonRow = UIStackView(arrangedSubviews: [adminBackButton, adminNextButton])
         buttonRow.translatesAutoresizingMaskIntoConstraints = false
         buttonRow.axis = .horizontal
@@ -707,6 +754,7 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
             fnLabel, adminFirstNameField,
             lnLabel, adminLastNameField,
             emailLabel, adminEmailField,
+            otpHeaderRow, adminOtpContainer,
             phoneLabel, phoneRow,
             passLabel, adminPasswordField,
             cpassLabel, adminConfirmPasswordField,
@@ -718,7 +766,8 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         stack.setCustomSpacing(16, after: subtitle)
         stack.setCustomSpacing(14, after: adminFirstNameField)
         stack.setCustomSpacing(14, after: adminLastNameField)
-        stack.setCustomSpacing(14, after: adminEmailField)
+        stack.setCustomSpacing(8, after: adminEmailField)
+        stack.setCustomSpacing(14, after: adminOtpContainer)
         stack.setCustomSpacing(14, after: phoneRow)
         stack.setCustomSpacing(14, after: adminPasswordField)
         stack.setCustomSpacing(28, after: adminConfirmPasswordField)
@@ -726,6 +775,13 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         adminDetailsContainer.addSubview(stack)
 
         NSLayoutConstraint.activate([
+            otpInnerStack.topAnchor.constraint(equalTo: adminOtpContainer.topAnchor, constant: 8),
+            otpInnerStack.leadingAnchor.constraint(equalTo: adminOtpContainer.leadingAnchor, constant: 8),
+            otpInnerStack.trailingAnchor.constraint(equalTo: adminOtpContainer.trailingAnchor, constant: -8),
+            otpInnerStack.bottomAnchor.constraint(equalTo: adminOtpContainer.bottomAnchor, constant: -8),
+            adminOtpCodeField.heightAnchor.constraint(equalToConstant: 44),
+            verifyAdminOtpButton.widthAnchor.constraint(equalToConstant: 90),
+
             stack.topAnchor.constraint(equalTo: adminDetailsContainer.topAnchor),
             stack.leadingAnchor.constraint(equalTo: adminDetailsContainer.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: adminDetailsContainer.trailingAnchor),
@@ -1582,6 +1638,194 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
         lbl.font = UIFont.systemFont(ofSize: 13)
         lbl.textColor = UIColor(red: 107/255, green: 114/255, blue: 128/255, alpha: 1.0)
         return lbl
+    }
+
+    // MARK: - Registration Success Modal (Exact Match to User Reference)
+    private func showRegistrationSuccessModal(email: String) {
+        let overlay = UIView(frame: view.bounds)
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.0)
+        overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(overlay)
+
+        let card = UIView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 28
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.22
+        card.layer.shadowOffset = CGSize(width: 0, height: 12)
+        card.layer.shadowRadius = 24
+        card.transform = CGAffineTransform(scaleX: 0.88, y: 0.88)
+        card.alpha = 0
+        overlay.addSubview(card)
+
+        let badgeImageView = UIImageView()
+        badgeImageView.translatesAutoresizingMaskIntoConstraints = false
+        badgeImageView.contentMode = .scaleAspectFit
+        if let badgeImg = UIImage(named: "ic_success_badge") {
+            badgeImageView.image = badgeImg
+        } else if let path = Bundle.main.path(forResource: "ic_success_badge", ofType: "png"), let img = UIImage(contentsOfFile: path) {
+            badgeImageView.image = img
+        } else {
+            let config = UIImage.SymbolConfiguration(pointSize: 42, weight: .bold)
+            badgeImageView.image = UIImage(systemName: "checkmark.seal.fill", withConfiguration: config)?
+                .withTintColor(UIColor(red: 210/255, green: 246/255, blue: 154/255, alpha: 1.0), renderingMode: .alwaysOriginal)
+        }
+        card.addSubview(badgeImageView)
+
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = "Successful"
+        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        titleLabel.textColor = UIColor(red: 17/255, green: 24/255, blue: 39/255, alpha: 1.0)
+        titleLabel.textAlignment = .center
+        card.addSubview(titleLabel)
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        subtitleLabel.text = "Your company workspace has been created successfully. Welcome to GlobizHR."
+        subtitleLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        subtitleLabel.textColor = UIColor(red: 107/255, green: 114/255, blue: 128/255, alpha: 1.0)
+        subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0
+        card.addSubview(subtitleLabel)
+
+        let doneButton = UIButton(type: .system)
+        doneButton.translatesAutoresizingMaskIntoConstraints = false
+        doneButton.setTitle("Done", for: .normal)
+        doneButton.setTitleColor(.white, for: .normal)
+        doneButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+        doneButton.backgroundColor = UIColor(red: 33/255, green: 33/255, blue: 33/255, alpha: 1.0)
+        doneButton.layer.cornerRadius = 24
+        card.addSubview(doneButton)
+
+        let cardWidth = min(340, UIScreen.main.bounds.width - 48)
+
+        NSLayoutConstraint.activate([
+            card.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            card.centerYAnchor.constraint(equalTo: overlay.centerYAnchor),
+            card.widthAnchor.constraint(equalToConstant: cardWidth),
+
+            badgeImageView.topAnchor.constraint(equalTo: card.topAnchor, constant: 36),
+            badgeImageView.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            badgeImageView.widthAnchor.constraint(equalToConstant: 92),
+            badgeImageView.heightAnchor.constraint(equalToConstant: 92),
+
+            titleLabel.topAnchor.constraint(equalTo: badgeImageView.bottomAnchor, constant: 20),
+            titleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -20),
+
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            subtitleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 24),
+            subtitleLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -24),
+
+            doneButton.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 28),
+            doneButton.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 24),
+            doneButton.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -24),
+            doneButton.heightAnchor.constraint(equalToConstant: 50),
+            doneButton.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -28)
+        ])
+
+        doneButton.addAction(UIAction { [weak self] _ in
+            guard let self = self else { return }
+            UIView.animate(withDuration: 0.25, animations: {
+                overlay.alpha = 0
+            }) { _ in
+                overlay.removeFromSuperview()
+                if let presenting = self.presentingViewController as? SignInViewController {
+                    presenting.prefillEmail = email
+                }
+                self.dismiss(animated: true, completion: nil)
+            }
+        }, for: .touchUpInside)
+
+        UIView.animate(withDuration: 0.35, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .curveEaseOut, animations: {
+            overlay.backgroundColor = UIColor.black.withAlphaComponent(0.55)
+            card.transform = .identity
+            card.alpha = 1.0
+        }, completion: nil)
+    }
+
+    // MARK: - Admin Email OTP Handlers
+    @objc private func didTapSendAdminOtp() {
+        let email = adminEmailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !email.isEmpty, email.contains("@"), email.contains(".") else {
+            adminEmailField.layer.borderColor = UIColor.systemRed.cgColor
+            adminOtpStatusLabel.text = "Please enter a valid admin email first"
+            adminOtpStatusLabel.textColor = .systemRed
+            return
+        }
+
+        sendAdminOtpButton.isEnabled = false
+        adminOtpStatusLabel.text = "Sending verification code..."
+        adminOtpStatusLabel.textColor = UIColor(red: 107/255, green: 114/255, blue: 128/255, alpha: 1.0)
+
+        AuthService.shared.sendRegistrationOtp(email: email) { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success:
+                self.adminOtpContainer.isHidden = false
+                self.adminOtpStatusLabel.text = "Verification code sent to your email"
+                self.adminOtpStatusLabel.textColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+                self.startAdminOtpTimer(seconds: 45)
+            case .failure(let err):
+                self.sendAdminOtpButton.isEnabled = true
+                self.adminOtpStatusLabel.text = err.localizedDescription
+                self.adminOtpStatusLabel.textColor = .systemRed
+            }
+        }
+    }
+
+    @objc private func didTapVerifyAdminOtp() {
+        let email = adminEmailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let code = adminOtpCodeField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard code.count >= 6 else {
+            adminOtpCodeField.layer.borderColor = UIColor.systemRed.cgColor
+            return
+        }
+
+        verifyAdminOtpButton.isEnabled = false
+        verifyAdminOtpButton.setTitle("Verifying...", for: .normal)
+
+        AuthService.shared.verifyRegistrationOtp(email: email, otp: code) { [weak self] result in
+            guard let self = self else { return }
+            self.verifyAdminOtpButton.isEnabled = true
+            self.verifyAdminOtpButton.setTitle("Verify", for: .normal)
+            switch result {
+            case .success:
+                self.isAdminEmailVerified = true
+                self.adminOtpContainer.isHidden = true
+                self.adminOtpStatusLabel.text = "Email verified successfully"
+                self.adminOtpStatusLabel.textColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+                self.sendAdminOtpButton.setTitle("Verified", for: .normal)
+                self.sendAdminOtpButton.setTitleColor(UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), for: .normal)
+                self.sendAdminOtpButton.isEnabled = false
+            case .failure(let err):
+                self.adminOtpCodeField.layer.borderColor = UIColor.systemRed.cgColor
+                self.adminOtpStatusLabel.text = err.localizedDescription
+                self.adminOtpStatusLabel.textColor = .systemRed
+            }
+        }
+    }
+
+    private func startAdminOtpTimer(seconds: Int) {
+        adminOtpTimer?.invalidate()
+        adminOtpCooldown = seconds
+        sendAdminOtpButton.isEnabled = false
+
+        adminOtpTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self = self else { timer.invalidate(); return }
+            self.adminOtpCooldown -= 1
+            if self.adminOtpCooldown > 0 {
+                self.sendAdminOtpButton.setTitle("Resend (\(self.adminOtpCooldown)s)", for: .normal)
+            } else {
+                timer.invalidate()
+                if !self.isAdminEmailVerified {
+                    self.sendAdminOtpButton.isEnabled = true
+                    self.sendAdminOtpButton.setTitle("Resend Code", for: .normal)
+                }
+            }
+        }
     }
 }
 

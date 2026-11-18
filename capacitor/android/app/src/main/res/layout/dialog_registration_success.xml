@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_marginStart="24dp"
+    android:layout_marginEnd="24dp"
+    android:background="@drawable/bg_dialog_success_card"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="36dp">
+
+    <!-- Scalloped Pistachio/Lime Badge with Forest Green Checkmark (Exact Match to Reference Image) -->
+    <ImageView
+        android:id="@+id/ivSuccessBadge"
+        android:layout_width="92dp"
+        android:layout_height="92dp"
+        android:contentDescription="Success"
+        android:src="@drawable/ic_badge_check_success" />
+
+    <!-- Title: Successful -->
+    <TextView
+        android:id="@+id/tvSuccessTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Successful"
+        android:textColor="#111827"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tvSuccessMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:text="Your company workspace has been created successfully. Welcome to GlobizHR."
+        android:textColor="#6B7280"
+        android:textSize="14sp" />
+
+    <!-- Full-width Dark Pill Button: Done -->
+    <Button
+        android:id="@+id/btnSuccessDone"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="28dp"
+        android:background="@drawable/bg_done_button"
+        android:elevation="0dp"
+        android:stateListAnimator="@null"
+        android:text="Done"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

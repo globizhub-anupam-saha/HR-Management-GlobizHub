@@ -63,6 +63,12 @@ public class SignUpActivity extends AppCompatActivity {
     // Step 1B: Admin Details
     private LinearLayout layoutAdminDetails;
     private EditText etAdminFirstName, etAdminLastName, etAdminEmail, etAdminPhone;
+    private TextView tvAdminEmailStatus, btnSendAdminOtp, tvAdminOtpTimer;
+    private LinearLayout layoutAdminOtpInput;
+    private EditText etAdminOtpCode;
+    private Button btnVerifyAdminOtp;
+    private boolean isAdminEmailVerified = false;
+    private android.os.CountDownTimer otpCountDownTimer;
     private EditText etAdminPassword, etAdminConfirmPassword;
     private TextView tvAdminPhoneCode;
     private ImageView ivToggleAdminPassword, ivToggleAdminConfirmPassword;
@@ -182,6 +188,12 @@ public class SignUpActivity extends AppCompatActivity {
         etAdminFirstName = findViewById(R.id.etAdminFirstName);
         etAdminLastName = findViewById(R.id.etAdminLastName);
         etAdminEmail = findViewById(R.id.etAdminEmail);
+        tvAdminEmailStatus = findViewById(R.id.tvAdminEmailStatus);
+        btnSendAdminOtp = findViewById(R.id.btnSendAdminOtp);
+        layoutAdminOtpInput = findViewById(R.id.layoutAdminOtpInput);
+        etAdminOtpCode = findViewById(R.id.etAdminOtpCode);
+        btnVerifyAdminOtp = findViewById(R.id.btnVerifyAdminOtp);
+        tvAdminOtpTimer = findViewById(R.id.tvAdminOtpTimer);
         etAdminPhone = findViewById(R.id.etAdminPhone);
         tvAdminPhoneCode = findViewById(R.id.tvAdminPhoneCode);
         etAdminPassword = findViewById(R.id.etAdminPassword);
@@ -507,6 +519,12 @@ public class SignUpActivity extends AppCompatActivity {
         });
 
         // Step 1B
+        if (btnSendAdminOtp != null) {
+            btnSendAdminOtp.setOnClickListener(v -> handleSendAdminOtp());
+        }
+        if (btnVerifyAdminOtp != null) {
+            btnVerifyAdminOtp.setOnClickListener(v -> handleVerifyAdminOtp());
+        }
         ivToggleAdminPassword.setOnClickListener(v -> toggleAdminPassword());
         ivToggleAdminConfirmPassword.setOnClickListener(v -> toggleAdminConfirmPassword());
         btnAdminBack.setOnClickListener(v -> showStep(STEP_COMPANY_DETAILS, true));
@@ -670,6 +688,7 @@ public class SignUpActivity extends AppCompatActivity {
             // 6. Invites
             String invites = etInviteEmails != null ? etInviteEmails.getText().toString().trim() : "";
             if (!invites.isEmpty()) payload.put("inviteEmails", invites);
+            payload.put("adminEmailVerified", isAdminEmailVerified);
 
             ApiClient.getInstance(this).registerWizard(payload, new ApiClient.ApiCallback<JSONObject>() {
                 @Override
@@ -680,18 +699,7 @@ public class SignUpActivity extends AppCompatActivity {
                         ApiClient.getInstance(SignUpActivity.this).saveToken(token, adminEmail, "SUPER_ADMIN");
                     }
 
-                    new AlertDialog.Builder(SignUpActivity.this)
-                            .setTitle("Workspace Configured!")
-                            .setMessage("Your company workspace and organization have been created successfully in the live GlobizHR database. Please sign in with your administrator credentials.")
-                            .setPositiveButton("Go to Sign In", (dialog, which) -> {
-                                Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
-                                intent.putExtra(SignInActivity.EXTRA_PREFILL_EMAIL, adminEmail);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                                finish();
-                            })
-                            .setCancelable(false)
-                            .show();
+                    showRegistrationSuccessDialog(adminEmail);
                 }
 
                 @Override
@@ -925,6 +933,130 @@ public class SignUpActivity extends AppCompatActivity {
             ivToggleAdminConfirmPassword.setImageResource(R.drawable.ic_visibility_off);
         }
         etAdminConfirmPassword.setSelection(etAdminConfirmPassword.getText().length());
+    }
+
+    private void showRegistrationSuccessDialog(final String email) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_registration_success, null);
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        }
+
+        Button btnDone = dialogView.findViewById(R.id.btnSuccessDone);
+        btnDone.setOnClickListener(v -> {
+            dialog.dismiss();
+            Toast.makeText(SignUpActivity.this, "Welcome to GlobizHR! Please sign in with your credentials.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
+            intent.putExtra(SignInActivity.EXTRA_PREFILL_EMAIL, email);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        });
+
+        dialog.show();
+    }
+
+    private void handleSendAdminOtp() {
+        String email = etAdminEmail.getText().toString().trim();
+        if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etAdminEmail.setError("Please enter a valid admin email first");
+            etAdminEmail.requestFocus();
+            return;
+        }
+
+        btnSendAdminOtp.setEnabled(false);
+        tvAdminEmailStatus.setText("Sending verification code...");
+        tvAdminEmailStatus.setTextColor(Color.parseColor("#6B7280"));
+
+        ApiClient.getInstance(this).sendRegistrationOtp(email, new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                layoutAdminOtpInput.setVisibility(View.VISIBLE);
+                tvAdminEmailStatus.setText("Verification code sent to your email");
+                tvAdminEmailStatus.setTextColor(Color.parseColor("#059669"));
+                etAdminOtpCode.requestFocus();
+                startOtpTimer(45);
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                btnSendAdminOtp.setEnabled(true);
+                tvAdminEmailStatus.setText(errorMessage != null ? errorMessage : "Failed to send code");
+                tvAdminEmailStatus.setTextColor(Color.parseColor("#DC2626"));
+            }
+        });
+    }
+
+    private void handleVerifyAdminOtp() {
+        String email = etAdminEmail.getText().toString().trim();
+        String code = etAdminOtpCode.getText().toString().trim();
+        if (code.length() < 6) {
+            etAdminOtpCode.setError("Enter 6-digit code");
+            etAdminOtpCode.requestFocus();
+            return;
+        }
+
+        btnVerifyAdminOtp.setEnabled(false);
+        btnVerifyAdminOtp.setText("Verifying...");
+
+        ApiClient.getInstance(this).verifyRegistrationOtp(email, code, new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                btnVerifyAdminOtp.setEnabled(true);
+                btnVerifyAdminOtp.setText("Verify");
+                isAdminEmailVerified = true;
+                layoutAdminOtpInput.setVisibility(View.GONE);
+                tvAdminEmailStatus.setText("Email verified successfully");
+                tvAdminEmailStatus.setTextColor(Color.parseColor("#059669"));
+                btnSendAdminOtp.setText("Verified");
+                btnSendAdminOtp.setEnabled(false);
+                btnSendAdminOtp.setTextColor(Color.parseColor("#059669"));
+                Toast.makeText(SignUpActivity.this, "Email verified successfully!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                btnVerifyAdminOtp.setEnabled(true);
+                btnVerifyAdminOtp.setText("Verify");
+                etAdminOtpCode.setError(errorMessage != null ? errorMessage : "Invalid code");
+            }
+        });
+    }
+
+    private void startOtpTimer(int seconds) {
+        if (otpCountDownTimer != null) {
+            otpCountDownTimer.cancel();
+        }
+        btnSendAdminOtp.setEnabled(false);
+        otpCountDownTimer = new android.os.CountDownTimer(seconds * 1000L, 1000L) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                long s = millisUntilFinished / 1000L;
+                btnSendAdminOtp.setText("Resend (" + s + "s)");
+                tvAdminOtpTimer.setText("Code expires in 10 minutes • Resend in " + s + "s");
+            }
+
+            @Override
+            public void onFinish() {
+                if (!isAdminEmailVerified) {
+                    btnSendAdminOtp.setEnabled(true);
+                    btnSendAdminOtp.setText("Resend Code");
+                    tvAdminOtpTimer.setText("Code expires in 10 minutes");
+                }
+            }
+        }.start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (otpCountDownTimer != null) {
+            otpCountDownTimer.cancel();
+        }
+        super.onDestroy();
     }
 
     private int dpToPx(int dp) {

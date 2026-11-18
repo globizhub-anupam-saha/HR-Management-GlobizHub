@@ -407,6 +407,78 @@ class AuthService {
         }.resume()
     }
 
+    // MARK: - Registration OTP
+    func sendRegistrationOtp(email: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let endpoint = "\(baseURL)/auth/send-registration-otp"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let body = ["email": email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("No response received from server.")))
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: data ?? Data(), options: [])) as? [String: Any] ?? [:]
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    completion(.success(json))
+                } else {
+                    let errMsg = self.parseErrorMessage(from: json, statusCode: httpResponse.statusCode)
+                    completion(.failure(.serverError(errMsg, httpResponse.statusCode)))
+                }
+            }
+        }.resume()
+    }
+
+    func verifyRegistrationOtp(email: String, otp: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let endpoint = "\(baseURL)/auth/verify-registration-otp"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let body = [
+            "email": email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+            "otp": otp.trimmingCharacters(in: .whitespacesAndNewlines)
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("No response received from server.")))
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: data ?? Data(), options: [])) as? [String: Any] ?? [:]
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    completion(.success(json))
+                } else {
+                    let errMsg = self.parseErrorMessage(from: json, statusCode: httpResponse.statusCode)
+                    completion(.failure(.serverError(errMsg, httpResponse.statusCode)))
+                }
+            }
+        }.resume()
+    }
+
     // MARK: - User Profile
     func getProfile(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         guard let token = getToken() else {
