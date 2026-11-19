@@ -1188,6 +1188,8 @@ public class HomeActivity extends AppCompatActivity {
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_notifications)
+                    .setLargeIcon(android.graphics.BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                    .setColor(android.graphics.Color.parseColor("#0056FD"))
                     .setContentTitle(title)
                     .setContentText(message)
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(message))

@@ -23,7 +23,13 @@ class ForgotPasswordViewController: UIViewController {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
-        iv.image = UIImage(named: "splash_logo") ?? UIImage(named: "Splash")
+        if let img = UIImage(named: "splash_logo") {
+            iv.image = img
+        } else if let path = Bundle.main.path(forResource: "splash_logo", ofType: "png"), let img = UIImage(contentsOfFile: path) {
+            iv.image = img
+        } else {
+            iv.image = UIImage(named: "Splash")
+        }
         return iv
     }()
 

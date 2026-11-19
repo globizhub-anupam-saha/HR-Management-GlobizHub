@@ -166,6 +166,7 @@ public class AppNotificationManager {
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(appCtx, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_notifications)
+                    .setLargeIcon(android.graphics.BitmapFactory.decodeResource(appCtx.getResources(), R.mipmap.ic_launcher))
                     .setColor(Color.parseColor("#0056FD"))
                     .setContentTitle(title)
                     .setContentText(message)
