@@ -409,7 +409,6 @@ model CompanySettings {
   enableGps            Boolean  @default(true)
   enableWifi           Boolean  @default(false)
   enableMockLocation   Boolean  @default(true) // Block fake GPS apps
-  requireSelfie        Boolean  @default(false)
   oneDevicePerEmployee Boolean  @default(true)
   allowMultiPunch      Boolean  @default(false) // When false (e.g. IT 9-5), prevents second clock-in after checkout
   enableSplitShifts    Boolean  @default(false) // Enables multi-session split shifts

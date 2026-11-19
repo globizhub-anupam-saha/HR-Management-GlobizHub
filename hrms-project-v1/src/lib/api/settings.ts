@@ -17,7 +17,6 @@ export interface CompanySettings {
   enableGps?: boolean;
   enableWifi?: boolean;
   enableMockLocation?: boolean;
-  requireSelfie?: boolean;
   oneDevicePerEmployee?: boolean;
   allowMultiPunch?: boolean;
   enableSplitShifts?: boolean;

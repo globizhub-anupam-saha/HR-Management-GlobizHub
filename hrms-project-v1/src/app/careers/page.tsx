@@ -36,7 +36,7 @@ import {
 
 const API_URL = API_BASE_URL;
 
-export default function GlobizhubCareersMarketplace() {
+export default function GlobizHRCareersMarketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCompanySlug, setSelectedCompanySlug] = useState("ALL");
   const [selectedWorkplace, setSelectedWorkplace] = useState("ALL");
@@ -76,7 +76,7 @@ export default function GlobizhubCareersMarketplace() {
             </div>
             <div className="flex flex-col">
               <span className="font-black text-lg tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Globizhub Careers
+                GlobizHR Careers
               </span>
               <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider -mt-1">
                 Verified Talent Marketplace
@@ -107,7 +107,7 @@ export default function GlobizhubCareersMarketplace() {
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
-            Explore verified job opportunities published directly by trusted companies on the Globizhub platform. No middleman, direct application.
+            Explore verified job opportunities published directly by trusted companies on the GlobizHR platform. No middleman, direct application.
           </p>
 
           {/* Search & Filter Bar */}
@@ -165,7 +165,7 @@ export default function GlobizhubCareersMarketplace() {
             <div>
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-primary" />
-                Verified Employers on Globizhub
+                Verified Employers on GlobizHR
               </h2>
               <p className="text-xs text-muted-foreground">
                 Browse companies actively hiring and click to view their dedicated career page.
@@ -368,7 +368,7 @@ export default function GlobizhubCareersMarketplace() {
       <footer className="border-t py-8 px-4 bg-muted/20 text-center text-xs text-muted-foreground">
         <div className="container mx-auto max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-medium">
-            &copy; {new Date().getFullYear()} Globizhub Careers. Verified Corporate Recruitment Marketplace.
+            &copy; {new Date().getFullYear()} GlobizHR Careers. Verified Corporate Recruitment Marketplace.
           </span>
           <div className="flex items-center gap-4 text-muted-foreground">
             <Link href="/careers" className="hover:text-foreground">Browse Jobs</Link>

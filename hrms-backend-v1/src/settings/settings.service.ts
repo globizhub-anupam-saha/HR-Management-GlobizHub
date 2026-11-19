@@ -18,7 +18,6 @@ const ALLOWED_SETTINGS_FIELDS = new Set([
   'enableGps',
   'enableWifi',
   'enableMockLocation',
-  'requireSelfie',
   'oneDevicePerEmployee',
   'allowMultiPunch',
   'enableSplitShifts',

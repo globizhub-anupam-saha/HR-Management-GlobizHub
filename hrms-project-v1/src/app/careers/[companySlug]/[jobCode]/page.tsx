@@ -77,7 +77,7 @@ export default function PublicJobDetailsPage({
           <Briefcase className="w-12 h-12 text-muted-foreground/40 mx-auto" />
           <h2 className="text-xl font-bold">Position Not Found</h2>
           <p className="text-xs text-muted-foreground max-w-sm">
-            This vacancy is either closed or no longer actively published on Globizhub Careers.
+            This vacancy is either closed or no longer actively published on GlobizHR Careers.
           </p>
           <Link href="/careers">
             <Button size="sm" variant="outline">
@@ -301,7 +301,7 @@ export default function PublicJobDetailsPage({
       {/* Footer */}
       <footer className="border-t py-8 px-4 bg-muted/20 text-center text-xs text-muted-foreground mt-auto">
         <div className="container mx-auto max-w-4xl flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} Globizhub Careers. Verified Corporate Recruitment.</span>
+          <span>&copy; {new Date().getFullYear()} GlobizHR Careers. Verified Corporate Recruitment.</span>
           <Link href="/careers" className="hover:text-foreground font-medium">
             Browse All Jobs
           </Link>
