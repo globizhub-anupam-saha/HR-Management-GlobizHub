@@ -77,6 +77,10 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
     private let tableView = UITableView()
     private let emptyLabel = UILabel()
 
+    // MARK: - Auto-Hide Bottom Navigation on Scroll Down, Reveal on Scroll Up
+    private var lastScrollOffsetY: CGFloat = 0
+    private var isNavBarHidden: Bool = false
+
     private var allModules: [MoreModule] = []
     private var rolePermittedModules: [MoreModule] = []
     private var filteredModules: [MoreModule] = []
@@ -475,6 +479,8 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         tableView.rowHeight = 52
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.contentInset.bottom = 68
+        tableView.scrollIndicatorInsets.bottom = 68
         tableView.register(MoreModuleCell.self, forCellReuseIdentifier: MoreModuleCell.identifier)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
@@ -497,11 +503,44 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             tableView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor),
             tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             tableView.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
-            tableView.bottomAnchor.constraint(equalTo: bottomNavBar.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let currentY = scrollView.contentOffset.y
+        let dy = currentY - lastScrollOffsetY
+
+        let maxOffset = scrollView.contentSize.height - scrollView.bounds.height
+        guard currentY > 0 && currentY < maxOffset else {
+            lastScrollOffsetY = currentY
+            return
+        }
+
+        if dy > 10 && !isNavBarHidden {
+            setBottomNavBar(hidden: true, animated: true)
+        } else if dy < -10 && isNavBarHidden {
+            setBottomNavBar(hidden: false, animated: true)
+        }
+
+        lastScrollOffsetY = currentY
+    }
+
+    private func setBottomNavBar(hidden: Bool, animated: Bool) {
+        guard isNavBarHidden != hidden else { return }
+        isNavBarHidden = hidden
+
+        let translationY: CGFloat = hidden ? (bottomNavBar.bounds.height > 0 ? bottomNavBar.bounds.height + 34 : 110) : 0
+        if animated {
+            UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .allowUserInteraction], animations: {
+                self.bottomNavBar.transform = CGAffineTransform(translationX: 0, y: translationY)
+            }, completion: nil)
+        } else {
+            self.bottomNavBar.transform = CGAffineTransform(translationX: 0, y: translationY)
+        }
     }
 
     @objc private func searchTextChanged(_ textField: UITextField) {

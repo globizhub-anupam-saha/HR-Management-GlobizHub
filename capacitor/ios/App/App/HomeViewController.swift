@@ -2,7 +2,7 @@ import UIKit
 import UserNotifications
 import AVFoundation
 
-class HomeViewController: UIViewController {
+class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - UI Elements
 
@@ -396,6 +396,7 @@ class HomeViewController: UIViewController {
 
     private func setupScrollView() {
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.delegate = self
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
 
@@ -425,10 +426,10 @@ class HomeViewController: UIViewController {
             scrollView.topAnchor.constraint(equalTo: topBar.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -60),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -92),
             contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
 
@@ -1888,6 +1889,43 @@ class HomeViewController: UIViewController {
             tf.dateFormat = "hh:mm a"
             let inStr = (checkInDate != nil) ? tf.string(from: checkInDate!) : "09:12 AM"
             heatmapDetailHoursLabel.text = "Clock In: \(inStr)  •  Clock Out: In Progress"
+        }
+    }
+
+    // MARK: - Auto-Hide Bottom Navigation on Scroll Down, Reveal on Scroll Up
+    private var lastScrollOffsetY: CGFloat = 0
+    private var isNavBarHidden: Bool = false
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let currentY = scrollView.contentOffset.y
+        let dy = currentY - lastScrollOffsetY
+
+        let maxOffset = scrollView.contentSize.height - scrollView.bounds.height
+        guard currentY > 0 && currentY < maxOffset else {
+            lastScrollOffsetY = currentY
+            return
+        }
+
+        if dy > 10 && !isNavBarHidden {
+            setBottomNavBar(hidden: true, animated: true)
+        } else if dy < -10 && isNavBarHidden {
+            setBottomNavBar(hidden: false, animated: true)
+        }
+
+        lastScrollOffsetY = currentY
+    }
+
+    private func setBottomNavBar(hidden: Bool, animated: Bool) {
+        guard isNavBarHidden != hidden else { return }
+        isNavBarHidden = hidden
+
+        let translationY: CGFloat = hidden ? (bottomNavBar.bounds.height > 0 ? bottomNavBar.bounds.height + 34 : 110) : 0
+        if animated {
+            UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .allowUserInteraction], animations: {
+                self.bottomNavBar.transform = CGAffineTransform(translationX: 0, y: translationY)
+            }, completion: nil)
+        } else {
+            self.bottomNavBar.transform = CGAffineTransform(translationX: 0, y: translationY)
         }
     }
 

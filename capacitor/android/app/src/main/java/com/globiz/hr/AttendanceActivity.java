@@ -156,6 +156,7 @@ public class AttendanceActivity extends AppCompatActivity {
         navTabMore = findViewById(R.id.navTabMore);
 
         btnSeeAll.setOnClickListener(v -> showFilterOptionsDialog());
+        NavBarScrollHelper.attachToScrollView(findViewById(R.id.scrollViewAttendance), findViewById(R.id.bottomNavBar));
     }
 
     private void setupTopBar() {

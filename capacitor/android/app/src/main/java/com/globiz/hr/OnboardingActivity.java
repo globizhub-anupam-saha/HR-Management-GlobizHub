@@ -44,7 +44,16 @@ public class OnboardingActivity extends AppCompatActivity {
         setupLinks();
 
         btnSignIn.setOnClickListener(v -> {
+            getSharedPreferences("globiz_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("has_completed_onboarding", true).apply();
             Intent intent = new Intent(OnboardingActivity.this, SignInActivity.class);
+            startActivity(intent);
+        });
+
+        tvSignUpPrompt.setOnClickListener(v -> {
+            getSharedPreferences("globiz_prefs", MODE_PRIVATE).edit()
+                    .putBoolean("has_completed_onboarding", true).apply();
+            Intent intent = new Intent(OnboardingActivity.this, SignUpActivity.class);
             startActivity(intent);
         });
     }

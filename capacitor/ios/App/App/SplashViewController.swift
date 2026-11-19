@@ -87,13 +87,6 @@ class SplashViewController: UIViewController {
         hasNavigated = true
 
         let nextVC: UIViewController
-        #if targetEnvironment(simulator)
-        if !AuthService.shared.isLoggedIn {
-            AuthService.shared.saveAuth(token: AuthService.defaultValidToken, email: "sealmanash7@gmail.com", role: "EMPLOYEE")
-            AuthService.shared.saveUserProfile(firstName: "Sealmanash", designation: "Operations & Tech Lead", organization: "GlobizHub Technologies")
-        }
-        nextVC = HomeViewController()
-        #else
         if AuthService.shared.isLoggedIn {
             nextVC = HomeViewController()
         } else if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
@@ -101,7 +94,6 @@ class SplashViewController: UIViewController {
         } else {
             nextVC = OnboardingViewController()
         }
-        #endif
 
         if let window = self.view.window ?? UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
             UIView.transition(with: window, duration: 0.40, options: .transitionCrossDissolve, animations: {

@@ -1,6 +1,6 @@
 import UIKit
 
-class LeaveViewController: UIViewController {
+class LeaveViewController: UIViewController, UIScrollViewDelegate {
 
     private let topBar = UIView()
     private let topBarContainer = UIView()
@@ -152,6 +152,7 @@ class LeaveViewController: UIViewController {
     private func setupScrollView() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsVerticalScrollIndicator = false
+        scrollView.delegate = self
         view.addSubview(scrollView)
 
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -170,10 +171,10 @@ class LeaveViewController: UIViewController {
             scrollView.topAnchor.constraint(equalTo: topBar.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -64),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -92),
             contentView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
             contentView.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
 
@@ -374,6 +375,43 @@ class LeaveViewController: UIViewController {
             vStack.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -12)
         ])
         return box
+    }
+
+    // MARK: - Auto-Hide Bottom Navigation on Scroll Down, Reveal on Scroll Up
+    private var lastScrollOffsetY: CGFloat = 0
+    private var isNavBarHidden: Bool = false
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let currentY = scrollView.contentOffset.y
+        let dy = currentY - lastScrollOffsetY
+
+        let maxOffset = scrollView.contentSize.height - scrollView.bounds.height
+        guard currentY > 0 && currentY < maxOffset else {
+            lastScrollOffsetY = currentY
+            return
+        }
+
+        if dy > 10 && !isNavBarHidden {
+            setBottomNavBar(hidden: true, animated: true)
+        } else if dy < -10 && isNavBarHidden {
+            setBottomNavBar(hidden: false, animated: true)
+        }
+
+        lastScrollOffsetY = currentY
+    }
+
+    private func setBottomNavBar(hidden: Bool, animated: Bool) {
+        guard isNavBarHidden != hidden else { return }
+        isNavBarHidden = hidden
+
+        let translationY: CGFloat = hidden ? (bottomNavBar.bounds.height > 0 ? bottomNavBar.bounds.height + 34 : 110) : 0
+        if animated {
+            UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseInOut, .allowUserInteraction], animations: {
+                self.bottomNavBar.transform = CGAffineTransform(translationX: 0, y: translationY)
+            }, completion: nil)
+        } else {
+            self.bottomNavBar.transform = CGAffineTransform(translationX: 0, y: translationY)
+        }
     }
 
     // MARK: - Bottom Navigation Bar Setup

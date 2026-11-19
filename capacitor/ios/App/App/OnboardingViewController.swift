@@ -105,6 +105,9 @@ class OnboardingViewController: UIViewController, UIScrollViewDelegate {
         scrollView.delegate = self
         setupViews()
         signInButton.addTarget(self, action: #selector(didTapSignIn), for: .touchUpInside)
+
+        signUpLabel.isUserInteractionEnabled = true
+        signUpLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapSignUp)))
     }
 
     override func viewDidLayoutSubviews() {
@@ -212,9 +215,18 @@ class OnboardingViewController: UIViewController, UIScrollViewDelegate {
     }
 
     @objc private func didTapSignIn() {
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         let signInVC = SignInViewController()
         signInVC.modalPresentationStyle = .fullScreen
         signInVC.modalTransitionStyle = .crossDissolve
         present(signInVC, animated: true, completion: nil)
+    }
+
+    @objc private func didTapSignUp() {
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+        let signUpVC = SignUpViewController()
+        signUpVC.modalPresentationStyle = .fullScreen
+        signUpVC.modalTransitionStyle = .crossDissolve
+        present(signUpVC, animated: true, completion: nil)
     }
 }

@@ -23,6 +23,7 @@ public class LeaveActivity extends AppCompatActivity {
 
         setupBottomNav();
         setupListeners();
+        NavBarScrollHelper.attachToScrollView(findViewById(R.id.scrollView), findViewById(R.id.bottomNavBar));
     }
 
     @Override

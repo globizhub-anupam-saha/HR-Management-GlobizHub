@@ -83,14 +83,16 @@ public class SplashActivity extends AppCompatActivity {
         Intent intent;
         if (ApiClient.getInstance(SplashActivity.this).isLoggedIn()) {
             intent = new Intent(SplashActivity.this, HomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         } else {
-            ApiClient client = ApiClient.getInstance(SplashActivity.this);
-            client.saveToken(ApiClient.DEFAULT_VALID_TOKEN, "sealmanash7@gmail.com", "EMPLOYEE");
-            client.saveUserProfile("Charles", "Developer", "acmecorp");
-            intent = new Intent(SplashActivity.this, HomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            boolean hasCompletedOnboarding = getSharedPreferences("globiz_prefs", MODE_PRIVATE)
+                    .getBoolean("has_completed_onboarding", false);
+            if (hasCompletedOnboarding) {
+                intent = new Intent(SplashActivity.this, SignInActivity.class);
+            } else {
+                intent = new Intent(SplashActivity.this, OnboardingActivity.class);
+            }
         }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);

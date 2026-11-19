@@ -97,6 +97,7 @@ public class MoreActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         rvModules = findViewById(R.id.rvModules);
         tvNoModules = findViewById(R.id.tvNoModules);
+        NavBarScrollHelper.attachToRecyclerView(rvModules, findViewById(R.id.bottomNavBar));
     }
 
     private void initModules() {

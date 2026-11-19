@@ -313,6 +313,7 @@ public class HomeActivity extends AppCompatActivity {
         TabletHelper.applyTabletConstraint(findViewById(R.id.topBarHomeContent));
         TabletHelper.applyTabletConstraint(findViewById(R.id.homeContentContainer));
         TabletHelper.applyTabletConstraint(findViewById(R.id.bottomNavHomeContent));
+        NavBarScrollHelper.attachToScrollView(findViewById(R.id.scrollView), findViewById(R.id.bottomNavBar));
 
         // Top Bar
         btnNotifications = findViewById(R.id.btnNotifications);
