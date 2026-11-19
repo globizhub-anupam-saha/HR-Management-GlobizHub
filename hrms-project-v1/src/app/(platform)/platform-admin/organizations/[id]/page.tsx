@@ -640,8 +640,8 @@ export default function OrganizationDetailsPage({
               <p className="text-foreground font-semibold mt-0.5">{security.settings?.allowedRadiusMeters || 100} Meters</p>
             </div>
             <div className="p-3 rounded-xl bg-background border border-border">
-              <span className="text-muted-foreground text-[10px] uppercase font-semibold">Mandatory Selfie Clock-In</span>
-              <p className="text-foreground font-semibold mt-0.5">{security.settings?.requireSelfie ? "Enabled" : "Disabled"}</p>
+              <span className="text-muted-foreground text-[10px] uppercase font-semibold">One Device Per Employee</span>
+              <p className="text-foreground font-semibold mt-0.5">{security.settings?.oneDevicePerEmployee ? "Enforced" : "Flexible"}</p>
             </div>
             <div className="p-3 rounded-xl bg-background border border-border">
               <span className="text-muted-foreground text-[10px] uppercase font-semibold">Session Timeout</span>

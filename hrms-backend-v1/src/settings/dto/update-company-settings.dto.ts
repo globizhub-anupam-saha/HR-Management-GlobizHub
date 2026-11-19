@@ -71,10 +71,6 @@ export class UpdateCompanySettingsDto {
 
   @IsBoolean()
   @IsOptional()
-  requireSelfie?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   oneDevicePerEmployee?: boolean;
 
   @IsBoolean()

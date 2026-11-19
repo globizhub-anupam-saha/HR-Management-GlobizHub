@@ -611,7 +611,7 @@ export default function CandidateApplicationPage({
       {/* Footer */}
       <footer className="border-t py-6 px-4 bg-muted/20 text-center text-xs text-muted-foreground mt-auto">
         <div className="container mx-auto max-w-4xl flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} Globizhub Careers. Direct Corporate Recruitment.</span>
+          <span>&copy; {new Date().getFullYear()} GlobizHR Careers. Direct Corporate Recruitment.</span>
           <Link href="/careers" className="hover:text-foreground">
             Marketplace Home
           </Link>

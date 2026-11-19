@@ -58,14 +58,14 @@ export default function CompanyCareerPage({
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/careers" className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" />
-            Back to Globizhub Careers Marketplace
+            Back to GlobizHR Careers Marketplace
           </Link>
 
           <Link href="/careers" className="flex items-center gap-2 group">
             <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground text-xs font-black">
               G
             </div>
-            <span className="font-bold text-sm text-foreground">Globizhub Careers</span>
+            <span className="font-bold text-sm text-foreground">GlobizHR Careers</span>
           </Link>
         </div>
       </header>
@@ -80,7 +80,7 @@ export default function CompanyCareerPage({
           <Building2 className="w-12 h-12 text-muted-foreground/40 mx-auto" />
           <h2 className="text-xl font-bold">Company Not Found</h2>
           <p className="text-xs text-muted-foreground max-w-sm">
-            This company is either not registered or not currently verified to post recruitment advertisements on Globizhub.
+            This company is either not registered or not currently verified to post recruitment advertisements on GlobizHR.
           </p>
           <Link href="/careers">
             <Button size="sm" variant="outline">
@@ -243,7 +243,7 @@ export default function CompanyCareerPage({
       {/* Footer */}
       <footer className="border-t py-8 px-4 bg-muted/20 text-center text-xs text-muted-foreground mt-auto">
         <div className="container mx-auto max-w-4xl flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} {company?.name || "Company"}. Powered by Globizhub HRMS.</span>
+          <span>&copy; {new Date().getFullYear()} {company?.name || "Company"}. Powered by GlobizHR.</span>
           <Link href="/careers" className="hover:text-foreground font-medium">
             Browse All Companies
           </Link>

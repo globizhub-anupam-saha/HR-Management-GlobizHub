@@ -160,7 +160,7 @@ export default function OnboardingPage() {
       const user = profileRes.data;
       setCurrentUser(user);
 
-      const isHrOrAdmin = ["SUPER_ADMIN", "OWNER", "HR_HEAD", "MANAGER"].includes(user.role);
+      const isHrOrAdmin = ["SUPER_ADMIN", "ADMIN", "OWNER", "HR_HEAD", "MANAGER"].includes(user.role);
 
       if (isHrOrAdmin) {
         // Fetch HR Cases & Templates
