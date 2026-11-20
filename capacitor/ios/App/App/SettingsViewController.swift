@@ -22,6 +22,7 @@ class SettingsViewController: UIViewController {
     private let profileNameLabel = UILabel()
     private let profileEmailLabel = UILabel()
     private let viewProfileButton = UIButton(type: .custom)
+    private let roleButton = UIButton(type: .system)
 
     private let companyNameLabel = UILabel()
 
@@ -237,14 +238,29 @@ class SettingsViewController: UIViewController {
         viewProfileButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
         viewProfileButton.backgroundColor = .black
         viewProfileButton.layer.cornerRadius = 18
-        viewProfileButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20)
+        viewProfileButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
         viewProfileButton.translatesAutoresizingMaskIntoConstraints = false
+
+        updateRoleButtonTitle()
+        roleButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+        roleButton.setTitleColor(UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), for: .normal)
+        roleButton.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+        roleButton.layer.cornerRadius = 16
+        roleButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)
+        roleButton.addTarget(self, action: #selector(handleSwitchRole), for: .touchUpInside)
+        roleButton.translatesAutoresizingMaskIntoConstraints = false
+
+        let buttonRow = UIStackView(arrangedSubviews: [viewProfileButton, roleButton])
+        buttonRow.axis = .horizontal
+        buttonRow.spacing = 8
+        buttonRow.alignment = .center
+        buttonRow.translatesAutoresizingMaskIntoConstraints = false
 
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.heightAnchor.constraint(equalToConstant: 8).isActive = true
         rightColumn.addArrangedSubview(spacer)
-        rightColumn.addArrangedSubview(viewProfileButton)
+        rightColumn.addArrangedSubview(buttonRow)
 
         NSLayoutConstraint.activate([
             avatarContainer.leadingAnchor.constraint(equalTo: profileCard.leadingAnchor, constant: 20),
@@ -680,5 +696,47 @@ class SettingsViewController: UIViewController {
                 }
             }
         }.resume()
+    }
+
+    private func updateRoleButtonTitle() {
+        let role = AuthService.shared.getRole()
+        let userRole = UserRole.from(string: role)
+        roleButton.setTitle("Role: \(userRole.displayName) ▾", for: .normal)
+    }
+
+    @objc private func handleSwitchRole() {
+        let sheet = UIAlertController(title: "Select Active Role", message: "Choose a role to test role-specific modules and navigation tabs.", preferredStyle: .actionSheet)
+
+        sheet.addAction(UIAlertAction(title: "Employee", style: .default, handler: { [weak self] _ in
+            AuthService.shared.saveRole("EMPLOYEE")
+            self?.updateRoleButtonTitle()
+            self?.showRoleSwitchedToast("Employee")
+        }))
+
+        sheet.addAction(UIAlertAction(title: "Admin", style: .default, handler: { [weak self] _ in
+            AuthService.shared.saveRole("ADMIN")
+            self?.updateRoleButtonTitle()
+            self?.showRoleSwitchedToast("Admin")
+        }))
+
+        sheet.addAction(UIAlertAction(title: "Super Admin", style: .default, handler: { [weak self] _ in
+            AuthService.shared.saveRole("SUPER_ADMIN")
+            self?.updateRoleButtonTitle()
+            self?.showRoleSwitchedToast("Super Admin")
+        }))
+
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = roleButton
+            popover.sourceRect = roleButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func showRoleSwitchedToast(_ roleName: String) {
+        let alert = UIAlertController(title: "Active Role Updated", message: "Switched to \(roleName). App navigation tabs and More modules have been synchronized.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

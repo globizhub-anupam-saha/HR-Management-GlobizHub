@@ -29,6 +29,7 @@ public class TasksActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        BottomNavHelper.setupBottomNav(this, "tasks");
         AppHeaderHelper.refreshHeaderState(this);
     }
 
@@ -58,48 +59,6 @@ public class TasksActivity extends AppCompatActivity {
     }
 
     private void setupBottomNav() {
-        View navTabHome = findViewById(R.id.navTabHome);
-        if (navTabHome != null) {
-            navTabHome.setOnClickListener(v -> {
-                Intent intent = new Intent(this, HomeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-            });
-        }
-
-        View navTabAttendance = findViewById(R.id.navTabAttendance);
-        if (navTabAttendance != null) {
-            navTabAttendance.setOnClickListener(v -> {
-                Intent intent = new Intent(this, AttendanceActivity.class);
-                startActivity(intent);
-                finish();
-            });
-        }
-
-        View navTabLeave = findViewById(R.id.navTabLeave);
-        if (navTabLeave != null) {
-            navTabLeave.setOnClickListener(v -> {
-                Intent intent = new Intent(this, LeaveActivity.class);
-                startActivity(intent);
-                finish();
-            });
-        }
-
-        View navTabTasks = findViewById(R.id.navTabTasks);
-        if (navTabTasks != null) {
-            navTabTasks.setOnClickListener(v -> {
-                ScrollView sv = findViewById(R.id.scrollView);
-                if (sv != null) sv.smoothScrollTo(0, 0);
-            });
-        }
-
-        View navTabMore = findViewById(R.id.navTabMore);
-        if (navTabMore != null) {
-            navTabMore.setOnClickListener(v -> {
-                Intent intent = new Intent(this, MoreActivity.class);
-                startActivity(intent);
-            });
-        }
+        BottomNavHelper.setupBottomNav(this, "tasks");
     }
 }

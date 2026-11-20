@@ -77,6 +77,7 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setupBottomNavBar()
         updateNotificationBadge()
         updateAttendanceState()
 
@@ -622,28 +623,13 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         bottomNavBar.layer.shadowOffset = CGSize(width: 0, height: -2)
         bottomNavBar.layer.shadowRadius = 8
         bottomNavBar.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(bottomNavBar)
+        if bottomNavBar.superview == nil {
+            view.addSubview(bottomNavBar)
+        }
 
         bottomNavContainer.translatesAutoresizingMaskIntoConstraints = false
-        bottomNavBar.addSubview(bottomNavContainer)
-
-        let navStack = UIStackView()
-        navStack.axis = .horizontal
-        navStack.distribution = .fillEqually
-        navStack.translatesAutoresizingMaskIntoConstraints = false
-        bottomNavContainer.addSubview(navStack)
-
-        let tabs: [(icon: String, title: String, isActive: Bool)] = [
-            ("house", "Home", false),
-            ("clock.fill", "Attendance", true),
-            ("calendar", "Leave", false),
-            ("checklist", "Tasks", false),
-            ("ellipsis", "More", false)
-        ]
-
-        for (index, tab) in tabs.enumerated() {
-            let tabView = makeNavTab(icon: tab.icon, title: tab.title, isActive: tab.isActive, tag: index)
-            navStack.addArrangedSubview(tabView)
+        if bottomNavContainer.superview == nil {
+            bottomNavBar.addSubview(bottomNavContainer)
         }
 
         let navWidth = bottomNavContainer.widthAnchor.constraint(equalTo: bottomNavBar.widthAnchor)
@@ -659,13 +645,18 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             bottomNavContainer.topAnchor.constraint(equalTo: bottomNavBar.topAnchor),
             bottomNavContainer.centerXAnchor.constraint(equalTo: bottomNavBar.centerXAnchor),
             bottomNavContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
-            bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-
-            navStack.topAnchor.constraint(equalTo: bottomNavContainer.topAnchor, constant: 4),
-            navStack.leadingAnchor.constraint(equalTo: bottomNavContainer.leadingAnchor),
-            navStack.trailingAnchor.constraint(equalTo: bottomNavContainer.trailingAnchor),
-            navStack.bottomAnchor.constraint(equalTo: bottomNavContainer.bottomAnchor, constant: -8)
+            bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
+
+        RoleNavigationManager.setupBottomNavBar(
+            in: self,
+            navBar: bottomNavBar,
+            container: bottomNavContainer,
+            activeTabId: "attendance",
+            scrollHandler: { [weak self] in
+                self?.scrollView.setContentOffset(.zero, animated: true)
+            }
+        )
     }
 
     private func makeNavTab(icon: String, title: String, isActive: Bool, tag: Int) -> UIView {

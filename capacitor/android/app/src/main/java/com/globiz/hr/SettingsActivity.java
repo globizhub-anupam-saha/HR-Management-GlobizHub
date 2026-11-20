@@ -134,6 +134,14 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "Profile view", Toast.LENGTH_SHORT).show();
         });
 
+        View btnSwitchRole = findViewById(R.id.btnSwitchRole);
+        TextView tvRoleBadge = findViewById(R.id.tvRoleBadge);
+        updateRoleBadge(tvRoleBadge);
+
+        if (btnSwitchRole != null) {
+            btnSwitchRole.setOnClickListener(v -> showRoleSwitcherDialog(tvRoleBadge));
+        }
+
         findViewById(R.id.btnRefresh).setOnClickListener(v -> {
             loadProfileData();
             Toast.makeText(this, "Settings refreshed", Toast.LENGTH_SHORT).show();
@@ -250,6 +258,29 @@ public class SettingsActivity extends AppCompatActivity {
             } catch (Exception ignored) {
             }
         });
+    }
+
+    private void updateRoleBadge(TextView tvRoleBadge) {
+        if (tvRoleBadge == null) return;
+        UserRole currentRole = UserRole.fromString(apiClient.getRole());
+        tvRoleBadge.setText(currentRole.getDisplayName());
+    }
+
+    private void showRoleSwitcherDialog(TextView tvRoleBadge) {
+        String[] roles = {"Employee", "Admin", "Super Admin"};
+        new AlertDialog.Builder(this)
+                .setTitle("Select Active Role")
+                .setItems(roles, (dialog, which) -> {
+                    String selectedRole = "EMPLOYEE";
+                    if (which == 1) selectedRole = "ADMIN";
+                    else if (which == 2) selectedRole = "SUPER_ADMIN";
+
+                    apiClient.saveRole(selectedRole);
+                    updateRoleBadge(tvRoleBadge);
+                    Toast.makeText(this, "Active role updated to " + roles[which] + ". App navigation and modules synchronized.", Toast.LENGTH_LONG).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void confirmSignOut() {

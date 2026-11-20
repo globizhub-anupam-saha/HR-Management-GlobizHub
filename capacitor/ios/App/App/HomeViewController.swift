@@ -229,6 +229,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setupBottomNavBar()
         scrollView.setContentOffset(.zero, animated: false)
 
         // Reset attendance UI to prevent stale timer carryover when switching accounts
@@ -1880,31 +1881,15 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         bottomNavBar.layer.shadowOffset = CGSize(width: 0, height: -2)
         bottomNavBar.layer.shadowRadius = 6
         bottomNavBar.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(bottomNavBar)
-
-        bottomNavContainer.translatesAutoresizingMaskIntoConstraints = false
-        bottomNavBar.addSubview(bottomNavContainer)
-
-        let navStack = UIStackView()
-        navStack.axis = .horizontal
-        navStack.distribution = .fillEqually
-        navStack.translatesAutoresizingMaskIntoConstraints = false
-        bottomNavContainer.addSubview(navStack)
-
-        let tabs = [
-            ("house.fill", "Home", true),
-            ("clock", "Attendance", false),
-            ("calendar", "Leave", false),
-            ("checkmark.square", "Tasks", false),
-            ("ellipsis", "More", false)
-        ]
-
-        for (idx, tab) in tabs.enumerated() {
-            let tabView = makeNavTab(icon: tab.0, title: tab.1, isActive: tab.2, tag: idx)
-            navStack.addArrangedSubview(tabView)
+        if bottomNavBar.superview == nil {
+            view.addSubview(bottomNavBar)
         }
 
-        // Tablet centering for bottom navigation bar
+        bottomNavContainer.translatesAutoresizingMaskIntoConstraints = false
+        if bottomNavContainer.superview == nil {
+            bottomNavBar.addSubview(bottomNavContainer)
+        }
+
         let navWidth = bottomNavContainer.widthAnchor.constraint(equalTo: bottomNavBar.widthAnchor)
         navWidth.priority = UILayoutPriority(999)
         navWidth.isActive = true
@@ -1918,13 +1903,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             bottomNavContainer.topAnchor.constraint(equalTo: bottomNavBar.topAnchor),
             bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             bottomNavContainer.centerXAnchor.constraint(equalTo: bottomNavBar.centerXAnchor),
-            bottomNavContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
-
-            navStack.topAnchor.constraint(equalTo: bottomNavContainer.topAnchor, constant: 4),
-            navStack.leadingAnchor.constraint(equalTo: bottomNavContainer.leadingAnchor),
-            navStack.trailingAnchor.constraint(equalTo: bottomNavContainer.trailingAnchor),
-            navStack.bottomAnchor.constraint(equalTo: bottomNavContainer.bottomAnchor, constant: -8)
+            bottomNavContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 680)
         ])
+
+        RoleNavigationManager.setupBottomNavBar(
+            in: self,
+            navBar: bottomNavBar,
+            container: bottomNavContainer,
+            activeTabId: "home",
+            scrollHandler: { [weak self] in
+                self?.scrollView.setContentOffset(.zero, animated: true)
+            }
+        )
     }
 
     private func makeNavTab(icon: String, title: String, isActive: Bool, tag: Int) -> UIView {
@@ -2580,6 +2570,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
                 if let userRole = user["role"] as? String, !userRole.isEmpty {
                     AuthService.shared.saveRole(userRole)
+                    self.setupBottomNavBar()
                 }
                 if let desigDict = user["designation"] as? [String: Any],
                    let modules = desigDict["sidebarModules"] as? [String] {

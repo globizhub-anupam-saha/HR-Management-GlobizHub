@@ -116,6 +116,7 @@ public class AttendanceActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        BottomNavHelper.setupBottomNav(this, "attendance");
         updateNotificationBadge();
         updateAttendanceState();
         tickerHandler.post(tickerRunnable);
@@ -218,33 +219,7 @@ public class AttendanceActivity extends AppCompatActivity {
     }
 
     private void setupBottomNav() {
-        navTabHome.setOnClickListener(v -> {
-            startActivity(new Intent(this, HomeActivity.class));
-            overridePendingTransition(0, 0);
-            finish();
-        });
-
-        navTabAttendance.setOnClickListener(v -> {
-            // Current tab
-        });
-
-        navTabLeave.setOnClickListener(v -> {
-            startActivity(new Intent(this, LeaveActivity.class));
-            overridePendingTransition(0, 0);
-            finish();
-        });
-
-        navTabTasks.setOnClickListener(v -> {
-            startActivity(new Intent(this, TasksActivity.class));
-            overridePendingTransition(0, 0);
-            finish();
-        });
-
-        navTabMore.setOnClickListener(v -> {
-            startActivity(new Intent(this, MoreActivity.class));
-            overridePendingTransition(0, 0);
-            finish();
-        });
+        BottomNavHelper.setupBottomNav(this, "attendance");
     }
 
     private void setupBannerActions() {

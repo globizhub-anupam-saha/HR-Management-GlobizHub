@@ -45,12 +45,14 @@ public class MoreActivity extends AppCompatActivity {
         filterModulesByRole();
         setupSearch();
         setupListeners();
+        BottomNavHelper.setupBottomNav(this, "more");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         AppHeaderHelper.refreshHeaderState(this);
+        BottomNavHelper.setupBottomNav(this, "more");
         filterModulesByRole();
 
         // Real-time synchronization of currently logged-in user profile & role modules
@@ -119,17 +121,24 @@ public class MoreActivity extends AppCompatActivity {
     }
 
     private void filterModulesByRole() {
-        String role = ApiClient.getInstance(this).getRole();
+        String roleStr = ApiClient.getInstance(this).getRole();
+        UserRole role = UserRole.fromString(roleStr);
         List<String> sidebarModules = ApiClient.getInstance(this).getSidebarModules();
         rolePermittedModules.clear();
 
+        List<BottomNavHelper.NavItem> navItems = BottomNavHelper.getNavItemsForRole(role);
+        List<String> navBarIds = new ArrayList<>();
+        for (BottomNavHelper.NavItem item : navItems) {
+            navBarIds.add(item.id.toLowerCase());
+        }
+
         for (MoreModule module : allModules) {
-            String id = module.getId();
-            // Primary tabs are already displayed on the bottom navigation bar
-            if ("attendance".equals(id) || "leave".equals(id) || "tasks".equals(id)) {
+            String id = module.getId().toLowerCase();
+            // Primary tabs for this role are already displayed on the bottom navigation bar
+            if (navBarIds.contains(id)) {
                 continue;
             }
-            if (module.isAllowedForRoleAndModules(role, sidebarModules)) {
+            if (module.isAllowedForRoleAndModules(roleStr, sidebarModules)) {
                 rolePermittedModules.add(module);
             }
         }
@@ -250,7 +259,11 @@ public class MoreActivity extends AppCompatActivity {
         } else if ("leave_policies".equals(module.getId())) {
             showLeavePoliciesDialog();
         } else if ("leave_approvals".equals(module.getId())) {
-            showLeaveApprovalsDialog();
+            BottomNavHelper.showApprovalsDialog(this);
+        } else if ("employees".equals(module.getId())) {
+            BottomNavHelper.showEmployeesDialog(this);
+        } else if ("payroll".equals(module.getId())) {
+            BottomNavHelper.showPayrollDialog(this);
         } else if ("attendance".equals(module.getId())) {
             startActivity(new Intent(this, AttendanceActivity.class));
         } else if ("leave".equals(module.getId())) {

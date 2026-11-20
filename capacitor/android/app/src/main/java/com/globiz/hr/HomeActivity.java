@@ -233,6 +233,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        BottomNavHelper.setupBottomNav(this, "home");
         if (isInitialLoad) {
             showSkeletonLoading();
             isInitialLoad = false;
@@ -793,48 +794,8 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
-        View navTabHome = findViewById(R.id.navTabHome);
-        if (navTabHome != null) {
-            navTabHome.setOnClickListener(v -> {
-                ScrollView sv = findViewById(R.id.scrollView);
-                if (sv != null) {
-                    sv.smoothScrollTo(0, 0);
-                }
-            });
-        }
-
-        View navTabAttendance = findViewById(R.id.navTabAttendance);
-        if (navTabAttendance != null) {
-            navTabAttendance.setOnClickListener(v -> {
-                Intent intent = new Intent(HomeActivity.this, AttendanceActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        View navTabLeave = findViewById(R.id.navTabLeave);
-        if (navTabLeave != null) {
-            navTabLeave.setOnClickListener(v -> {
-                Intent intent = new Intent(HomeActivity.this, LeaveActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        View navTabTasks = findViewById(R.id.navTabTasks);
-        if (navTabTasks != null) {
-            navTabTasks.setOnClickListener(v -> {
-                Intent intent = new Intent(HomeActivity.this, TasksActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        View navTabMore = findViewById(R.id.navTabMore);
-        if (navTabMore != null) {
-            navTabMore.setOnClickListener(v -> {
-                Intent intent = new Intent(this, MoreActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_up_in, android.R.anim.fade_out);
-            });
-        }
+        // Setup role-based dynamic bottom navigation bar
+        BottomNavHelper.setupBottomNav(this, "home");
     }
 
     private void showTeamRosterDialog() {
@@ -1220,6 +1181,7 @@ public class HomeActivity extends AppCompatActivity {
                     String userRole = user.optString("role", "");
                     if (!userRole.isEmpty()) {
                         apiClient.saveRole(userRole);
+                        runOnUiThread(() -> BottomNavHelper.setupBottomNav(HomeActivity.this, "home"));
                     }
                 }
                 if (user.has("designation") && user.opt("designation") instanceof JSONObject) {

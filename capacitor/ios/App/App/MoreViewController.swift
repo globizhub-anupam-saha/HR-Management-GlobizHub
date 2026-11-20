@@ -103,6 +103,7 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setupBottomNavBar()
         filterModulesByRole()
         updateHeaderState()
         updateNotificationBadge()
@@ -177,9 +178,13 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
 
     private func filterModulesByRole() {
         let role = AuthService.shared.getRole()
+        let userRole = UserRole.from(string: role)
         let sidebarModules = AuthService.shared.getSidebarModules()
+        let navItems = RoleNavigationManager.getNavItems(for: userRole)
+        let navBarIds = Set(navItems.map { $0.id.lowercased() })
+
         rolePermittedModules = allModules.filter { module in
-            if module.id == "attendance" || module.id == "leave" || module.id == "tasks" {
+            if navBarIds.contains(module.id.lowercased()) {
                 return false
             }
             return module.isAllowed(for: role, sidebarModules: sidebarModules)
@@ -317,28 +322,13 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         bottomNavBar.layer.shadowOffset = CGSize(width: 0, height: -2)
         bottomNavBar.layer.shadowRadius = 6
         bottomNavBar.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(bottomNavBar)
+        if bottomNavBar.superview == nil {
+            view.addSubview(bottomNavBar)
+        }
 
         bottomNavContainer.translatesAutoresizingMaskIntoConstraints = false
-        bottomNavBar.addSubview(bottomNavContainer)
-
-        let navStack = UIStackView()
-        navStack.axis = .horizontal
-        navStack.distribution = .fillEqually
-        navStack.translatesAutoresizingMaskIntoConstraints = false
-        bottomNavContainer.addSubview(navStack)
-
-        let tabs = [
-            ("house", "Home", false),
-            ("clock", "Attendance", false),
-            ("calendar", "Leave", false),
-            ("checkmark.square", "Tasks", false),
-            ("ellipsis", "More", true)
-        ]
-
-        for (idx, tab) in tabs.enumerated() {
-            let item = makeNavItem(icon: tab.0, title: tab.1, isSelected: tab.2, tag: idx)
-            navStack.addArrangedSubview(item)
+        if bottomNavContainer.superview == nil {
+            bottomNavBar.addSubview(bottomNavContainer)
         }
 
         let navWidth = bottomNavContainer.widthAnchor.constraint(equalTo: bottomNavBar.widthAnchor)
@@ -354,13 +344,18 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             bottomNavContainer.topAnchor.constraint(equalTo: bottomNavBar.topAnchor),
             bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             bottomNavContainer.centerXAnchor.constraint(equalTo: bottomNavBar.centerXAnchor),
-            bottomNavContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
-
-            navStack.topAnchor.constraint(equalTo: bottomNavContainer.topAnchor, constant: 4),
-            navStack.leadingAnchor.constraint(equalTo: bottomNavContainer.leadingAnchor),
-            navStack.trailingAnchor.constraint(equalTo: bottomNavContainer.trailingAnchor),
-            navStack.bottomAnchor.constraint(equalTo: bottomNavContainer.bottomAnchor, constant: -8)
+            bottomNavContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 680)
         ])
+
+        RoleNavigationManager.setupBottomNavBar(
+            in: self,
+            navBar: bottomNavBar,
+            container: bottomNavContainer,
+            activeTabId: "more",
+            scrollHandler: { [weak self] in
+                self?.tableView.setContentOffset(.zero, animated: true)
+            }
+        )
     }
 
     private func makeNavItem(icon: String, title: String, isSelected: Bool, tag: Int) -> UIView {
@@ -595,7 +590,11 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         } else if module.id == "leave_policies" {
             showLeavePoliciesAlert()
         } else if module.id == "leave_approvals" {
-            showLeaveApprovalsAlert()
+            RoleNavigationManager.showApprovalsAlert(from: self)
+        } else if module.id == "employees" {
+            RoleNavigationManager.showEmployeesAlert(from: self)
+        } else if module.id == "payroll" {
+            RoleNavigationManager.showPayrollAlert(from: self)
         } else if module.id == "attendance" {
             let attendanceVC = AttendanceViewController()
             attendanceVC.modalPresentationStyle = .fullScreen
