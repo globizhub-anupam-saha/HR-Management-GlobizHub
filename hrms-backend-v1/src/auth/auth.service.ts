@@ -708,7 +708,7 @@ export class AuthService {
       this.logger.log(
         `Completed background bulk invite processing for company ${companyId}`,
       );
-    } catch (_err: any) {
+    } catch (err: any) {
       this.logger.error(
         `Background bulk invite worker error for company ${companyId}: ${err?.message}`,
         err?.stack,
@@ -779,7 +779,7 @@ export class AuthService {
             };
           }
         }
-      } catch (_err: any) {
+      } catch {
         // Fall through to Employee lookup
       }
     }
