@@ -245,6 +245,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        AppHeaderHelper.applyWindowInsets(this);
         BottomNavHelper.setupBottomNav(this, "home");
         if (isInitialLoad) {
             showSkeletonLoading();

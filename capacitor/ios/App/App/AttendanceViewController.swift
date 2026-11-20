@@ -41,6 +41,7 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
 
     // State Variables
     struct HistoryItem {
+        var rawDate: Date? = nil
         let dateDisplay: String
         let timeRange: String
         let location: String
@@ -93,9 +94,6 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
                 if let eDate = inFmt.date(from: end) {
                     let endStr = endFmt.string(from: eDate).lowercased()
                     AuthService.shared.saveShiftEndTime(endStr)
-                    DispatchQueue.main.async {
-                        self.summaryClockOutLabel.text = endStr
-                    }
                 }
             }
         }
@@ -769,14 +767,18 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
                 if let inDate = isoParser.date(from: inIso) {
                     summaryClockInLabel.text = displayFmt.string(from: inDate).lowercased()
                 } else {
-                    summaryClockInLabel.text = "09:00am"
+                    summaryClockInLabel.text = "--:--"
                 }
             } else {
-                summaryClockInLabel.text = "09:00am"
+                summaryClockInLabel.text = "--:--"
             }
 
-            summaryBreakLabel.text = "12:00pm"
-            summaryClockOutLabel.text = AuthService.shared.getShiftEndTime()
+            if let breakTime = AuthService.shared.getLastBreakTimeStr() {
+                summaryBreakLabel.text = breakTime
+            } else {
+                summaryBreakLabel.text = "--:--"
+            }
+            summaryClockOutLabel.text = "--:--"
         } else {
             clockActionLabel.text = "Clock In"
             clockActionBtn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
@@ -792,8 +794,23 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             } else {
                 summaryClockInLabel.text = "--:--"
             }
-            summaryBreakLabel.text = "12:00pm"
-            summaryClockOutLabel.text = AuthService.shared.getShiftEndTime()
+
+            if let breakTime = AuthService.shared.getLastBreakTimeStr() {
+                summaryBreakLabel.text = breakTime
+            } else {
+                summaryBreakLabel.text = "--:--"
+            }
+
+            if let outIso = AuthService.shared.getLocalCheckOutIso() {
+                let isoParser = ISO8601DateFormatter()
+                if let outDate = isoParser.date(from: outIso) {
+                    summaryClockOutLabel.text = displayFmt.string(from: outDate).lowercased()
+                } else {
+                    summaryClockOutLabel.text = "--:--"
+                }
+            } else {
+                summaryClockOutLabel.text = "--:--"
+            }
         }
     }
 
@@ -806,10 +823,10 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
                     if !records.isEmpty {
                         self.parseHistoryRecords(records)
                     } else {
-                        self.populateDefaultReferenceHistory()
+                        self.historyItems.removeAll()
                     }
                 case .failure:
-                    self.populateDefaultReferenceHistory()
+                    self.historyItems.removeAll()
                 }
                 self.renderHistoryList()
             }
@@ -837,11 +854,11 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             if let clockInRaw = clockInRaw, let inDate = apiFmt.date(from: clockInRaw) {
                 let dateDisplay = formatOrdinalDate(inDate)
                 let inRange = rangeFmt.string(from: inDate).uppercased()
-                var outRange = "3:00PM"
+                var outRange = "--:--"
                 let inSummary = summaryFmt.string(from: inDate).lowercased()
-                var outSummary = "05:00pm"
+                var outSummary = "--:--"
 
-                if let clockOutRaw = clockOutRaw, let outDate = apiFmt.date(from: clockOutRaw) {
+                if let clockOutRaw = clockOutRaw, !clockOutRaw.isEmpty, clockOutRaw.lowercased() != "null", let outDate = apiFmt.date(from: clockOutRaw) {
                     outRange = rangeFmt.string(from: outDate).uppercased()
                     outSummary = summaryFmt.string(from: outDate).lowercased()
                 }
@@ -849,32 +866,20 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
                 let computedStatus = calculateStatusFromTime(inDate)
 
                 historyItems.append(HistoryItem(
+                    rawDate: inDate,
                     dateDisplay: dateDisplay,
                     timeRange: "\(inRange) - \(outRange)",
                     location: location,
                     status: computedStatus,
                     clockIn: inSummary,
                     clockOut: outSummary,
-                    breakTime: "12:00pm"
+                    breakTime: "--:--"
                 ))
             }
         }
 
-        if historyItems.isEmpty {
-            populateDefaultReferenceHistory()
-        }
-    }
-
-    private func populateDefaultReferenceHistory() {
-        let sysLoc = getSystemLocation()
-        // Connected to in-built company system with Early, On Time, and Late schedules
-        historyItems = [
-            HistoryItem(dateDisplay: "13th May, 2025", timeRange: "7:30AM - 3:00PM", location: sysLoc, status: "EARLY", clockIn: "08:45am", clockOut: "05:00pm", breakTime: "12:00pm"),
-            HistoryItem(dateDisplay: "12th May, 2025", timeRange: "9:02AM - 5:15PM", location: sysLoc, status: "ON_TIME", clockIn: "09:02am", clockOut: "05:15pm", breakTime: "12:00pm"),
-            HistoryItem(dateDisplay: "11th May, 2025", timeRange: "7:45AM - 3:30PM", location: sysLoc, status: "EARLY", clockIn: "08:50am", clockOut: "05:05pm", breakTime: "12:00pm"),
-            HistoryItem(dateDisplay: "10th May, 2025", timeRange: "9:25AM - 5:30PM", location: sysLoc, status: "LATE", clockIn: "09:25am", clockOut: "05:30pm", breakTime: "12:00pm"),
-            HistoryItem(dateDisplay: "9th May, 2025", timeRange: "9:35AM - 5:45PM", location: sysLoc, status: "LATE", clockIn: "09:35am", clockOut: "05:45pm", breakTime: "12:00pm")
-        ]
+        // Sort descending: Today, Yesterday, and continuing before
+        historyItems.sort { ($0.rawDate ?? Date.distantPast) > ($1.rawDate ?? Date.distantPast) }
     }
 
     private func prependLiveHistoryItem(clockIn: String) {
@@ -885,14 +890,16 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         rangeFmt.dateFormat = "h:mma"
         let inRange = rangeFmt.string(from: now).uppercased()
 
+        let breakStr = AuthService.shared.getLastBreakTimeStr() ?? "--:--"
         let newItem = HistoryItem(
+            rawDate: now,
             dateDisplay: todayDisplay,
             timeRange: "\(inRange) - In Progress",
             location: getSystemLocation(),
             status: liveStatus,
             clockIn: clockIn,
             clockOut: "--:--",
-            breakTime: "12:00pm"
+            breakTime: breakStr
         )
         historyItems.insert(newItem, at: 0)
         renderHistoryList()
@@ -907,6 +914,7 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             let inRange = first.timeRange.contains("-") ? first.timeRange.components(separatedBy: "-")[0].trimmingCharacters(in: .whitespaces) : "9:00AM"
 
             historyItems[0] = HistoryItem(
+                rawDate: first.rawDate,
                 dateDisplay: first.dateDisplay,
                 timeRange: "\(inRange) - \(outRange)",
                 location: first.location,
@@ -922,7 +930,22 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
     private func renderHistoryList() {
         historyStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        let count = isExpanded ? historyItems.count : min(5, historyItems.count)
+        if historyItems.isEmpty {
+            let emptyLabel = UILabel()
+            emptyLabel.text = "No attendance history recorded yet"
+            emptyLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+            emptyLabel.font = .systemFont(ofSize: 14, weight: .medium)
+            emptyLabel.textAlignment = .center
+            emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+            historyStackView.addArrangedSubview(emptyLabel)
+            emptyLabel.heightAnchor.constraint(equalToConstant: 60).isActive = true
+            seeAllButton.isHidden = true
+            return
+        }
+
+        let count = isExpanded ? min(30, historyItems.count) : min(7, historyItems.count)
+        seeAllButton.isHidden = historyItems.count <= 7
+        seeAllButton.setTitle(isExpanded ? "Show 7 Days" : "See All >", for: .normal)
 
         for i in 0..<count {
             let item = historyItems[i]
@@ -934,8 +957,6 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             let rowCard = makeHistoryRow(item: item)
             historyStackView.addArrangedSubview(rowCard)
         }
-
-        seeAllButton.setTitle(isExpanded ? "Show Less" : "See All >", for: .normal)
     }
 
     private func makeHistoryRow(item: HistoryItem) -> UIView {
@@ -1145,32 +1166,8 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
     }
 
     @objc private func didTapSeeAll() {
-        let alert = UIAlertController(title: "Attendance History", message: "Select view filter", preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Show All Records", style: .default, handler: { [weak self] _ in
-            self?.currentFilter = "ALL"
-            self?.isExpanded = true
-            self?.renderHistoryList()
-        }))
-        alert.addAction(UIAlertAction(title: "Filter: Early Punches", style: .default, handler: { [weak self] _ in
-            self?.currentFilter = "EARLY"
-            self?.isExpanded = true
-            self?.renderHistoryList()
-        }))
-        alert.addAction(UIAlertAction(title: "Filter: On Time Punches", style: .default, handler: { [weak self] _ in
-            self?.currentFilter = "ON_TIME"
-            self?.isExpanded = true
-            self?.renderHistoryList()
-        }))
-        alert.addAction(UIAlertAction(title: "Filter: Late Punches", style: .default, handler: { [weak self] _ in
-            self?.currentFilter = "LATE"
-            self?.isExpanded = true
-            self?.renderHistoryList()
-        }))
-        alert.addAction(UIAlertAction(title: "Request Regularization", style: .default, handler: { [weak self] _ in
-            self?.showRegularizationAlert()
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(alert, animated: true)
+        isExpanded.toggle()
+        renderHistoryList()
     }
 
     private func showRegularizationAlert() {

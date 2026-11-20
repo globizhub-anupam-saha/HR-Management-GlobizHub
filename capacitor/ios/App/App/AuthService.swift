@@ -193,6 +193,19 @@ class AuthService {
         UserDefaults.standard.synchronize()
     }
 
+    func getLastBreakTimeStr() -> String? {
+        let sessions = getLocalBreakSessions()
+        if let last = sessions.last, let start = last["start"] {
+            let isoParser = ISO8601DateFormatter()
+            if let date = isoParser.date(from: start) {
+                let fmt = DateFormatter()
+                fmt.dateFormat = "hh:mma"
+                return fmt.string(from: date).lowercased()
+            }
+        }
+        return nil
+    }
+
     func getLocalAttendanceStatus() -> String {
         return UserDefaults.standard.string(forKey: userScopedKey(localAttendanceStatusKey)) ?? "CLOCKED_OUT"
     }

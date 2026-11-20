@@ -156,6 +156,7 @@ public class AppHeaderHelper {
 
         Window window = activity.getWindow();
         if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(Color.WHITE);
@@ -174,10 +175,10 @@ public class AppHeaderHelper {
         // Apply immediately so there is never a flash of overlapping header during activity transition
         applyInsetsToViews(activity, initialStatusHeight, initialNavHeight);
 
-        // Listen on root content frame to capture real dynamic camera cutouts & gesture bar insets
-        View rootView = activity.findViewById(android.R.id.content);
-        if (rootView != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
+        // Listen on decorView to capture real dynamic camera cutouts & gesture bar insets
+        View decorView = activity.getWindow() != null ? activity.getWindow().getDecorView() : null;
+        if (decorView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(decorView, (v, insets) -> {
                 Insets statusInsets = insets.getInsets(
                         WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.displayCutout()
                 );
@@ -189,16 +190,16 @@ public class AppHeaderHelper {
                 applyInsetsToViews(activity, topInset, bottomInset);
                 return insets;
             });
-            ViewCompat.requestApplyInsets(rootView);
+            ViewCompat.requestApplyInsets(decorView);
         }
     }
 
     private static void applyInsetsToViews(AppCompatActivity activity, int topInset, int bottomInset) {
         if (activity == null) return;
 
-        // 1. Status Bar Inset: Locks topBar to (64dp + topInset).
-        // topBarContent has height=64dp and layout_alignParentBottom=true,
-        // so the topInset area is pure blank whitespace behind the system status bar/punch hole.
+        // 1. Status Bar Inset: Locks topBar to (64dp + topInset) and applies topInset as padding.
+        // This guarantees that the topInset region is pure white background behind the system status bar/punch hole,
+        // and child elements (GLOBIZHR text, titles, avatars, notification icons) start safely below the status bar.
         View topBar = activity.findViewById(R.id.topBar);
         if (topBar == null) topBar = activity.findViewById(R.id.settingsTopBar);
         if (topBar == null) topBar = activity.findViewById(R.id.notificationsTopBar);
@@ -212,6 +213,8 @@ public class AppHeaderHelper {
                 lp.height = originalHeight + topInset;
                 topBar.setLayoutParams(lp);
             }
+            topBar.setPadding(0, topInset, 0, 0);
+            topBar.requestLayout();
         }
 
         // 2. Navigation Bar Inset: Lifts the bottom navigation bar comfortably up for thumbs & gesture bar

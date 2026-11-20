@@ -7,6 +7,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -26,6 +28,7 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -75,6 +78,7 @@ public class AttendanceActivity extends AppCompatActivity {
     };
 
     public static class AttendanceItem {
+        public Date rawDate;
         public String dateDisplay;     // e.g. "13th May, 2025"
         public String timeRange;       // e.g. "7:30AM - 3:00PM"
         public String location;        // e.g. "GlobizHub HQ" / "Acme Corp • HQ"
@@ -83,7 +87,8 @@ public class AttendanceActivity extends AppCompatActivity {
         public String clockOut;        // e.g. "05:00pm"
         public String breakTime;       // e.g. "12:00pm"
 
-        public AttendanceItem(String dateDisplay, String timeRange, String location, String status, String clockIn, String clockOut, String breakTime) {
+        public AttendanceItem(Date rawDate, String dateDisplay, String timeRange, String location, String status, String clockIn, String clockOut, String breakTime) {
+            this.rawDate = rawDate;
             this.dateDisplay = dateDisplay;
             this.timeRange = timeRange;
             this.location = location;
@@ -91,6 +96,10 @@ public class AttendanceActivity extends AppCompatActivity {
             this.clockIn = clockIn;
             this.clockOut = clockOut;
             this.breakTime = breakTime;
+        }
+
+        public AttendanceItem(String dateDisplay, String timeRange, String location, String status, String clockIn, String clockOut, String breakTime) {
+            this(null, dateDisplay, timeRange, location, status, clockIn, clockOut, breakTime);
         }
     }
 
@@ -137,11 +146,6 @@ public class AttendanceActivity extends AppCompatActivity {
                             if (eDate != null) {
                                 String endStr = endFmt.format(eDate).toLowerCase();
                                 client.saveShiftEndTime(endStr);
-                                runOnUiThread(() -> {
-                                    if (tvSummaryClockOut != null) {
-                                        tvSummaryClockOut.setText(endStr);
-                                    }
-                                });
                             }
                         } catch (Exception ignored) {}
                     }
@@ -188,7 +192,10 @@ public class AttendanceActivity extends AppCompatActivity {
         navTabTasks = findViewById(R.id.navTabTasks);
         navTabMore = findViewById(R.id.navTabMore);
 
-        btnSeeAll.setOnClickListener(v -> showFilterOptionsDialog());
+        btnSeeAll.setOnClickListener(v -> {
+            isAllExpanded = !isAllExpanded;
+            renderHistoryList();
+        });
         NavBarScrollHelper.attachToScrollView(findViewById(R.id.scrollViewAttendance), findViewById(R.id.bottomNavBar));
     }
 
@@ -283,45 +290,77 @@ public class AttendanceActivity extends AppCompatActivity {
             tvClockActionText.setTextColor(Color.parseColor("#16A34A"));
             btnClockAction.setBackgroundResource(R.drawable.bg_break_pill);
 
-            // Clock in time from saved ISO
+            // Clock In: Real-time check-in time
             String inIso = client.getLocalCheckInIso();
             if (inIso != null) {
                 try {
                     SimpleDateFormat isoParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
                     Date inDate = isoParser.parse(inIso);
                     if (inDate != null) {
-                        tvSummaryClockIn.setText(displayFmt.format(inDate).toLowerCase());
+                        tvSummaryClockIn.setText(displayFmt.format(inDate).toLowerCase(Locale.US));
+                    } else {
+                        tvSummaryClockIn.setText("--:--");
                     }
                 } catch (Exception e) {
-                    tvSummaryClockIn.setText("09:00am");
+                    tvSummaryClockIn.setText("--:--");
                 }
             } else {
-                tvSummaryClockIn.setText("09:00am");
+                tvSummaryClockIn.setText("--:--");
             }
 
-            tvSummaryBreak.setText(client.isOnBreak() ? "In Break" : "12:00pm");
-            tvSummaryClockOut.setText(client.getShiftEndTime());
+            // Break: show exact time clicked if taken, otherwise "--:--"
+            String breakTime = client.getLastBreakTimeStr();
+            if (breakTime != null && !breakTime.isEmpty()) {
+                tvSummaryBreak.setText(breakTime);
+            } else if (client.isOnBreak()) {
+                tvSummaryBreak.setText("In Break");
+            } else {
+                tvSummaryBreak.setText("--:--");
+            }
+
+            // Shift End: "--:--" while shift is in progress
+            tvSummaryClockOut.setText("--:--");
         } else {
             tvClockActionText.setText("Clock In");
             tvClockActionText.setTextColor(Color.WHITE);
             btnClockAction.setBackgroundResource(R.drawable.bg_pill_blue_button);
 
             String inIso = client.getLocalCheckInIso();
-
             if (inIso != null) {
                 try {
                     SimpleDateFormat isoParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
                     Date inDate = isoParser.parse(inIso);
                     if (inDate != null) {
-                        tvSummaryClockIn.setText(displayFmt.format(inDate).toLowerCase());
+                        tvSummaryClockIn.setText(displayFmt.format(inDate).toLowerCase(Locale.US));
+                    } else {
+                        tvSummaryClockIn.setText("--:--");
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    tvSummaryClockIn.setText("--:--");
+                }
             } else {
                 tvSummaryClockIn.setText("--:--");
             }
 
-            tvSummaryBreak.setText("12:00pm");
-            tvSummaryClockOut.setText(client.getShiftEndTime());
+            String breakTime = client.getLastBreakTimeStr();
+            tvSummaryBreak.setText(breakTime != null && !breakTime.isEmpty() ? breakTime : "--:--");
+
+            String outIso = client.getLocalCheckOutIso();
+            if (outIso != null) {
+                try {
+                    SimpleDateFormat isoParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+                    Date outDate = isoParser.parse(outIso);
+                    if (outDate != null) {
+                        tvSummaryClockOut.setText(displayFmt.format(outDate).toLowerCase(Locale.US));
+                    } else {
+                        tvSummaryClockOut.setText("--:--");
+                    }
+                } catch (Exception ignored) {
+                    tvSummaryClockOut.setText("--:--");
+                }
+            } else {
+                tvSummaryClockOut.setText("--:--");
+            }
         }
     }
 
@@ -335,14 +374,14 @@ public class AttendanceActivity extends AppCompatActivity {
                 if (response != null && response.length() > 0) {
                     parseHistoryJson(response);
                 } else {
-                    populateDefaultReferenceHistory();
+                    historyItems.clear();
                 }
                 runOnUiThread(AttendanceActivity.this::renderHistoryList);
             }
 
             @Override
             public void onError(String error, int statusCode) {
-                populateDefaultReferenceHistory();
+                historyItems.clear();
                 runOnUiThread(AttendanceActivity.this::renderHistoryList);
             }
         });
@@ -373,11 +412,11 @@ public class AttendanceActivity extends AppCompatActivity {
                     if (inDate != null) {
                         String dateDisplay = formatOrdinalDate(inDate);
                         String inRange = rangeTimeFmt.format(inDate).toUpperCase();
-                        String outRange = "3:00PM";
+                        String outRange = "--:--";
                         String inSummary = summaryTimeFmt.format(inDate).toLowerCase();
-                        String outSummary = "05:00pm";
+                        String outSummary = "--:--";
 
-                        if (clockOutRaw != null) {
+                        if (clockOutRaw != null && !clockOutRaw.isEmpty() && !"null".equalsIgnoreCase(clockOutRaw)) {
                             Date outDate = apiDateFmt.parse(clockOutRaw);
                             if (outDate != null) {
                                 outRange = rangeTimeFmt.format(outDate).toUpperCase();
@@ -389,34 +428,27 @@ public class AttendanceActivity extends AppCompatActivity {
                         String computedStatus = calculateStatusFromTime(inDate);
 
                         historyItems.add(new AttendanceItem(
+                                inDate,
                                 dateDisplay,
                                 inRange + " - " + outRange,
                                 loc,
                                 computedStatus,
                                 inSummary,
                                 outSummary,
-                                "12:00pm"
+                                "--:--"
                         ));
                     }
                 }
             } catch (Exception ignored) {}
         }
 
-        if (historyItems.isEmpty()) {
-            populateDefaultReferenceHistory();
-        }
-    }
-
-    private void populateDefaultReferenceHistory() {
-        historyItems.clear();
-        String sysLoc = getSystemLocation();
-
-        // Connected to in-built company system with dynamic Early, On Time, and Late schedules
-        historyItems.add(new AttendanceItem("13th May, 2025", "7:30AM - 3:00PM", sysLoc, "EARLY", "08:45am", "05:00pm", "12:00pm"));
-        historyItems.add(new AttendanceItem("12th May, 2025", "9:02AM - 5:15PM", sysLoc, "ON_TIME", "09:02am", "05:15pm", "12:00pm"));
-        historyItems.add(new AttendanceItem("11th May, 2025", "7:45AM - 3:30PM", sysLoc, "EARLY", "08:50am", "05:05pm", "12:00pm"));
-        historyItems.add(new AttendanceItem("10th May, 2025", "9:25AM - 5:30PM", sysLoc, "LATE", "09:25am", "05:30pm", "12:00pm"));
-        historyItems.add(new AttendanceItem("9th May, 2025", "9:35AM - 5:45PM", sysLoc, "LATE", "09:35am", "05:45pm", "12:00pm"));
+        // Sort descending: Today, Yesterday, and continuing before
+        Collections.sort(historyItems, (a, b) -> {
+            if (a.rawDate != null && b.rawDate != null) {
+                return b.rawDate.compareTo(a.rawDate);
+            }
+            return 0;
+        });
     }
 
     private void prependLiveHistoryItem(String clockIn) {
@@ -427,14 +459,16 @@ public class AttendanceActivity extends AppCompatActivity {
         SimpleDateFormat rangeTimeFmt = new SimpleDateFormat("h:mma", Locale.US);
         String inRange = rangeTimeFmt.format(now).toUpperCase();
 
+        String breakTime = ApiClient.getInstance(this).getLastBreakTimeStr();
         AttendanceItem newItem = new AttendanceItem(
+                now,
                 todayDisplay,
                 inRange + " - In Progress",
                 getSystemLocation(),
                 liveStatus,
                 clockIn,
                 "--:--",
-                "12:00pm"
+                breakTime != null ? breakTime : "--:--"
         );
         historyItems.add(0, newItem);
         renderHistoryList();
@@ -457,7 +491,22 @@ public class AttendanceActivity extends AppCompatActivity {
         llAttendanceHistoryList.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
 
-        int maxCount = isAllExpanded ? historyItems.size() : Math.min(5, historyItems.size());
+        if (historyItems.isEmpty()) {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("No attendance history recorded yet");
+            tvEmpty.setTextColor(Color.parseColor("#94A3B8"));
+            tvEmpty.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            tvEmpty.setGravity(Gravity.CENTER);
+            int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32, getResources().getDisplayMetrics());
+            tvEmpty.setPadding(0, pad, 0, pad);
+            llAttendanceHistoryList.addView(tvEmpty);
+            btnSeeAll.setVisibility(View.GONE);
+            return;
+        }
+
+        int maxCount = isAllExpanded ? Math.min(30, historyItems.size()) : Math.min(7, historyItems.size());
+        btnSeeAll.setVisibility(historyItems.size() > 7 ? View.VISIBLE : View.GONE);
+        btnSeeAll.setText(isAllExpanded ? "Show 7 Days" : "See All >");
 
         for (int i = 0; i < maxCount; i++) {
             AttendanceItem item = historyItems.get(i);
@@ -507,8 +556,6 @@ public class AttendanceActivity extends AppCompatActivity {
 
             llAttendanceHistoryList.addView(row);
         }
-
-        btnSeeAll.setText(isAllExpanded ? "Show Less" : "See All >");
     }
 
     private String calculateStatusFromTime(Date inDate) {

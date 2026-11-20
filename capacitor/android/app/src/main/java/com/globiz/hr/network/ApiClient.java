@@ -42,6 +42,7 @@ public class ApiClient {
     private static final String KEY_ATTENDANCE_STATUS = "current_attendance_status";
     private static final String KEY_IS_ON_BREAK = "is_on_break";
     private static final String KEY_BREAK_START = "break_start_iso";
+    private static final String KEY_LAST_BREAK_TIME_STR = "last_break_time_str";
 
     private static ApiClient instance;
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -232,6 +233,7 @@ public class ApiClient {
         prefs.edit()
                 .putString(userScopedKey(KEY_LAST_CHECK_IN), isoTimestamp)
                 .remove(userScopedKey(KEY_LAST_CHECK_OUT))
+                .remove(userScopedKey(KEY_LAST_BREAK_TIME_STR))
                 .putString(userScopedKey(KEY_ATTENDANCE_STATUS), "CHECKED_IN")
                 .apply();
     }
@@ -313,10 +315,28 @@ public class ApiClient {
 
     public void saveBreakState(boolean onBreak, String breakStartIso) {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit()
+        SharedPreferences.Editor editor = prefs.edit()
                 .putBoolean(KEY_IS_ON_BREAK, onBreak)
-                .putString(KEY_BREAK_START, breakStartIso != null ? breakStartIso : "")
-                .apply();
+                .putString(KEY_BREAK_START, breakStartIso != null ? breakStartIso : "");
+        if (breakStartIso != null && !breakStartIso.isEmpty()) {
+            try {
+                SimpleDateFormat isoParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+                Date d = isoParser.parse(breakStartIso);
+                if (d != null) {
+                    SimpleDateFormat displayFmt = new SimpleDateFormat("hh:mma", Locale.US);
+                    editor.putString(userScopedKey(KEY_LAST_BREAK_TIME_STR), displayFmt.format(d).toLowerCase(Locale.US));
+                }
+            } catch (Exception e) {
+                SimpleDateFormat displayFmt = new SimpleDateFormat("hh:mma", Locale.US);
+                editor.putString(userScopedKey(KEY_LAST_BREAK_TIME_STR), displayFmt.format(new Date()).toLowerCase(Locale.US));
+            }
+        }
+        editor.apply();
+    }
+
+    public String getLastBreakTimeStr() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(userScopedKey(KEY_LAST_BREAK_TIME_STR), null);
     }
 
     public boolean isOnBreak() {
