@@ -89,6 +89,7 @@ class SplashViewController: UIViewController {
         if let idx = ProcessInfo.processInfo.arguments.firstIndex(of: "-testRole"), idx + 1 < ProcessInfo.processInfo.arguments.count {
             let roleArg = ProcessInfo.processInfo.arguments[idx + 1]
             AuthService.shared.saveRole(roleArg)
+            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
         }
 
         var nextVC: UIViewController

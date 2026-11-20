@@ -38,20 +38,27 @@ struct MoreModule {
     func isAllowed(for roleStr: String, sidebarModules: [String]? = nil) -> Bool {
         let role = UserRole.from(string: roleStr)
 
-        if let modules = sidebarModules, !modules.isEmpty {
-            return modules.contains(id)
-        }
-
         switch role {
         case .superAdmin:
-            return true
+            return id == "attendance"
+                || id == "tasks"
+                || id == "manage_schedules"
+                || id == "leave_policies"
+                || id == "documents_admin"
+                || id == "settings"
+
         case .admin:
-            if id == "settings" || id == "shifts" || id == "schedules" || id == "payslips" {
-                return false
-            }
-            return allowedRoles.contains("ADMIN") || allowedRoles.contains("MANAGER") || allowedRoles.contains("HR_HEAD") || allowedRoles.contains("ALL")
+            return id == "tasks"
+                || id == "manage_schedules"
+                || id == "leave_policies"
+                || id == "payroll"
+                || id == "documents_admin"
+
         case .employee:
-            return allowedRoles.contains("EMPLOYEE") || allowedRoles.contains("ALL")
+            return id == "schedules"
+                || id == "shifts"
+                || id == "payslips"
+                || id == "documents"
         }
     }
 }

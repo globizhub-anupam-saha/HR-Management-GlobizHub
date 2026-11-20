@@ -41,30 +41,31 @@ public class MoreModule {
     public boolean isAllowedForRoleAndModules(String roleStr, List<String> sidebarModules) {
         UserRole role = UserRole.fromString(roleStr);
 
-        if (sidebarModules != null && !sidebarModules.isEmpty()) {
-            return sidebarModules.contains(id);
-        }
-
         switch (role) {
             case SUPER_ADMIN:
-                // Super Admin has unrestricted access to all admin and settings modules
-                return true;
+                // Super Admin has master administration modules in More
+                return "attendance".equals(id)
+                        || "tasks".equals(id)
+                        || "manage_schedules".equals(id)
+                        || "leave_policies".equals(id)
+                        || "documents_admin".equals(id)
+                        || "settings".equals(id);
 
             case ADMIN:
-                // Admin has full management access, but NOT super_admin system configuration or personal-only items
-                if ("settings".equals(id)) return false;
-                if ("shifts".equals(id) || "schedules".equals(id) || "payslips".equals(id)) return false;
-                for (String allowed : allowedRoles) {
-                    if (allowed.equals("ADMIN") || allowed.equals("MANAGER") || allowed.equals("HR_HEAD") || allowed.equals("ALL")) {
-                        return true;
-                    }
-                }
-                return false;
+                // Admin has management and operations modules in More
+                return "tasks".equals(id)
+                        || "manage_schedules".equals(id)
+                        || "leave_policies".equals(id)
+                        || "payroll".equals(id)
+                        || "documents_admin".equals(id);
 
             case EMPLOYEE:
             default:
-                // Employee only has access to personal employee self-service modules
-                return allowedRoles.contains("EMPLOYEE") || allowedRoles.contains("ALL");
+                // Employee only has personal self-service modules in More
+                return "schedules".equals(id)
+                        || "shifts".equals(id)
+                        || "payslips".equals(id)
+                        || "documents".equals(id);
         }
     }
 }

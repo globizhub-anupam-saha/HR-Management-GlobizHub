@@ -276,6 +276,8 @@ public class SettingsActivity extends AppCompatActivity {
                     else if (which == 2) selectedRole = "SUPER_ADMIN";
 
                     apiClient.saveRole(selectedRole);
+                    getSharedPreferences("TeamHub_Role_Override", MODE_PRIVATE)
+                            .edit().putBoolean("is_role_overridden", true).apply();
                     updateRoleBadge(tvRoleBadge);
                     Toast.makeText(this, "Active role updated to " + roles[which] + ". App navigation and modules synchronized.", Toast.LENGTH_LONG).show();
                 })

@@ -709,18 +709,21 @@ class SettingsViewController: UIViewController {
 
         sheet.addAction(UIAlertAction(title: "Employee", style: .default, handler: { [weak self] _ in
             AuthService.shared.saveRole("EMPLOYEE")
+            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
             self?.updateRoleButtonTitle()
             self?.showRoleSwitchedToast("Employee")
         }))
 
         sheet.addAction(UIAlertAction(title: "Admin", style: .default, handler: { [weak self] _ in
             AuthService.shared.saveRole("ADMIN")
+            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
             self?.updateRoleButtonTitle()
             self?.showRoleSwitchedToast("Admin")
         }))
 
         sheet.addAction(UIAlertAction(title: "Super Admin", style: .default, handler: { [weak self] _ in
             AuthService.shared.saveRole("SUPER_ADMIN")
+            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
             self?.updateRoleButtonTitle()
             self?.showRoleSwitchedToast("Super Admin")
         }))

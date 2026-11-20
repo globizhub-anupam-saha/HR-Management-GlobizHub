@@ -1177,7 +1177,8 @@ public class HomeActivity extends AppCompatActivity {
                     organization = "GlobizHub Inc.";
                 }
 
-                if (user.has("role")) {
+                boolean isOverridden = getSharedPreferences("TeamHub_Role_Override", MODE_PRIVATE).getBoolean("is_role_overridden", false);
+                if (!isOverridden && user.has("role")) {
                     String userRole = user.optString("role", "");
                     if (!userRole.isEmpty()) {
                         apiClient.saveRole(userRole);

@@ -60,7 +60,8 @@ public class MoreActivity extends AppCompatActivity {
             @Override
             public void onSuccess(JSONObject user) {
                 if (user == null) return;
-                if (user.has("role")) {
+                boolean isOverridden = getSharedPreferences("TeamHub_Role_Override", MODE_PRIVATE).getBoolean("is_role_overridden", false);
+                if (!isOverridden && user.has("role")) {
                     String userRole = user.optString("role", "");
                     if (!userRole.isEmpty()) {
                         ApiClient.getInstance(MoreActivity.this).saveRole(userRole);

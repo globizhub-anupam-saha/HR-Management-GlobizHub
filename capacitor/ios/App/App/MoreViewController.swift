@@ -113,7 +113,8 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             guard let self = self else { return }
             switch result {
             case .success(let profile):
-                if let userRole = profile["role"] as? String, !userRole.isEmpty {
+                if !UserDefaults.standard.bool(forKey: "isUserManualRoleOverride"),
+                   let userRole = profile["role"] as? String, !userRole.isEmpty {
                     AuthService.shared.saveRole(userRole)
                 }
                 if let desigDict = profile["designation"] as? [String: Any],
@@ -356,6 +357,7 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
                 self?.tableView.setContentOffset(.zero, animated: true)
             }
         )
+        view.bringSubviewToFront(bottomNavBar)
     }
 
     private func makeNavItem(icon: String, title: String, isSelected: Bool, tag: Int) -> UIView {
@@ -503,6 +505,7 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+        view.bringSubviewToFront(bottomNavBar)
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {

@@ -2568,7 +2568,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     companyName = "GlobizHub Inc."
                 }
 
-                if let userRole = user["role"] as? String, !userRole.isEmpty {
+                if !UserDefaults.standard.bool(forKey: "isUserManualRoleOverride"),
+                   let userRole = user["role"] as? String, !userRole.isEmpty {
                     AuthService.shared.saveRole(userRole)
                     self.setupBottomNavBar()
                 }
