@@ -245,6 +245,15 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         rightActionsStack.translatesAutoresizingMaskIntoConstraints = false
         topBarContainer.addSubview(rightActionsStack)
 
+        // Customize Tabs Action Button
+        let customizeConfig = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let customizeButton = UIButton(type: .system)
+        customizeButton.setImage(UIImage(systemName: "slider.horizontal.3", withConfiguration: customizeConfig), for: .normal)
+        customizeButton.tintColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        customizeButton.addTarget(self, action: #selector(openCustomizeTabs), for: .touchUpInside)
+        customizeButton.translatesAutoresizingMaskIntoConstraints = false
+        rightActionsStack.addArrangedSubview(customizeButton)
+
         // Notification Bell with Conditional Red Dot
         let bellConfig = UIImage.SymbolConfiguration(pointSize: 19, weight: .regular)
         notificationBellButton.setImage(UIImage(systemName: "bell", withConfiguration: bellConfig), for: .normal)

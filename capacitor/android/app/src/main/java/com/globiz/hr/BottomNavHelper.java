@@ -33,28 +33,17 @@ public class BottomNavHelper {
     }
 
     public static List<NavItem> getNavItemsForRole(UserRole role) {
+        List<TabManager.TabItem> tabs = TabManager.getDefaultTabsForRole(role);
         List<NavItem> items = new ArrayList<>();
         items.add(new NavItem("home", "Home", R.drawable.ic_nav_home));
-
-        switch (role) {
-            case SUPER_ADMIN:
-                items.add(new NavItem("employees", "Employees", R.drawable.ic_users_group));
-                items.add(new NavItem("approvals", "Approvals", R.drawable.ic_check_circle));
-                items.add(new NavItem("payroll", "Payroll", R.drawable.ic_trend_up));
-                break;
-            case ADMIN:
-                items.add(new NavItem("attendance", "Attendance", R.drawable.ic_attendance));
-                items.add(new NavItem("approvals", "Approvals", R.drawable.ic_check_circle));
-                items.add(new NavItem("employees", "Employees", R.drawable.ic_users_group));
-                break;
-            case EMPLOYEE:
-            default:
-                items.add(new NavItem("attendance", "Attendance", R.drawable.ic_attendance));
-                items.add(new NavItem("leave", "Leave", R.drawable.ic_nav_leave));
-                items.add(new NavItem("tasks", "Tasks", R.drawable.ic_mod_tasks));
-                break;
+        int count = 0;
+        for (TabManager.TabItem item : tabs) {
+            if ("home".equalsIgnoreCase(item.getId())) continue;
+            if (item.isEnabled() && count < 3) {
+                items.add(new NavItem(item.getId(), item.getTitle(), item.getIconResId()));
+                count++;
+            }
         }
-
         items.add(new NavItem("more", "More", R.drawable.ic_nav_more));
         return items;
     }
@@ -62,8 +51,7 @@ public class BottomNavHelper {
     public static void setupBottomNav(Activity activity, String activeTabId) {
         if (activity == null || activity.isFinishing()) return;
 
-        UserRole role = UserRole.fromString(ApiClient.getInstance(activity).getRole());
-        List<NavItem> items = getNavItemsForRole(role);
+        List<NavItem> items = TabManager.getActiveBottomNavTabs(activity);
 
         int[] tabViewIds = new int[] {
                 R.id.navTabHome,
@@ -111,40 +99,69 @@ public class BottomNavHelper {
     public static void handleTabClick(Activity activity, String tabId) {
         if (activity == null || activity.isFinishing()) return;
 
-        if ("home".equalsIgnoreCase(tabId)) {
+        String id = tabId.toLowerCase();
+        if ("home".equals(id)) {
             if (!(activity instanceof HomeActivity)) {
                 Intent intent = new Intent(activity, HomeActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 activity.startActivity(intent);
                 activity.finish();
             }
-        } else if ("attendance".equalsIgnoreCase(tabId)) {
+        } else if ("attendance".equals(id)) {
             if (!(activity instanceof AttendanceActivity)) {
                 activity.startActivity(new Intent(activity, AttendanceActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
-        } else if ("leave".equalsIgnoreCase(tabId)) {
+        } else if ("leave".equals(id)) {
             if (!(activity instanceof LeaveActivity)) {
                 activity.startActivity(new Intent(activity, LeaveActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
-        } else if ("tasks".equalsIgnoreCase(tabId)) {
+        } else if ("tasks".equals(id)) {
             if (!(activity instanceof TasksActivity)) {
                 activity.startActivity(new Intent(activity, TasksActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
-        } else if ("more".equalsIgnoreCase(tabId)) {
+        } else if ("more".equals(id)) {
             if (!(activity instanceof MoreActivity)) {
                 activity.startActivity(new Intent(activity, MoreActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
-        } else if ("employees".equalsIgnoreCase(tabId)) {
+        } else if ("payslips".equals(id)) {
+            activity.startActivity(new Intent(activity, PayslipsActivity.class));
+        } else if ("shifts".equals(id) || "schedules".equals(id) || "manage_schedules".equals(id)) {
+            activity.startActivity(new Intent(activity, ShiftsActivity.class));
+        } else if ("documents".equals(id) || "documents_admin".equals(id)) {
+            activity.startActivity(new Intent(activity, DocumentsActivity.class));
+        } else if ("settings".equals(id)) {
+            activity.startActivity(new Intent(activity, SettingsActivity.class));
+        } else if ("employees".equals(id)) {
             showEmployeesDialog(activity);
-        } else if ("approvals".equalsIgnoreCase(tabId)) {
+        } else if ("approvals".equals(id) || "leave_approvals".equals(id)) {
             showApprovalsDialog(activity);
-        } else if ("payroll".equalsIgnoreCase(tabId)) {
+        } else if ("payroll".equals(id)) {
             showPayrollDialog(activity);
+        } else if ("leave_policies".equals(id)) {
+            showLeavePoliciesDialog(activity);
         }
+    }
+
+    public static void showLeavePoliciesDialog(Activity activity) {
+        if (activity == null || activity.isFinishing()) return;
+        new AlertDialog.Builder(activity)
+                .setTitle("Company Leave Policies")
+                .setMessage("Annual Leave Entitlements:\n\n" +
+                        "• Casual Leave: 12 Days / Year\n" +
+                        "• Medical / Sick Leave: 10 Days / Year\n" +
+                        "• Earned / Annual Leave: 15 Days / Year\n" +
+                        "• Maternity Leave: 84 Days\n" +
+                        "• Paternity Leave: 14 Days\n\n" +
+                        "Rules:\n" +
+                        "1. Applications must be submitted 24h in advance.\n" +
+                        "2. Medical leave beyond 2 days requires a certificate.\n" +
+                        "3. Unused earned leaves carry forward as per company rules.")
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     public static void showEmployeesDialog(Activity activity) {

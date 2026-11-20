@@ -127,7 +127,7 @@ public class MoreActivity extends AppCompatActivity {
         List<String> sidebarModules = ApiClient.getInstance(this).getSidebarModules();
         rolePermittedModules.clear();
 
-        List<BottomNavHelper.NavItem> navItems = BottomNavHelper.getNavItemsForRole(role);
+        List<BottomNavHelper.NavItem> navItems = TabManager.getActiveBottomNavTabs(this);
         List<String> navBarIds = new ArrayList<>();
         for (BottomNavHelper.NavItem item : navItems) {
             navBarIds.add(item.id.toLowerCase());
@@ -135,7 +135,7 @@ public class MoreActivity extends AppCompatActivity {
 
         for (MoreModule module : allModules) {
             String id = module.getId().toLowerCase();
-            // Primary tabs for this role are already displayed on the bottom navigation bar
+            // Modules currently active on the customized bottom navigation bar are excluded from More
             if (navBarIds.contains(id)) {
                 continue;
             }

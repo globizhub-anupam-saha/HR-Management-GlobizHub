@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.globiz.hr.network.ApiClient;
+
 import java.util.List;
 
 public class CustomizeTabsActivity extends AppCompatActivity {
@@ -48,18 +50,20 @@ public class CustomizeTabsActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        List<TabManager.TabItem> tabList = TabManager.getTabs(this);
+        UserRole currentRole = UserRole.fromString(ApiClient.getInstance(this).getRole());
+        List<TabManager.TabItem> tabList = TabManager.getTabs(this, currentRole);
 
         adapter = new CustomizeTabsAdapter(
                 tabList,
                 viewHolder -> {
-                    if (itemTouchHelper != null && viewHolder.getAdapterPosition() >= 2) {
+                    // Only non-locked items (position >= 1) can be dragged
+                    if (itemTouchHelper != null && viewHolder.getAdapterPosition() >= 1) {
                         itemTouchHelper.startDrag(viewHolder);
                     }
                 },
                 () -> {
-                    // Auto-save changes immediately
-                    TabManager.saveTabs(this, adapter.getTabs());
+                    // Auto-save changes immediately for the current role
+                    TabManager.saveTabs(this, currentRole, adapter.getTabs());
                     showUpdateToast();
                 }
         );
@@ -77,7 +81,8 @@ public class CustomizeTabsActivity extends AppCompatActivity {
                 int fromPos = viewHolder.getAdapterPosition();
                 int toPos = target.getAdapterPosition();
 
-                if (fromPos < 2 || toPos < 2) {
+                // Position 0 (Home) is permanently locked
+                if (fromPos == 0 || toPos == 0) {
                     return false;
                 }
                 return adapter.onItemMove(fromPos, toPos);
@@ -91,8 +96,8 @@ public class CustomizeTabsActivity extends AppCompatActivity {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView,
                                         @NonNull RecyclerView.ViewHolder viewHolder) {
-                // First 2 items are locked
-                if (viewHolder.getAdapterPosition() < 2) {
+                // Position 0 (Home) is permanently locked
+                if (viewHolder.getAdapterPosition() == 0) {
                     return makeMovementFlags(0, 0);
                 }
                 return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);

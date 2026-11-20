@@ -85,8 +85,8 @@ public class CustomizeTabsAdapter extends RecyclerView.Adapter<CustomizeTabsAdap
     }
 
     public boolean onItemMove(int fromPosition, int toPosition) {
-        // First 2 items (Activities, Dashboard) are permanently locked and cannot be moved or replaced
-        if (fromPosition < 2 || toPosition < 2) {
+        // Home (position 0) is permanently locked and cannot be moved or replaced
+        if (fromPosition == 0 || toPosition == 0) {
             return false;
         }
 

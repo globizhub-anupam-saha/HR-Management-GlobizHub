@@ -112,7 +112,8 @@ class CustomizeTabsViewController: UIViewController, UITableViewDataSource, UITa
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
-        tabs = TabManager.shared.getTabs()
+        let role = UserRole.from(string: AuthService.shared.getRole())
+        tabs = TabManager.shared.getTabs(for: role)
 
         setupTopBar()
         setupTableView()
@@ -276,7 +277,7 @@ class CustomizeTabsViewController: UIViewController, UITableViewDataSource, UITa
 
         switch gesture.state {
         case .began:
-            guard let indexPath = tableView.indexPathForRow(at: location), indexPath.row >= 2 else { return }
+            guard let indexPath = tableView.indexPathForRow(at: location), indexPath.row >= 1 else { return }
             sourceIndexPath = indexPath
 
             guard let cell = tableView.cellForRow(at: indexPath) else { return }
@@ -304,7 +305,7 @@ class CustomizeTabsViewController: UIViewController, UITableViewDataSource, UITa
             snapshot.center.y = location.y
 
             if let targetIndexPath = tableView.indexPathForRow(at: location),
-               targetIndexPath.row >= 2,
+               targetIndexPath.row >= 1,
                targetIndexPath != source {
 
                 // Reorder items in data model
@@ -340,7 +341,8 @@ class CustomizeTabsViewController: UIViewController, UITableViewDataSource, UITa
                 self.sourceIndexPath = nil
 
                 // Auto-save and show toast
-                TabManager.shared.saveTabs(self.tabs)
+                let role = UserRole.from(string: AuthService.shared.getRole())
+                TabManager.shared.saveTabs(self.tabs, for: role)
                 self.showToast()
             }
 
@@ -384,7 +386,8 @@ class CustomizeTabsViewController: UIViewController, UITableViewDataSource, UITa
                   let currentIndexPath = self.tableView.indexPath(for: cell),
                   currentIndexPath.row < self.tabs.count else { return }
             self.tabs[currentIndexPath.row].isEnabled = isEnabled
-            TabManager.shared.saveTabs(self.tabs)
+            let role = UserRole.from(string: AuthService.shared.getRole())
+            TabManager.shared.saveTabs(self.tabs, for: role)
             self.showToast()
         }
 

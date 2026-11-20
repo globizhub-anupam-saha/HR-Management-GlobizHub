@@ -97,6 +97,8 @@ class SplashViewController: UIViewController {
             nextVC = AttendanceViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteMore") {
             nextVC = MoreViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteCustomizeTabs") {
+            nextVC = CustomizeTabsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteSettings") {
             nextVC = SettingsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteHome") || AuthService.shared.isLoggedIn {

@@ -71,27 +71,7 @@ class RoleNavigationManager {
     }
 
     static func getNavItems(for role: UserRole) -> [NavItem] {
-        var items: [NavItem] = [
-            NavItem(id: "home", title: "Home", systemIcon: "house.fill")
-        ]
-
-        switch role {
-        case .superAdmin:
-            items.append(NavItem(id: "employees", title: "Employees", systemIcon: "person.2"))
-            items.append(NavItem(id: "approvals", title: "Approvals", systemIcon: "calendar.badge.checkmark"))
-            items.append(NavItem(id: "payroll", title: "Payroll", systemIcon: "dollarsign.circle"))
-        case .admin:
-            items.append(NavItem(id: "attendance", title: "Attendance", systemIcon: "clock"))
-            items.append(NavItem(id: "approvals", title: "Approvals", systemIcon: "calendar.badge.checkmark"))
-            items.append(NavItem(id: "employees", title: "Employees", systemIcon: "person.2"))
-        case .employee:
-            items.append(NavItem(id: "attendance", title: "Attendance", systemIcon: "clock"))
-            items.append(NavItem(id: "leave", title: "Leave", systemIcon: "calendar"))
-            items.append(NavItem(id: "tasks", title: "Tasks", systemIcon: "checkmark.square"))
-        }
-
-        items.append(NavItem(id: "more", title: "More", systemIcon: "ellipsis"))
-        return items
+        return TabManager.shared.getActiveBottomNavTabs(for: role)
     }
 
     static func setupBottomNavBar(
@@ -235,7 +215,45 @@ class RoleNavigationManager {
             showApprovalsAlert(from: vc)
         } else if id == "payroll" {
             showPayrollAlert(from: vc)
+        } else if id == "payslips" {
+            let payslipsVC = PayslipsViewController()
+            payslipsVC.modalPresentationStyle = .fullScreen
+            vc.present(payslipsVC, animated: false)
+        } else if id == "shifts" || id == "schedules" || id == "manage_schedules" {
+            let shiftsVC = ShiftsViewController()
+            shiftsVC.modalPresentationStyle = .fullScreen
+            vc.present(shiftsVC, animated: false)
+        } else if id == "documents" || id == "documents_admin" {
+            let docsVC = DocumentsViewController()
+            docsVC.modalPresentationStyle = .fullScreen
+            vc.present(docsVC, animated: false)
+        } else if id == "settings" {
+            let settingsVC = SettingsViewController()
+            settingsVC.modalPresentationStyle = .fullScreen
+            vc.present(settingsVC, animated: false)
+        } else if id == "leave_policies" {
+            showLeavePoliciesAlert(from: vc)
         }
+    }
+
+    static func showLeavePoliciesAlert(from vc: UIViewController) {
+        let msg = """
+        Annual Leave Entitlements:
+
+        • Casual Leave: 12 Days / Year
+        • Medical / Sick Leave: 10 Days / Year
+        • Earned / Annual Leave: 15 Days / Year
+        • Maternity Leave: 84 Days
+        • Paternity Leave: 14 Days
+
+        Rules:
+        1. Applications must be submitted 24h in advance.
+        2. Medical leave beyond 2 days requires a certificate.
+        3. Unused earned leaves carry forward as per company rules.
+        """
+        let alert = UIAlertController(title: "Company Leave Policies", message: msg, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        vc.present(alert, animated: true)
     }
 
     static func showEmployeesAlert(from vc: UIViewController) {
