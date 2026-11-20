@@ -80,6 +80,11 @@ class SettingsViewController: UIViewController {
         headerStack.translatesAutoresizingMaskIntoConstraints = false
         leftStack.addArrangedSubview(headerStack)
 
+        brandSubtitleLabel.text = "GLOBIZHR"
+        brandSubtitleLabel.font = .systemFont(ofSize: 11, weight: .heavy)
+        brandSubtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        headerStack.addArrangedSubview(brandSubtitleLabel)
+
         titleLabel.text = "Settings"
         titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
@@ -171,7 +176,7 @@ class SettingsViewController: UIViewController {
             scrollView.topAnchor.constraint(equalTo: topBar.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
             contentView.leadingAnchor.constraint(greaterThanOrEqualTo: scrollView.leadingAnchor, constant: 16),

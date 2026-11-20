@@ -175,6 +175,11 @@ class NotificationsViewController: UIViewController, UITableViewDataSource, UITa
         headerStack.translatesAutoresizingMaskIntoConstraints = false
         leftStack.addArrangedSubview(headerStack)
 
+        brandSubtitleLabel.text = "GLOBIZHR"
+        brandSubtitleLabel.font = .systemFont(ofSize: 11, weight: .heavy)
+        brandSubtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        headerStack.addArrangedSubview(brandSubtitleLabel)
+
         titleLabel.text = "Notifications"
         titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
@@ -267,13 +272,15 @@ class NotificationsViewController: UIViewController, UITableViewDataSource, UITa
         refreshControl.addTarget(self, action: #selector(handleRefresh(_:)), for: .valueChanged)
         tableView.refreshControl = refreshControl
 
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
+
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor),
             tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             tableView.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
     }
 

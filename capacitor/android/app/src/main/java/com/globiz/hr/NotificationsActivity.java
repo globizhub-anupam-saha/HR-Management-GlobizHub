@@ -52,6 +52,8 @@ public class NotificationsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notifications);
 
+        AppHeaderHelper.applyWindowInsets(this);
+
         apiClient = ApiClient.getInstance(this);
 
         View btnBack = findViewById(R.id.btnNotificationsBack);

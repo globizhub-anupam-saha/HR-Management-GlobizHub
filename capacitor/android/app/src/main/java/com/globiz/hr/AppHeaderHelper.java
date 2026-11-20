@@ -150,6 +150,12 @@ public class AppHeaderHelper {
     public static void applyWindowInsets(AppCompatActivity activity) {
         if (activity == null) return;
 
+        // Ensure status bar is white with dark icons (Android 6.0+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            activity.getWindow().setStatusBarColor(Color.WHITE);
+        }
+
         // 1. Status Bar Inset: Prevents top bar from colliding with notification drawer & camera cutouts
         View topBar = activity.findViewById(R.id.topBar);
         if (topBar == null) topBar = activity.findViewById(R.id.settingsTopBar);
@@ -207,6 +213,24 @@ public class AppHeaderHelper {
                 }
                 return insets;
             });
+        } else {
+            // For screens without a bottom navigation bar (Settings, Notifications, Customize, etc.),
+            // apply navigation bar insets to the scroll/content container so bottom actions stay comfortably reachable
+            View contentContainer = activity.findViewById(R.id.settingsContentContainer);
+            if (contentContainer == null) contentContainer = activity.findViewById(R.id.lvNotifications);
+            if (contentContainer == null) contentContainer = activity.findViewById(R.id.rvCustomizeTabs);
+            if (contentContainer == null) contentContainer = activity.findViewById(R.id.btnDoDeleteAccount);
+
+            if (contentContainer != null) {
+                final View cc = contentContainer;
+                final int initialBottom = cc.getPaddingBottom();
+                final int comfortMargin = dpToPx(activity, 16);
+                ViewCompat.setOnApplyWindowInsetsListener(cc, (v, insets) -> {
+                    Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), initialBottom + navInsets.bottom + comfortMargin);
+                    return insets;
+                });
+            }
         }
     }
 
