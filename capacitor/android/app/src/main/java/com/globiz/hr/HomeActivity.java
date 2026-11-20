@@ -225,6 +225,7 @@ public class HomeActivity extends AppCompatActivity {
         cachedFirstName = apiClient.getFirstName();
         initNotificationChannel();
         initViews();
+        AppHeaderHelper.applyWindowInsets(this);
         setupHoldGesture();
         setupListeners();
     }

@@ -105,6 +105,7 @@ public class AttendanceActivity extends AppCompatActivity {
         setContentView(R.layout.activity_attendance);
 
         initViews();
+        AppHeaderHelper.applyWindowInsets(this);
         setupBottomNav();
         setupTopBar();
         setupBannerActions();

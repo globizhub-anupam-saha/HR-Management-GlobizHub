@@ -1913,17 +1913,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             bottomNavBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bottomNavBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottomNavBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bottomNavBar.heightAnchor.constraint(equalToConstant: 68),
+            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -72),
 
             bottomNavContainer.topAnchor.constraint(equalTo: bottomNavBar.topAnchor),
             bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             bottomNavContainer.centerXAnchor.constraint(equalTo: bottomNavBar.centerXAnchor),
             bottomNavContainer.widthAnchor.constraint(lessThanOrEqualToConstant: 680),
 
-            navStack.topAnchor.constraint(equalTo: bottomNavContainer.topAnchor),
+            navStack.topAnchor.constraint(equalTo: bottomNavContainer.topAnchor, constant: 4),
             navStack.leadingAnchor.constraint(equalTo: bottomNavContainer.leadingAnchor),
             navStack.trailingAnchor.constraint(equalTo: bottomNavContainer.trailingAnchor),
-            navStack.bottomAnchor.constraint(equalTo: bottomNavContainer.bottomAnchor)
+            navStack.bottomAnchor.constraint(equalTo: bottomNavContainer.bottomAnchor, constant: -8)
         ])
     }
 

@@ -1,14 +1,19 @@
 package com.globiz.hr;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.globiz.hr.network.ApiClient;
 
@@ -133,6 +138,89 @@ public class AppHeaderHelper {
                 }
             });
         }
+
+        // 7. Safe Window Insets (Top Status Bar & Bottom Navigation Bar)
+        applyWindowInsets(activity);
+    }
+
+    /**
+     * Applies safe window insets to keep the top bar safely below the status bar/camera notch,
+     * and lifts the bottom navigation bar up comfortably above the gesture handle on Android.
+     */
+    public static void applyWindowInsets(AppCompatActivity activity) {
+        if (activity == null) return;
+
+        // 1. Status Bar Inset: Prevents top bar from colliding with notification drawer & camera cutouts
+        View topBar = activity.findViewById(R.id.topBar);
+        if (topBar == null) topBar = activity.findViewById(R.id.settingsTopBar);
+        if (topBar == null) topBar = activity.findViewById(R.id.notificationsTopBar);
+        if (topBar == null) topBar = activity.findViewById(R.id.customizeTopBar);
+        if (topBar == null) topBar = activity.findViewById(R.id.deleteAccountTopBar);
+
+        if (topBar != null) {
+            final View tb = topBar;
+            final int initialStatusHeight = getStatusBarHeight(activity);
+            final int originalHeight = dpToPx(activity, 64);
+
+            tb.setPadding(tb.getPaddingLeft(), initialStatusHeight, tb.getPaddingRight(), tb.getPaddingBottom());
+            ViewGroup.LayoutParams lp = tb.getLayoutParams();
+            if (lp != null) {
+                lp.height = originalHeight + initialStatusHeight;
+                tb.setLayoutParams(lp);
+            }
+
+            ViewCompat.setOnApplyWindowInsetsListener(tb, (v, insets) -> {
+                Insets statusInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.displayCutout());
+                int topInset = Math.max(statusInsets.top, initialStatusHeight);
+                v.setPadding(v.getPaddingLeft(), topInset, v.getPaddingRight(), v.getPaddingBottom());
+                ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
+                if (layoutParams != null) {
+                    layoutParams.height = originalHeight + topInset;
+                    v.setLayoutParams(layoutParams);
+                }
+                return insets;
+            });
+        }
+
+        // 2. Navigation Bar Inset: Lifts the bottom navigation bar comfortably up for thumbs & gesture bar
+        View bottomNavBar = activity.findViewById(R.id.bottomNavBar);
+        if (bottomNavBar != null) {
+            final View bnb = bottomNavBar;
+            final int comfortLift = dpToPx(activity, 12);
+            final int baseNavHeight = dpToPx(activity, 64);
+
+            bnb.setPadding(bnb.getPaddingLeft(), 0, bnb.getPaddingRight(), comfortLift);
+            ViewGroup.LayoutParams bLp = bnb.getLayoutParams();
+            if (bLp != null) {
+                bLp.height = baseNavHeight + comfortLift;
+                bnb.setLayoutParams(bLp);
+            }
+
+            ViewCompat.setOnApplyWindowInsetsListener(bnb, (v, insets) -> {
+                Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                int bottomPadding = navInsets.bottom + comfortLift;
+                v.setPadding(v.getPaddingLeft(), 0, v.getPaddingRight(), bottomPadding);
+                ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
+                if (layoutParams != null) {
+                    layoutParams.height = baseNavHeight + bottomPadding;
+                    v.setLayoutParams(layoutParams);
+                }
+                return insets;
+            });
+        }
+    }
+
+    public static int getStatusBarHeight(Context context) {
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            return context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return dpToPx(context, 28);
+    }
+
+    public static int dpToPx(Context context, int dp) {
+        float density = context.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
     }
 
     /**
