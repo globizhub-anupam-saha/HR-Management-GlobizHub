@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-sans), "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-sans), "Poppins", sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -211,13 +211,13 @@
 }
 
 @layer base {
-  * {
+  *, ::before, ::after {
     border-color: var(--separator);
     outline-color: var(--ring);
   }
 
   html {
-    font-family: var(--font-sans);
+    font-family: var(--font-sans), "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     letter-spacing: normal;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -227,12 +227,17 @@
   }
 
   body {
+    font-family: var(--font-sans), "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--background);
     color: var(--foreground);
     min-height: 100vh;
     font-size: 15px;
     line-height: 22px;
     font-weight: 400;
+  }
+
+  input, button, textarea, select {
+    font-family: inherit;
   }
 
   @media (max-width: 767px) {

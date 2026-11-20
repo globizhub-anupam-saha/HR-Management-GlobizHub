@@ -50,6 +50,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+function getDefaultDueDate(): string {
+  return new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0];
+}
+
+function getDefaultPaymentDate(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
 export default function StatutoryCompliancePage() {
   const queryClient = useQueryClient();
 
@@ -82,20 +90,20 @@ export default function StatutoryCompliancePage() {
     documentPath: "",
   });
 
-  const [challanForm, setChallanForm] = useState({
+  const [challanForm, setChallanForm] = useState(() => ({
     challanNumber: "",
     trrn: "",
     amount: 0,
-    dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
-  });
+    dueDate: getDefaultDueDate(),
+  }));
 
-  const [paymentForm, setPaymentForm] = useState({
+  const [paymentForm, setPaymentForm] = useState(() => ({
     paymentReference: "",
     amount: 0,
-    paymentDate: new Date().toISOString().split("T")[0],
+    paymentDate: getDefaultPaymentDate(),
     method: "NET_BANKING",
     receiptPath: "",
-  });
+  }));
 
   // 1. Fetch Establishments
   const { data: establishments, isLoading: isEstLoading } = useQuery({

@@ -36,6 +36,7 @@ import {
 import { useState, useMemo } from "react";
 import { usePlatformAuth } from "@/context/PlatformAuthContext";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/brand/Logo";
 
 interface PlatformNavItem {
   name: string;
@@ -179,13 +180,13 @@ export function PlatformSidebar({
         {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border/80 shrink-0 bg-card">
           <Link href="/platform-admin/dashboard" onClick={onNavigate} className="flex items-center gap-2.5 group">
-            <div className="size-9 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-500/20 border border-white/20 group-hover:scale-105 transition-transform">
-              <Shield className="size-4.5 text-white" />
+            <div className="size-9 rounded-xl bg-white dark:bg-slate-900 border border-border/80 flex items-center justify-center p-1 shadow-sm group-hover:scale-105 transition-transform shrink-0">
+              <Logo variant="emblem" size="sm" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold tracking-tight text-foreground block leading-tight">
-                  GlobizHR
+                  <span className="text-[#0066B2] dark:text-[#38BDF8]">Globiz</span><span className="text-[#F7941D]">Hr</span>
                 </span>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 uppercase tracking-wide">
                   Super Admin

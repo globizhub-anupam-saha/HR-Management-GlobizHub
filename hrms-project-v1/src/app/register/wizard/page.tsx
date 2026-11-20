@@ -3,7 +3,6 @@
 // src/app/register/wizard/page.tsx
 
 import { useSetupWizardStore } from "@/store/useSetupWizardStore";
-import { Button } from "@/components/ui/button";
 import Step1CompanyInfo from "@/components/wizard/Step1CompanyInfo";
 import Step2CompanySettings from "@/components/wizard/Step2CompanySettings";
 import Step3HolidayCalendar from "@/components/wizard/Step3HolidayCalendar";
@@ -16,13 +15,25 @@ import Step9Branches from "@/components/wizard/Step9Branches";
 import Step10InviteEmployees from "@/components/wizard/Step10InviteEmployees";
 
 import WizardProgressBar from "@/components/wizard/WizardProgressBar";
+import Logo from "@/components/brand/Logo";
+import Link from "next/link";
 
 export default function SetupWizardPage() {
-  const { currentStep, prevStep } = useSetupWizardStore();
+  const { currentStep } = useSetupWizardStore();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
       
+      {/* Official Brand Header */}
+      <div className="w-full max-w-4xl flex items-center justify-between mb-6">
+        <Link href="/" className="hover:opacity-90 transition-opacity">
+          <Logo variant="text-lockup" size="md" showTagline />
+        </Link>
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+          Setup Wizard
+        </span>
+      </div>
+
       {/* Dynamic 10-Step Progress Bar with 5 visible per screen & hidden scrollbar */}
       <div className="w-full max-w-4xl">
         <WizardProgressBar />
@@ -30,17 +41,6 @@ export default function SetupWizardPage() {
 
       {/* Dynamic Form Content Container */}
       <div className="w-full max-w-4xl bg-white p-8 rounded-xl shadow-sm border border-slate-100 relative">
-        
-        {/* Back Button (Only show if not on Step 1) */}
-        {currentStep > 1 && (
-          <Button 
-            variant="ghost" 
-            onClick={prevStep}
-            className="absolute top-6 right-8 text-slate-500 hover:text-slate-900"
-          >
-            ← Back
-          </Button>
-        )}
 
         {/* STEP RENDERING */}
         {currentStep === 1 && (

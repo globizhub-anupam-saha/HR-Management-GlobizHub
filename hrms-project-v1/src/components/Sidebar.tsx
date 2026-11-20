@@ -29,6 +29,7 @@ import {
 import { useViewMode } from "@/context/ViewModeContext";
 import { usePermissions } from "@/context/PermissionContext";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/brand/Logo";
 
 interface NavItem {
   key: string;
@@ -299,14 +300,9 @@ export default function Sidebar({
         {/* Brand Header */}
         <div className="h-16 flex flex-col justify-center px-4 border-b border-hairline border-separator shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="size-8 rounded-[10px] bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shadow-xs border border-primary/20">
-                <Sparkles className="size-4 text-primary" />
-              </div>
-              <span className="text-[15px] font-semibold tracking-tight text-foreground">
-                GlobizHR
-              </span>
-            </div>
+            <Link href="/workspace/dashboard" className="flex items-center gap-2.5">
+              <Logo variant="text-lockup" size="sm" />
+            </Link>
 
             {/* Role Badge */}
             {isManagerMode && (

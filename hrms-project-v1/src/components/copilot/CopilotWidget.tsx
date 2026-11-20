@@ -29,6 +29,10 @@ interface Message {
   source?: "knowledge_base" | "llm";
 }
 
+function generateCopilotMessageId(prefix: string): string {
+  return `${prefix}-${Date.now()}`;
+}
+
 export function CopilotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -69,7 +73,7 @@ export function CopilotWidget() {
       const data = await res.json();
       setMessages([
         {
-          id: "welcome-" + Date.now(),
+          id: generateCopilotMessageId("welcome"),
           sender: "copilot",
           text: data.reply,
           timestamp: new Date(),
@@ -90,7 +94,7 @@ export function CopilotWidget() {
     if (!query || isLoading) return;
 
     const userMessage: Message = {
-      id: "user-" + Date.now(),
+      id: generateCopilotMessageId("user"),
       sender: "user",
       text: query,
       timestamp: new Date(),
@@ -113,7 +117,7 @@ export function CopilotWidget() {
 
       const data = await res.json();
       const botMessage: Message = {
-        id: "copilot-" + Date.now(),
+        id: generateCopilotMessageId("copilot"),
         sender: "copilot",
         text: data.reply,
         timestamp: new Date(),
@@ -127,7 +131,7 @@ export function CopilotWidget() {
       setMessages((prev) => [
         ...prev,
         {
-          id: "error-" + Date.now(),
+          id: generateCopilotMessageId("error"),
           sender: "copilot",
           text: "I encountered an issue connecting to the knowledge assistant. Please try again or check our documentation.",
           timestamp: new Date(),

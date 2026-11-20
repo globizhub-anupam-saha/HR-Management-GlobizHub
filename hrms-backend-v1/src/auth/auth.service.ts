@@ -175,6 +175,20 @@ export class AuthService {
       throw new ConflictException('Admin email already exists');
     }
 
+    // 1b. Verify that the admin email was verified via OTP
+    const verifiedOtp = await this.prisma.emailOtp.findFirst({
+      where: {
+        email: dto.adminEmail,
+        verified: true,
+      },
+    });
+
+    if (!verifiedOtp && process.env.NODE_ENV === 'production') {
+      throw new BadRequestException(
+        'Admin email must be verified with OTP before completing registration.',
+      );
+    }
+
     // 2. Hash the user's custom password (or fallback to default if not provided)
     const passwordToHash = dto.adminPassword || 'SecurePassword123!';
     const hashedPassword = await bcrypt.hash(passwordToHash, 10);
@@ -474,6 +488,14 @@ export class AuthService {
       companyId: company.id,
       role: newAdmin.role,
     };
+
+    // Clean up verified OTP records for this registered admin email
+    if (verifiedOtp) {
+      await this.prisma.emailOtp.deleteMany({
+        where: { email: dto.adminEmail },
+      });
+    }
+
     return {
       access_token: await this.jwtService.signAsync(payload),
       message: 'Workspace successfully configured!',

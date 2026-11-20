@@ -64,6 +64,10 @@ interface CompanyOption {
   email: string;
 }
 
+function getDefaultInvoiceDueDate(): string {
+  return new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0];
+}
+
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
   const [summary, setSummary] = useState({ totalInvoiced: 0, totalCollected: 0, totalOutstanding: 0 });
@@ -93,13 +97,13 @@ export default function InvoicesPage() {
       console.error("Failed to load invoice details", err);
     }
   };
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     companyId: "",
     amountDue: 4999,
     currency: "INR",
-    dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
+    dueDate: getDefaultInvoiceDueDate(),
     notes: "",
-  });
+  }));
 
   const fetchInvoices = useCallback(async () => {
     setIsLoading(true);

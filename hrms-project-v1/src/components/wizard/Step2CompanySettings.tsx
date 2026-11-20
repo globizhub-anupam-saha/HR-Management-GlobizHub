@@ -420,7 +420,10 @@ export default function Step2CompanySettings() {
         </div>
 
         {/* SUBMIT BUTTON */}
-        <div className="pt-6 flex justify-end">
+        <div className="pt-6 flex justify-end space-x-3">
+          <Button type="button" variant="outline" onClick={prevStep} className="border-slate-200 text-slate-600 hover:bg-slate-50">
+            Prev
+          </Button>
           <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white">
             Next Step
           </Button>

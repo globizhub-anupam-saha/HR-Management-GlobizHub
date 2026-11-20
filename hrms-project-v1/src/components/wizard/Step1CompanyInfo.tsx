@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
+  ShieldAlert,
   CheckCircle2,
   Loader2,
   Mail,
@@ -174,7 +175,18 @@ export default function Step1CompanyInfo() {
       setAdminOtpCode("");
       setAdminDebugOtp(null);
       setAdminOtpSuccess("Admin email verified successfully!");
-      updateFormData({ adminEmailVerified: true });
+      
+      const companyEmail = form.getValues("email");
+      const isSameAsCompany = companyEmail && companyEmail.trim().toLowerCase() === email.trim().toLowerCase();
+      if (isSameAsCompany) {
+        setIsCompanyEmailVerified(true);
+      }
+
+      updateFormData({
+        adminEmailVerified: true,
+        ...(isSameAsCompany ? { emailVerified: true } : {}),
+      });
+      form.clearErrors("adminEmail");
     } catch (err: any) {
       setAdminOtpError(
         err.response?.data?.message || "Invalid or expired verification code"
@@ -248,36 +260,42 @@ export default function Step1CompanyInfo() {
 
   // 4. When the user hits "Next", save to Zustand and move to Step 2
   async function onSubmit(values: z.infer<typeof step1Schema>) {
-    setIsCheckingEmail(true);
     form.clearErrors("adminEmail");
 
-    try {
-      // If admin email wasn't verified via OTP, check availability on the fly
-      if (!isAdminEmailVerified) {
-        const response = await api.post("/auth/check-registration-email", {
-          email: values.adminEmail,
-        });
+    // MANDATORY OTP VERIFICATION CHECK
+    if (!isAdminEmailVerified) {
+      form.setError("adminEmail", {
+        type: "manual",
+        message: "Email verification is mandatory. Please verify your email with OTP to proceed.",
+      });
 
-        if (!response.data.available) {
-          form.setError("adminEmail", {
-            type: "manual",
-            message: "An account already exists with this email",
-          });
-          return;
-        }
+      // Automatically dispatch OTP and show verification box if not open
+      if (!showAdminOtpBox) {
+        setShowAdminOtpBox(true);
+        handleSendAdminOtp();
       }
+      return;
+    }
 
+    setIsCheckingEmail(true);
+
+    try {
       const { confirmPassword: _confirmPassword, ...step1Data } = values;
+      const isSameAsCompany = Boolean(
+        values.email &&
+          values.email.trim().toLowerCase() === values.adminEmail.trim().toLowerCase()
+      );
+      
       updateFormData({
         ...step1Data,
-        adminEmailVerified: isAdminEmailVerified,
-        emailVerified: isCompanyEmailVerified,
+        adminEmailVerified: true,
+        emailVerified: Boolean(isCompanyEmailVerified || isSameAsCompany),
       });
       nextStep();
     } catch {
       form.setError("adminEmail", {
         type: "manual",
-        message: "Unable to verify this email. Please try again.",
+        message: "Unable to proceed. Please try again.",
       });
     } finally {
       setIsCheckingEmail(false);
@@ -555,24 +573,26 @@ export default function Step1CompanyInfo() {
               )}
             />
 
-            {/* ADMIN EMAIL (LOGIN ID) WITH OTP VERIFICATION OPTION */}
+            {/* ADMIN EMAIL (LOGIN ID) WITH MANDATORY OTP VERIFICATION */}
             <FormField
               control={form.control}
               name="adminEmail"
               render={({ field }) => (
                 <FormItem className="md:col-span-1">
                   <div className="flex items-center justify-between mb-1">
-                    <FormLabel>Admin Email (Login ID)</FormLabel>
+                    <FormLabel className="flex items-center gap-1 font-semibold text-slate-900">
+                      Admin Email (Login ID) <span className="text-rose-500">*</span>
+                    </FormLabel>
                     {isAdminEmailVerified ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Email Verified
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Verified
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={handleSendAdminOtp}
                         disabled={isAdminSendingOtp}
-                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
                       >
                         {isAdminSendingOtp ? (
                           <>
@@ -580,7 +600,7 @@ export default function Step1CompanyInfo() {
                           </>
                         ) : (
                           <>
-                            <ShieldCheck className="w-3.5 h-3.5" /> Verify with OTP
+                            <ShieldAlert className="w-3.5 h-3.5 text-rose-500" /> Verify with OTP (Mandatory)
                           </>
                         )}
                       </button>
@@ -599,7 +619,7 @@ export default function Step1CompanyInfo() {
                         className={
                           isAdminEmailVerified
                             ? "border-emerald-500 bg-emerald-50/20 pr-9 text-slate-800 font-medium"
-                            : ""
+                            : "border-slate-300"
                         }
                       />
                       {isAdminEmailVerified && (
@@ -607,6 +627,17 @@ export default function Step1CompanyInfo() {
                       )}
                     </div>
                   </FormControl>
+
+                  {/* Mandatory verification helper text */}
+                  {isAdminEmailVerified ? (
+                    <p className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 mt-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Email verified successfully. Ready to proceed.
+                    </p>
+                  ) : (
+                    <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Mandatory: You must verify this email with a 6-digit OTP code before proceeding.
+                    </p>
+                  )}
                   <FormMessage />
 
                   {/* Admin Email Inline OTP Box */}

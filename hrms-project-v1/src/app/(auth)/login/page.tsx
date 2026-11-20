@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2, Building2 } from "lucide-react";
+import Logo from "@/components/brand/Logo";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -80,14 +81,14 @@ export default function LoginPage() {
       <div className="max-w-[420px] w-full bg-card rounded-[24px] apple-shadow-card border-0 dark:border dark:border-hairline dark:border-separator p-6 sm:p-8">
         
         <div className="flex flex-col items-center mb-8">
-          <div className="size-14 bg-primary/12 text-primary rounded-[14px] flex items-center justify-center mb-4 transition-transform active:scale-95">
-            <Building2 className="size-7 stroke-[1.5]" />
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-[18px] border border-border/80 shadow-sm flex items-center justify-center mb-3">
+            <Logo variant="emblem" size="lg" />
           </div>
-          <h1 className="type-title-2 font-bold text-foreground text-center tracking-tight">
-            Sign in to GlobizHR
+          <h1 className="type-title-2 font-black text-foreground text-center tracking-tight">
+            Sign in to <span className="text-[#0066B2] dark:text-[#38BDF8]">Globiz</span><span className="text-[#F7941D]">Hr</span>
           </h1>
           <p className="type-subhead text-label-secondary text-center mt-1">
-            Access your workspace or administrator dashboard.
+            A complete HR management solution
           </p>
         </div>
 

@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Logo from "@/components/brand/Logo";
 
 const API_URL = API_BASE_URL;
 
@@ -71,14 +72,15 @@ export default function GlobizHRCareersMarketplace() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/careers" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-primary-foreground shadow-sm group-hover:scale-105 transition-transform">
-              <Compass className="w-5 h-5" />
+            <div className="size-9 rounded-xl bg-white dark:bg-slate-900 border border-border/80 flex items-center justify-center p-1 shadow-sm group-hover:scale-105 transition-transform shrink-0">
+              <Logo variant="emblem" size="sm" />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-lg tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                GlobizHR Careers
+              <span className="font-black text-lg tracking-tight">
+                <span className="text-[#0066B2] dark:text-[#38BDF8]">Globiz</span><span className="text-[#F7941D]">Hr</span>{" "}
+                <span className="text-foreground font-semibold">Careers</span>
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider -mt-1">
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider -mt-0.5">
                 Verified Talent Marketplace
               </span>
             </div>
