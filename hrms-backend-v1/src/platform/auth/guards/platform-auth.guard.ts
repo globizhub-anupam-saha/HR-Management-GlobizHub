@@ -26,7 +26,9 @@ export class PlatformAuthGuard implements CanActivate {
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      throw new UnauthorizedException('Server configuration error: JWT_SECRET not set');
+      throw new UnauthorizedException(
+        'Server configuration error: JWT_SECRET not set',
+      );
     }
 
     try {
@@ -62,7 +64,10 @@ export class PlatformAuthGuard implements CanActivate {
       request['user'] = platformUser; // for generic decorators
       return true;
     } catch (err: any) {
-      if (err instanceof ForbiddenException || err instanceof UnauthorizedException) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof UnauthorizedException
+      ) {
         throw err;
       }
       throw new UnauthorizedException('Invalid or expired platform token');
@@ -74,4 +79,3 @@ export class PlatformAuthGuard implements CanActivate {
     return type === 'Bearer' ? token : undefined;
   }
 }
-

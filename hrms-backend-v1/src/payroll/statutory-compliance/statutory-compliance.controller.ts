@@ -62,8 +62,14 @@ export class StatutoryComplianceController {
   @Post('establishments')
   @RequirePermissions('payroll.manage')
   @RequirePayrollTier(PayrollFeatureTier.ENTERPRISE)
-  async createEstablishment(@Request() req, @Body() dto: CreateEstablishmentDto) {
-    return this.establishmentService.createEstablishment(req.user.companyId, dto);
+  async createEstablishment(
+    @Request() req,
+    @Body() dto: CreateEstablishmentDto,
+  ) {
+    return this.establishmentService.createEstablishment(
+      req.user.companyId,
+      dto,
+    );
   }
 
   @Get('establishments/:id')
@@ -81,13 +87,20 @@ export class StatutoryComplianceController {
     @Param('id') id: string,
     @Body() dto: UpdateEstablishmentDto,
   ) {
-    return this.establishmentService.updateEstablishment(req.user.companyId, id, dto);
+    return this.establishmentService.updateEstablishment(
+      req.user.companyId,
+      id,
+      dto,
+    );
   }
 
   // 2. Rules
   @Get('rules/:establishmentId')
   @RequirePermissions('payroll.view')
-  async listRules(@Request() req, @Param('establishmentId') establishmentId: string) {
+  async listRules(
+    @Request() req,
+    @Param('establishmentId') establishmentId: string,
+  ) {
     return this.rulesService.listRules(req.user.companyId, establishmentId);
   }
 
@@ -104,7 +117,10 @@ export class StatutoryComplianceController {
     @Request() req,
     @Body() dto: UpsertEmployeeStatutoryProfileDto,
   ) {
-    return this.establishmentService.upsertEmployeeProfile(req.user.companyId, dto);
+    return this.establishmentService.upsertEmployeeProfile(
+      req.user.companyId,
+      dto,
+    );
   }
 
   @Get('employee-profiles/:establishmentId')
@@ -113,7 +129,10 @@ export class StatutoryComplianceController {
     @Request() req,
     @Param('establishmentId') establishmentId: string,
   ) {
-    return this.establishmentService.listEmployeeProfiles(req.user.companyId, establishmentId);
+    return this.establishmentService.listEmployeeProfiles(
+      req.user.companyId,
+      establishmentId,
+    );
   }
 
   // 4. Calculations
@@ -131,10 +150,21 @@ export class StatutoryComplianceController {
     @Body() dto: GenerateStatutoryFileDto,
     @Response() res: ExpressResponse,
   ) {
-    const result = await this.returnService.generateReturnFile(req.user.companyId, dto);
+    const result = await this.returnService.generateReturnFile(
+      req.user.companyId,
+      dto,
+    );
 
-    res.setHeader('Content-Type', dto.type === 'PF' ? 'text/plain; charset=utf-8' : 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Type',
+      dto.type === 'PF'
+        ? 'text/plain; charset=utf-8'
+        : 'text/csv; charset=utf-8',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
     res.setHeader('X-Return-Id', result.returnId);
     return res.send(result.fileContent);
   }
@@ -157,10 +187,7 @@ export class StatutoryComplianceController {
 
   @Post('record-payment')
   @RequirePermissions('payroll.manage')
-  async recordPayment(
-    @Request() req,
-    @Body() dto: RecordStatutoryPaymentDto,
-  ) {
+  async recordPayment(@Request() req, @Body() dto: RecordStatutoryPaymentDto) {
     return this.returnService.recordPayment(req.user.companyId, dto);
   }
 
@@ -173,7 +200,11 @@ export class StatutoryComplianceController {
     @Query('year') year?: string,
   ) {
     const parsedYear = year ? parseInt(year, 10) : undefined;
-    return this.returnService.listReturns(req.user.companyId, establishmentId, parsedYear);
+    return this.returnService.listReturns(
+      req.user.companyId,
+      establishmentId,
+      parsedYear,
+    );
   }
 
   // 8. Reconciliation
@@ -205,4 +236,3 @@ export class StatutoryComplianceController {
     );
   }
 }
-

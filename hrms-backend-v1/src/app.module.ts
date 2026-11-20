@@ -44,7 +44,10 @@ import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
         DATABASE_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().min(32).required(),
         // Must be exactly 64 hex characters (32 bytes) for AES-256-CBC
-        ENCRYPTION_KEY: Joi.string().length(64).pattern(/^[0-9a-fA-F]+$/).required(),
+        ENCRYPTION_KEY: Joi.string()
+          .length(64)
+          .pattern(/^[0-9a-fA-F]+$/)
+          .required(),
         // Required to prevent open-CORS bug when var is missing
         FRONTEND_ORIGIN: Joi.string().uri().required(),
         FRONTEND_URL: Joi.string().uri().required(),

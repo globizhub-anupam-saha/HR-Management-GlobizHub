@@ -3,7 +3,10 @@ import { DocumentService } from './document.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../s3/s3.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { DocumentCategory, DocumentStatus } from '../../generated/prisma/client';
+import {
+  DocumentCategory,
+  DocumentStatus,
+} from '../../generated/prisma/client';
 
 describe('DocumentService', () => {
   let service: DocumentService;
@@ -32,7 +35,11 @@ describe('DocumentService', () => {
   };
 
   const mockS3 = {
-    getPresignedUrl: jest.fn().mockImplementation((url) => Promise.resolve(`https://signed.url/${url}`)),
+    getPresignedUrl: jest
+      .fn()
+      .mockImplementation((url) =>
+        Promise.resolve(`https://signed.url/${url}`),
+      ),
     uploadFile: jest.fn().mockResolvedValue('uploaded-url'),
     deleteFile: jest.fn().mockResolvedValue(true),
   };
@@ -56,7 +63,10 @@ describe('DocumentService', () => {
 
   describe('OWNER role authorization across operations', () => {
     it('allows OWNER to request a document from an employee', async () => {
-      mockPrisma.employee.findFirst.mockResolvedValue({ id: 'emp-1', companyId: 'comp-100' });
+      mockPrisma.employee.findFirst.mockResolvedValue({
+        id: 'emp-1',
+        companyId: 'comp-100',
+      });
       mockPrisma.document.create.mockResolvedValue({
         id: 'doc-1',
         name: 'PAN Card',
@@ -143,7 +153,12 @@ describe('DocumentService', () => {
       });
       mockPrisma.document.delete.mockResolvedValue({ id: 'doc-1' });
 
-      const result = await service.deleteDocument('doc-1', 'owner-1', 'OWNER', 'comp-100');
+      const result = await service.deleteDocument(
+        'doc-1',
+        'owner-1',
+        'OWNER',
+        'comp-100',
+      );
       expect(result.id).toBe('doc-1');
       expect(mockS3.deleteFile).toHaveBeenCalledWith('docs/doc1.pdf');
     });
@@ -166,7 +181,12 @@ describe('DocumentService', () => {
         },
       });
 
-      const result = await service.getDocumentById('doc-1', 'owner-1', 'OWNER', 'comp-100');
+      const result = await service.getDocumentById(
+        'doc-1',
+        'owner-1',
+        'OWNER',
+        'comp-100',
+      );
       expect(result.id).toBe('doc-1');
       expect(result.fileUrl).toBe('https://signed.url/policies/nda.pdf');
     });

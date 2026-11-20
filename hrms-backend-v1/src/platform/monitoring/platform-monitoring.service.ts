@@ -34,13 +34,18 @@ export class PlatformMonitoringService {
       where.companyId = query.companyId;
     }
     if (query.actorEmail) {
-      where.actorEmail = { contains: query.actorEmail.trim(), mode: 'insensitive' };
+      where.actorEmail = {
+        contains: query.actorEmail.trim(),
+        mode: 'insensitive',
+      };
     }
     if (query.search) {
       where.OR = [
         { action: { contains: query.search.trim(), mode: 'insensitive' } },
         { actorEmail: { contains: query.search.trim(), mode: 'insensitive' } },
-        { targetEntity: { contains: query.search.trim(), mode: 'insensitive' } },
+        {
+          targetEntity: { contains: query.search.trim(), mode: 'insensitive' },
+        },
         { reason: { contains: query.search.trim(), mode: 'insensitive' } },
       ];
     }
@@ -91,12 +96,13 @@ export class PlatformMonitoringService {
     const mem = process.memoryUsage();
     const uptimeSeconds = process.uptime();
 
-    const [totalTenants, activeTenants, totalEmployees, totalSubscriptions] = await Promise.all([
-      this.prisma.company.count(),
-      this.prisma.company.count({ where: { status: 'VERIFIED' } }),
-      this.prisma.employee.count(),
-      this.prisma.subscription.count({ where: { status: 'ACTIVE' } }),
-    ]);
+    const [totalTenants, activeTenants, totalEmployees, totalSubscriptions] =
+      await Promise.all([
+        this.prisma.company.count(),
+        this.prisma.company.count({ where: { status: 'VERIFIED' } }),
+        this.prisma.employee.count(),
+        this.prisma.subscription.count({ where: { status: 'ACTIVE' } }),
+      ]);
 
     return {
       status: dbStatus === 'HEALTHY' ? 'OPERATIONAL' : 'DEGRADED',
@@ -130,4 +136,3 @@ export class PlatformMonitoringService {
     return `${days}d ${hours}h ${minutes}m`;
   }
 }
-

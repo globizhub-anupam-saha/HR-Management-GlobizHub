@@ -38,7 +38,9 @@ export interface CtcBreakdown {
   netTakeHome: number;
 }
 
-export function calculateCtcBreakdown(input: CtcCalculationInput): CtcBreakdown {
+export function calculateCtcBreakdown(
+  input: CtcCalculationInput,
+): CtcBreakdown {
   const annualCTC = Math.max(0, input.annualCTC);
   const monthlyCTC = Math.round(annualCTC / 12);
 
@@ -66,16 +68,23 @@ export function calculateCtcBreakdown(input: CtcCalculationInput): CtcBreakdown 
   const professionalTax = monthlyCTC >= 15000 ? 200 : 0;
 
   // 6. Special Allowance = Monthly CTC - (Basic + HRA + Conveyance + Medical + Employer PF)
-  const subtotalEarnings = basicSalary + hra + conveyanceAllowance + medicalAllowance;
+  const subtotalEarnings =
+    basicSalary + hra + conveyanceAllowance + medicalAllowance;
   let specialAllowance = monthlyCTC - employerPf - subtotalEarnings;
 
-  let otherAllowances = 0;
+  const otherAllowances = 0;
   if (specialAllowance < 0) {
     // If CTC is small, keep specialAllowance at 0 and adjust
     specialAllowance = 0;
   }
 
-  const grossSalary = basicSalary + hra + conveyanceAllowance + medicalAllowance + specialAllowance + otherAllowances;
+  const grossSalary =
+    basicSalary +
+    hra +
+    conveyanceAllowance +
+    medicalAllowance +
+    specialAllowance +
+    otherAllowances;
 
   // 7. Income Tax (TDS) under New Tax Regime (FY 2024-25 / 2025-26 rules)
   // Standard deduction of ₹75,000
@@ -83,22 +92,22 @@ export function calculateCtcBreakdown(input: CtcCalculationInput): CtcBreakdown 
   let annualTax = 0;
 
   if (taxableAnnual > 1500000) {
-    annualTax += (taxableAnnual - 1500000) * 0.30;
-    annualTax += 300000 * 0.20;
+    annualTax += (taxableAnnual - 1500000) * 0.3;
+    annualTax += 300000 * 0.2;
     annualTax += 300000 * 0.15;
-    annualTax += 300000 * 0.10;
+    annualTax += 300000 * 0.1;
     annualTax += 300000 * 0.05;
   } else if (taxableAnnual > 1200000) {
-    annualTax += (taxableAnnual - 1200000) * 0.20;
+    annualTax += (taxableAnnual - 1200000) * 0.2;
     annualTax += 300000 * 0.15;
-    annualTax += 300000 * 0.10;
+    annualTax += 300000 * 0.1;
     annualTax += 300000 * 0.05;
   } else if (taxableAnnual > 900000) {
     annualTax += (taxableAnnual - 900000) * 0.15;
-    annualTax += 300000 * 0.10;
+    annualTax += 300000 * 0.1;
     annualTax += 300000 * 0.05;
   } else if (taxableAnnual > 600000) {
-    annualTax += (taxableAnnual - 600000) * 0.10;
+    annualTax += (taxableAnnual - 600000) * 0.1;
     annualTax += 300000 * 0.05;
   } else if (taxableAnnual > 300000) {
     annualTax += (taxableAnnual - 300000) * 0.05;
@@ -138,4 +147,3 @@ export function calculateCtcBreakdown(input: CtcCalculationInput): CtcBreakdown 
     netTakeHome,
   };
 }
-

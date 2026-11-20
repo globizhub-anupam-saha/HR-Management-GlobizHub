@@ -10,4 +10,3 @@ import { CredentialController } from './credential.controller';
   exports: [CredentialService],
 })
 export class CredentialModule {}
-

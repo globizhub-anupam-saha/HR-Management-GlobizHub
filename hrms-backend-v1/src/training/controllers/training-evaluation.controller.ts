@@ -33,7 +33,10 @@ export class TrainingEvaluationController {
   }
 
   @Get('employee/:employeeId')
-  async findByEmployee(@Request() req, @Param('employeeId') employeeId: string) {
+  async findByEmployee(
+    @Request() req,
+    @Param('employeeId') employeeId: string,
+  ) {
     return this.service.findByEmployee(req.user.companyId, employeeId);
   }
 

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import { NotificationService } from '../../notification/notification.service';
@@ -20,7 +24,12 @@ export class TrainingEvaluationService {
       where: { companyId },
       include: {
         plan: {
-          select: { id: true, title: true, planNumber: true, trainingType: true },
+          select: {
+            id: true,
+            title: true,
+            planNumber: true,
+            trainingType: true,
+          },
         },
         employee: {
           select: {
@@ -71,7 +80,12 @@ export class TrainingEvaluationService {
       where: { companyId, employeeId },
       include: {
         plan: {
-          select: { id: true, title: true, planNumber: true, trainingType: true },
+          select: {
+            id: true,
+            title: true,
+            planNumber: true,
+            trainingType: true,
+          },
         },
         evaluator: {
           select: { id: true, firstName: true, lastName: true },
@@ -105,7 +119,12 @@ export class TrainingEvaluationService {
             approvals: {
               include: {
                 approver: {
-                  select: { id: true, firstName: true, lastName: true, role: true },
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    role: true,
+                  },
                 },
               },
             },
@@ -115,7 +134,9 @@ export class TrainingEvaluationService {
     });
 
     if (!evaluation) {
-      throw new NotFoundException(`Training evaluation with ID ${id} not found`);
+      throw new NotFoundException(
+        `Training evaluation with ID ${id} not found`,
+      );
     }
 
     return evaluation;
@@ -145,7 +166,9 @@ export class TrainingEvaluationService {
         enrollmentId: enrollment.id,
         employeeId: dto.employeeId,
         evaluatorId,
-        evaluationDate: dto.evaluationDate ? new Date(dto.evaluationDate) : new Date(),
+        evaluationDate: dto.evaluationDate
+          ? new Date(dto.evaluationDate)
+          : new Date(),
         competenciesAchieved: dto.competenciesAchieved || [],
         trainingEffectivenessRating: dto.trainingEffectivenessRating || 5,
         businessImpact: dto.businessImpact?.trim(),

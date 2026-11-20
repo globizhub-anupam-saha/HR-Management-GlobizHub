@@ -10,4 +10,3 @@ export class UpdateLeaveStatusDto {
   @IsOptional()
   rejectionReason?: string;
 }
-

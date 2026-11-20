@@ -38,4 +38,3 @@ export class FinalSettlementDto {
   @IsString()
   remarks?: string;
 }
-

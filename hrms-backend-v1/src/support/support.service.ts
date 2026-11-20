@@ -55,7 +55,12 @@ export class SupportService {
       },
       include: {
         employee: {
-          select: { firstName: true, lastName: true, email: true, employeeCode: true },
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            employeeCode: true,
+          },
         },
       },
     });
@@ -82,7 +87,12 @@ export class SupportService {
       },
       include: {
         employee: {
-          select: { firstName: true, lastName: true, email: true, employeeCode: true },
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            employeeCode: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -99,7 +109,13 @@ export class SupportService {
       },
       include: {
         employee: {
-          select: { firstName: true, lastName: true, email: true, employeeCode: true, department: true },
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            employeeCode: true,
+            department: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -136,7 +152,12 @@ export class SupportService {
       },
       include: {
         employee: {
-          select: { firstName: true, lastName: true, email: true, employeeCode: true },
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            employeeCode: true,
+          },
         },
       },
     });
@@ -176,7 +197,11 @@ export class SupportService {
       else if (t.status === 'RESOLVED') resolvedCount++;
       else if (t.status === 'CLOSED') closedCount++;
 
-      if (['OPEN', 'IN_PROGRESS'].includes(t.status) && t.dueDate && t.dueDate < now) {
+      if (
+        ['OPEN', 'IN_PROGRESS'].includes(t.status) &&
+        t.dueDate &&
+        t.dueDate < now
+      ) {
         overdueCount++;
       }
     }
@@ -192,7 +217,9 @@ export class SupportService {
   }
 
   private formatTicket(ticket: any) {
-    const match = ticket.title.match(/^\[SUPPORT-([^\]]+)\]\[([^\]]+)\]\s*(.*)$/);
+    const match = ticket.title.match(
+      /^\[SUPPORT-([^\]]+)\]\[([^\]]+)\]\s*(.*)$/,
+    );
     const category = match ? match[1] : 'GENERAL';
     const priority = match ? match[2] : 'MEDIUM';
     const subject = match ? match[3] : ticket.title;
@@ -224,4 +251,3 @@ export class SupportService {
     };
   }
 }
-

@@ -58,4 +58,3 @@ export class CreatePlanDto {
   @IsBoolean()
   isPublic?: boolean = true;
 }
-

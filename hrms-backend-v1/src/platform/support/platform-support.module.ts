@@ -11,4 +11,3 @@ import { PlatformAuthModule } from '../auth/platform-auth.module';
   exports: [PlatformSupportService],
 })
 export class PlatformSupportModule {}
-

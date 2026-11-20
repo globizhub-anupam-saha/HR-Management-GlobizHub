@@ -23,7 +23,9 @@ export class AuthGuard implements CanActivate {
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       // Joi schema prevents reaching here in production, but guard as a safeguard
-      throw new UnauthorizedException('Server misconfiguration: JWT_SECRET not set');
+      throw new UnauthorizedException(
+        'Server misconfiguration: JWT_SECRET not set',
+      );
     }
 
     try {
@@ -39,14 +41,21 @@ export class AuthGuard implements CanActivate {
       }
 
       // P0 Multi-Tenant Security: Tenant token must have a valid companyId
-      if (!payload.companyId || typeof payload.companyId !== 'string' || !payload.companyId.trim()) {
+      if (
+        !payload.companyId ||
+        typeof payload.companyId !== 'string' ||
+        !payload.companyId.trim()
+      ) {
         throw new UnauthorizedException('Tenant company context is required');
       }
 
       // Attach the payload to the request object
       request['user'] = payload;
     } catch (err) {
-      if (err instanceof ForbiddenException || err instanceof UnauthorizedException) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof UnauthorizedException
+      ) {
         throw err;
       }
       throw new UnauthorizedException('Invalid token');

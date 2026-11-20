@@ -51,7 +51,12 @@ export class PlatformOrgController {
     @Body() dto: UpdateOrganizationStatusDto,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.orgService.updateStatus(id, dto, currentUser.id, currentUser.email);
+    return this.orgService.updateStatus(
+      id,
+      dto,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Post(':id/access-session')
@@ -73,4 +78,3 @@ export class PlatformOrgController {
     );
   }
 }
-

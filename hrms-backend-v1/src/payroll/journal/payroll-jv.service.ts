@@ -74,7 +74,14 @@ export class PayrollJvService {
 
       // Check statutory contributions snapshot if available
       const pfContr = r.statutoryContributions.filter((c) =>
-        ['PF', 'EPF_EE', 'EPF_ER_PENSION', 'EPF_ER_DIFF', 'EPS', 'EDLI'].includes(c.category),
+        [
+          'PF',
+          'EPF_EE',
+          'EPF_ER_PENSION',
+          'EPF_ER_DIFF',
+          'EPS',
+          'EDLI',
+        ].includes(c.category),
       );
       if (pfContr.length > 0) {
         for (const c of pfContr) {
@@ -185,7 +192,9 @@ export class PayrollJvService {
               accountName: 'ESIC Payable',
               description: `ESIC Total Remittance - ${narration}`,
               debit: 0,
-              credit: parseFloat((totalEmployeeEsi + totalEmployerEsi).toFixed(2)),
+              credit: parseFloat(
+                (totalEmployeeEsi + totalEmployerEsi).toFixed(2),
+              ),
             },
           ]
         : []),
@@ -227,12 +236,24 @@ export class PayrollJvService {
         : []),
     ];
 
-    const totalDebit = parseFloat(entries.reduce((sum, e) => sum + e.debit, 0).toFixed(2));
-    const totalCredit = parseFloat(entries.reduce((sum, e) => sum + e.credit, 0).toFixed(2));
+    const totalDebit = parseFloat(
+      entries.reduce((sum, e) => sum + e.debit, 0).toFixed(2),
+    );
+    const totalCredit = parseFloat(
+      entries.reduce((sum, e) => sum + e.credit, 0).toFixed(2),
+    );
     const isBalanced = Math.abs(totalDebit - totalCredit) < 1.0; // Rounding tolerance < 1 rupee
 
     // Generate CSV for Tally / Zoho Books import
-    const headers = ['Voucher No', 'Date', 'Account Code', 'Account Name', 'Description', 'Debit', 'Credit'];
+    const headers = [
+      'Voucher No',
+      'Date',
+      'Account Code',
+      'Account Name',
+      'Description',
+      'Debit',
+      'Credit',
+    ];
     const csvRows = entries.map((e) => [
       `JV-${year}-${String(month).padStart(2, '0')}`,
       voucherDate,
@@ -243,7 +264,9 @@ export class PayrollJvService {
       e.credit.toFixed(2),
     ]);
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...csvRows.map((r) => r.join(','))].join('\r\n');
+    const csvContent =
+      '\uFEFF' +
+      [headers.join(','), ...csvRows.map((r) => r.join(','))].join('\r\n');
 
     return {
       voucherNumber: `JV-${year}-${String(month).padStart(2, '0')}`,
@@ -259,4 +282,3 @@ export class PayrollJvService {
     };
   }
 }
-

@@ -55,4 +55,3 @@ export class UpdatePlanDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

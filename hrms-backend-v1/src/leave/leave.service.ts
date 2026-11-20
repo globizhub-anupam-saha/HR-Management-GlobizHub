@@ -330,7 +330,11 @@ export class LeaveService {
     if (dto.isHalfDay) {
       start.setHours(0, 0, 0, 0);
       end.setHours(0, 0, 0, 0);
-      const isWorkDay = await this.calculateWorkingDays(start, start, companyId);
+      const isWorkDay = await this.calculateWorkingDays(
+        start,
+        start,
+        companyId,
+      );
       if (isWorkDay === 0) {
         throw new BadRequestException(
           'Selected date is a non-working day or holiday.',
@@ -634,10 +638,7 @@ export class LeaveService {
     });
   }
 
-  async getApprovals(
-    companyId: string,
-    user: { sub: string; role: string },
-  ) {
+  async getApprovals(companyId: string, user: { sub: string; role: string }) {
     const isManager = user.role === 'MANAGER';
     let filter: any = { companyId, status: LeaveStatus.PENDING };
 
@@ -676,7 +677,10 @@ export class LeaveService {
     });
   }
 
-  async getAllCompanyLeaves(companyId: string, query?: { status?: LeaveStatus }) {
+  async getAllCompanyLeaves(
+    companyId: string,
+    query?: { status?: LeaveStatus },
+  ) {
     return this.prisma.leaveRequest.findMany({
       where: {
         companyId,
@@ -930,7 +934,8 @@ export class LeaveService {
             allocationId: nextAlloc.id,
             type: TransactionType.ADJUSTMENT,
             amount: carryDays,
-            description: "Carried forward from " + fromYear + " (" + carryDays + " days)",
+            description:
+              'Carried forward from ' + fromYear + ' (' + carryDays + ' days)',
           },
         });
 
@@ -942,7 +947,8 @@ export class LeaveService {
               allocationId: alloc.id,
               type: TransactionType.EXPIRY,
               amount: -expiredDays,
-              description: "Expired beyond carry-forward limit from " + fromYear,
+              description:
+                'Expired beyond carry-forward limit from ' + fromYear,
             },
           });
         }
@@ -961,7 +967,7 @@ export class LeaveService {
             allocationId: alloc.id,
             type: TransactionType.EXPIRY,
             amount: -remaining,
-            description: "Year-end lapse for " + fromYear,
+            description: 'Year-end lapse for ' + fromYear,
           },
         });
 
@@ -979,7 +985,7 @@ export class LeaveService {
       actorId || null,
       'UPDATE',
       'LeaveAllocation',
-      fromYear + "->" + toYear,
+      fromYear + '->' + toYear,
       null,
       { carriedForwardCount, lapsedCount },
     );

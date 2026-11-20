@@ -1,4 +1,7 @@
-import { ModuleEntitlementGuard, REQUIRED_PLAN_MODULE_KEY } from './module-entitlement.guard';
+import {
+  ModuleEntitlementGuard,
+  REQUIRED_PLAN_MODULE_KEY,
+} from './module-entitlement.guard';
 import { ForbiddenException } from '@nestjs/common';
 
 describe('ModuleEntitlementGuard', () => {
@@ -74,7 +77,9 @@ describe('ModuleEntitlementGuard', () => {
     });
 
     const context = createMockContext({ companyId: 'comp-1' });
-    await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should prioritize organization feature override over plan entitlement', async () => {
@@ -86,7 +91,8 @@ describe('ModuleEntitlementGuard', () => {
     });
 
     const context = createMockContext({ companyId: 'comp-1' });
-    await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 });
-

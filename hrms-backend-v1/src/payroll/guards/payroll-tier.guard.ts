@@ -52,7 +52,9 @@ export class PayrollTierGuard implements CanActivate {
 
     const companyId = user?.companyId;
     if (!companyId) {
-      throw new ForbiddenException('Tenant company context required for plan entitlement validation');
+      throw new ForbiddenException(
+        'Tenant company context required for plan entitlement validation',
+      );
     }
 
     const company = await this.prisma.company.findUnique({
@@ -80,4 +82,3 @@ export class PayrollTierGuard implements CanActivate {
     return true;
   }
 }
-

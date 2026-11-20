@@ -245,10 +245,7 @@ export class OrganizationService {
     };
   }
 
-  async createDesignation(
-    companyId: string,
-    dto: CreateDesignationDto,
-  ) {
+  async createDesignation(companyId: string, dto: CreateDesignationDto) {
     return this.prisma.designation.create({
       data: {
         companyId,
@@ -332,7 +329,10 @@ export class OrganizationService {
     }
 
     const activeManpower = await this.prisma.manpowerRequisition.count({
-      where: { designationId: id, status: { notIn: ['REJECTED', 'CANCELLED'] } },
+      where: {
+        designationId: id,
+        status: { notIn: ['REJECTED', 'CANCELLED'] },
+      },
     });
     if (activeManpower > 0) {
       throw new BadRequestException(
@@ -391,7 +391,12 @@ export class OrganizationService {
       }
     }
 
-    const [activeEmployeesCount, totalDocumentsCount, availablePlans, recentInvoices] = await Promise.all([
+    const [
+      activeEmployeesCount,
+      totalDocumentsCount,
+      availablePlans,
+      recentInvoices,
+    ] = await Promise.all([
       this.prisma.employee.count({
         where: { companyId, exitRecord: null },
       }),
@@ -412,11 +417,20 @@ export class OrganizationService {
 
     const maxEmployees = subscription?.plan?.maxEmployees ?? 25;
     const maxStorageGb = subscription?.plan?.maxStorageGb ?? 5;
-    const estimatedStorageGb = Number(((totalDocumentsCount * 0.005) + 0.1).toFixed(2));
+    const estimatedStorageGb = Number(
+      (totalDocumentsCount * 0.005 + 0.1).toFixed(2),
+    );
 
-    const currentPeriodEnd = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : new Date();
+    const currentPeriodEnd = subscription?.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd)
+      : new Date();
     const now = new Date();
-    const daysRemaining = Math.max(0, Math.ceil((currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    const daysRemaining = Math.max(
+      0,
+      Math.ceil(
+        (currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      ),
+    );
 
     return {
       subscription: subscription
@@ -449,10 +463,16 @@ export class OrganizationService {
       usage: {
         activeEmployees: activeEmployeesCount,
         maxEmployees,
-        employeeUsagePct: Math.min(100, Math.round((activeEmployeesCount / maxEmployees) * 100)),
+        employeeUsagePct: Math.min(
+          100,
+          Math.round((activeEmployeesCount / maxEmployees) * 100),
+        ),
         storageUsedGb: estimatedStorageGb,
         maxStorageGb,
-        storageUsagePct: Math.min(100, Math.round((estimatedStorageGb / maxStorageGb) * 100)),
+        storageUsagePct: Math.min(
+          100,
+          Math.round((estimatedStorageGb / maxStorageGb) * 100),
+        ),
       },
       availablePlans: availablePlans.map((p) => ({
         id: p.id,

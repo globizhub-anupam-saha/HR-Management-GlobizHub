@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { ReplyTicketDto } from './dto/reply-ticket.dto';
@@ -45,9 +41,15 @@ export class PlatformSupportService {
     }
     if (query.search) {
       where.OR = [
-        { ticketNumber: { contains: query.search.trim(), mode: 'insensitive' } },
+        {
+          ticketNumber: { contains: query.search.trim(), mode: 'insensitive' },
+        },
         { subject: { contains: query.search.trim(), mode: 'insensitive' } },
-        { company: { name: { contains: query.search.trim(), mode: 'insensitive' } } },
+        {
+          company: {
+            name: { contains: query.search.trim(), mode: 'insensitive' },
+          },
+        },
       ];
     }
 
@@ -60,7 +62,9 @@ export class PlatformSupportService {
         orderBy: { updatedAt: 'desc' },
         include: {
           company: { select: { id: true, name: true, email: true } },
-          assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
+          assignee: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
           _count: { select: { messages: true } },
         },
       }),
@@ -101,8 +105,12 @@ export class PlatformSupportService {
       where: { id },
       include: {
         company: { select: { id: true, name: true, email: true, phone: true } },
-        creator: { select: { id: true, firstName: true, lastName: true, email: true } },
-        assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
+        creator: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        assignee: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
         messages: {
           orderBy: { createdAt: 'asc' },
         },
@@ -116,7 +124,11 @@ export class PlatformSupportService {
   /**
    * Create ticket
    */
-  async createTicket(dto: CreateTicketDto, actorId?: string, actorEmail?: string) {
+  async createTicket(
+    dto: CreateTicketDto,
+    actorId?: string,
+    actorEmail?: string,
+  ) {
     const count = await this.prisma.supportTicket.count();
     const ticketNumber = `TCK-${(count + 1001).toString()}`;
 
@@ -154,7 +166,9 @@ export class PlatformSupportService {
             afterState: { ticketNumber, subject: ticket.subject } as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log ticket creation audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log ticket creation audit', err),
+        );
     }
 
     return ticket;
@@ -169,7 +183,9 @@ export class PlatformSupportService {
     actorId: string,
     actorName: string,
   ) {
-    const ticket = await this.prisma.supportTicket.findUnique({ where: { id } });
+    const ticket = await this.prisma.supportTicket.findUnique({
+      where: { id },
+    });
     if (!ticket) throw new NotFoundException('Support ticket not found');
 
     const newStatus = dto.status || 'IN_PROGRESS';
@@ -208,7 +224,9 @@ export class PlatformSupportService {
     actorId?: string,
     actorEmail?: string,
   ) {
-    const existing = await this.prisma.supportTicket.findUnique({ where: { id } });
+    const existing = await this.prisma.supportTicket.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Support ticket not found');
 
     const updated = await this.prisma.supportTicket.update({
@@ -234,10 +252,11 @@ export class PlatformSupportService {
             afterState: { status: updated.status } as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log ticket status update audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log ticket status update audit', err),
+        );
     }
 
     return updated;
   }
 }
-

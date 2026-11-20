@@ -29,7 +29,10 @@ export class NotificationController {
   @Get()
   async getAll(@Request() req, @Query('limit') limit?: string) {
     const parsedLimit = limit ? parseInt(limit, 10) : 50;
-    return this.notificationService.getAllMyNotifications(req.user.sub, parsedLimit);
+    return this.notificationService.getAllMyNotifications(
+      req.user.sub,
+      parsedLimit,
+    );
   }
 
   @Patch(':id/read')

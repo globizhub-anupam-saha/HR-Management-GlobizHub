@@ -53,7 +53,9 @@ export class EmployeePositionChangeService {
             OR: [
               { firstName: { contains: filters.search, mode: 'insensitive' } },
               { lastName: { contains: filters.search, mode: 'insensitive' } },
-              { employeeCode: { contains: filters.search, mode: 'insensitive' } },
+              {
+                employeeCode: { contains: filters.search, mode: 'insensitive' },
+              },
             ],
           },
         },
@@ -193,7 +195,8 @@ export class EmployeePositionChangeService {
         currentBranchId: employee.department?.branchId,
         proposedBranchId: dto.proposedBranchId,
         proposedEffectiveDate: new Date(dto.proposedEffectiveDate),
-        compensationReviewStatus: dto.compensationReviewStatus || 'NOT_REQUIRED',
+        compensationReviewStatus:
+          dto.compensationReviewStatus || 'NOT_REQUIRED',
         proposedSalaryIncrease: dto.proposedSalaryIncrease,
         decisionNotes: dto.decisionNotes?.trim(),
         status: 'PENDING_APPROVAL',
@@ -259,17 +262,27 @@ export class EmployeePositionChangeService {
 
     // 1. Enforce role authorization
     if (user?.role === 'EMPLOYEE') {
-      throw new ForbiddenException('Only managers and HR administrators are authorized to review position changes');
+      throw new ForbiddenException(
+        'Only managers and HR administrators are authorized to review position changes',
+      );
     }
 
     // 2. Prevent self-approval (unless super admin / owner)
     const actorId = user?.sub || user?.id;
-    if (actorId === change.employeeId && user?.role !== 'SUPER_ADMIN' && user?.role !== 'OWNER') {
-      throw new ForbiddenException('Employees are not permitted to review or approve their own position change requests');
+    if (
+      actorId === change.employeeId &&
+      user?.role !== 'SUPER_ADMIN' &&
+      user?.role !== 'OWNER'
+    ) {
+      throw new ForbiddenException(
+        'Employees are not permitted to review or approve their own position change requests',
+      );
     }
 
     if (change.status !== 'PENDING_APPROVAL' && change.status !== 'DEFERRED') {
-      throw new BadRequestException('Only PENDING or DEFERRED changes can be reviewed');
+      throw new BadRequestException(
+        'Only PENDING or DEFERRED changes can be reviewed',
+      );
     }
 
     let newStatus = 'APPROVED';
@@ -340,7 +353,9 @@ export class EmployeePositionChangeService {
     }
 
     if (change.status !== 'APPROVED') {
-      throw new BadRequestException('Only APPROVED position changes can be applied');
+      throw new BadRequestException(
+        'Only APPROVED position changes can be applied',
+      );
     }
 
     const employee = await this.prisma.employee.findUnique({
@@ -363,9 +378,7 @@ export class EmployeePositionChangeService {
     await this.prisma.$transaction(async (tx) => {
       // 1. Preserve historical employment record
       const previousJobTitle =
-        employee.designation?.name ||
-        employee.role ||
-        'Employee';
+        employee.designation?.name || employee.role || 'Employee';
 
       await tx.employmentHistory.create({
         data: {
@@ -389,13 +402,12 @@ export class EmployeePositionChangeService {
           employee.employeeCode &&
           change.proposedDepartmentId !== employee.departmentId
         ) {
-          updateData.employeeCode =
-            await generateDepartmentScopedEmployeeCode({
-              prisma: tx,
-              companyId,
-              departmentId: change.proposedDepartmentId,
-              excludeEmployeeId: employee.id,
-            });
+          updateData.employeeCode = await generateDepartmentScopedEmployeeCode({
+            prisma: tx,
+            companyId,
+            departmentId: change.proposedDepartmentId,
+            excludeEmployeeId: employee.id,
+          });
         }
       }
 

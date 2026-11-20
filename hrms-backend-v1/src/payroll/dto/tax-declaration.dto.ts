@@ -84,4 +84,3 @@ export class VerifyTaxDeclarationDto {
   @IsString()
   rejectionReason?: string;
 }
-

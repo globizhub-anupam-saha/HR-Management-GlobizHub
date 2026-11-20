@@ -75,8 +75,8 @@ export function calculateTds(input: TdsCalculationInput): TdsCalculationResult {
 
     // 2. HRA Exemption under Section 10(13A): Least of 3 limits
     if (rentPaid > 0 && hraReceived > 0) {
-      const excessRent = Math.max(0, rentPaid - 0.10 * basic);
-      const metroCap = (input.isMetro ? 0.50 : 0.40) * basic;
+      const excessRent = Math.max(0, rentPaid - 0.1 * basic);
+      const metroCap = (input.isMetro ? 0.5 : 0.4) * basic;
       hraExemption = Math.min(hraReceived, excessRent, metroCap);
     }
 
@@ -125,11 +125,11 @@ export function calculateTds(input: TdsCalculationInput): TdsCalculationResult {
     // 5L - 10L: 20%
     // Above 10L: 30%
     if (taxableIncome > 1000000) {
-      tax += (taxableIncome - 1000000) * 0.30;
-      tax += 500000 * 0.20;
+      tax += (taxableIncome - 1000000) * 0.3;
+      tax += 500000 * 0.2;
       tax += 250000 * 0.05;
     } else if (taxableIncome > 500000) {
-      tax += (taxableIncome - 500000) * 0.20;
+      tax += (taxableIncome - 500000) * 0.2;
       tax += 250000 * 0.05;
     } else if (taxableIncome > 250000) {
       tax += (taxableIncome - 250000) * 0.05;
@@ -145,10 +145,14 @@ export function calculateTds(input: TdsCalculationInput): TdsCalculationResult {
     const cess = Math.round(taxAfterRebate * 0.04);
     const totalAnnualTax = taxAfterRebate + cess;
 
-    const remainingMonths = input.remainingMonthsInFY && input.remainingMonthsInFY > 0
-      ? input.remainingMonthsInFY
-      : 12;
-    const remainingTax = Math.max(0, totalAnnualTax - (input.tdsAlreadyPaid || 0));
+    const remainingMonths =
+      input.remainingMonthsInFY && input.remainingMonthsInFY > 0
+        ? input.remainingMonthsInFY
+        : 12;
+    const remainingTax = Math.max(
+      0,
+      totalAnnualTax - (input.tdsAlreadyPaid || 0),
+    );
     const monthlyTds = Math.round(remainingTax / remainingMonths);
 
     return {
@@ -186,22 +190,22 @@ export function calculateTds(input: TdsCalculationInput): TdsCalculationResult {
     // 12,00,001 - 15,00,000: 20%
     // Above 15,00,000: 30%
     if (taxableIncome > 1500000) {
-      tax += (taxableIncome - 1500000) * 0.30;
-      tax += 300000 * 0.20;
+      tax += (taxableIncome - 1500000) * 0.3;
+      tax += 300000 * 0.2;
       tax += 200000 * 0.15;
-      tax += 300000 * 0.10;
+      tax += 300000 * 0.1;
       tax += 400000 * 0.05;
     } else if (taxableIncome > 1200000) {
-      tax += (taxableIncome - 1200000) * 0.20;
+      tax += (taxableIncome - 1200000) * 0.2;
       tax += 200000 * 0.15;
-      tax += 300000 * 0.10;
+      tax += 300000 * 0.1;
       tax += 400000 * 0.05;
     } else if (taxableIncome > 1000000) {
       tax += (taxableIncome - 1000000) * 0.15;
-      tax += 300000 * 0.10;
+      tax += 300000 * 0.1;
       tax += 400000 * 0.05;
     } else if (taxableIncome > 700000) {
-      tax += (taxableIncome - 700000) * 0.10;
+      tax += (taxableIncome - 700000) * 0.1;
       tax += 400000 * 0.05;
     } else if (taxableIncome > 300000) {
       tax += (taxableIncome - 300000) * 0.05;
@@ -217,10 +221,14 @@ export function calculateTds(input: TdsCalculationInput): TdsCalculationResult {
     const cess = Math.round(taxAfterRebate * 0.04);
     const totalAnnualTax = taxAfterRebate + cess;
 
-    const remainingMonths = input.remainingMonthsInFY && input.remainingMonthsInFY > 0
-      ? input.remainingMonthsInFY
-      : 12;
-    const remainingTax = Math.max(0, totalAnnualTax - (input.tdsAlreadyPaid || 0));
+    const remainingMonths =
+      input.remainingMonthsInFY && input.remainingMonthsInFY > 0
+        ? input.remainingMonthsInFY
+        : 12;
+    const remainingTax = Math.max(
+      0,
+      totalAnnualTax - (input.tdsAlreadyPaid || 0),
+    );
     const monthlyTds = Math.round(remainingTax / remainingMonths);
 
     return {
@@ -251,4 +259,3 @@ export function calculateTds(input: TdsCalculationInput): TdsCalculationResult {
     };
   }
 }
-

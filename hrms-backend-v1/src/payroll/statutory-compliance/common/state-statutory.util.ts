@@ -136,7 +136,12 @@ export function calculateStateLwf(input: StateLwfInput): StateLwfResult {
           isDeductionMonth: true,
         };
       }
-      return { employeeContribution: 0, employerContribution: 0, totalContribution: 0, isDeductionMonth: false };
+      return {
+        employeeContribution: 0,
+        employerContribution: 0,
+        totalContribution: 0,
+        isDeductionMonth: false,
+      };
     }
 
     case 'KARNATAKA':
@@ -150,7 +155,12 @@ export function calculateStateLwf(input: StateLwfInput): StateLwfResult {
           isDeductionMonth: true,
         };
       }
-      return { employeeContribution: 0, employerContribution: 0, totalContribution: 0, isDeductionMonth: false };
+      return {
+        employeeContribution: 0,
+        employerContribution: 0,
+        totalContribution: 0,
+        isDeductionMonth: false,
+      };
     }
 
     case 'GUJARAT':
@@ -164,7 +174,12 @@ export function calculateStateLwf(input: StateLwfInput): StateLwfResult {
           isDeductionMonth: true,
         };
       }
-      return { employeeContribution: 0, employerContribution: 0, totalContribution: 0, isDeductionMonth: false };
+      return {
+        employeeContribution: 0,
+        employerContribution: 0,
+        totalContribution: 0,
+        isDeductionMonth: false,
+      };
     }
 
     default:
@@ -176,4 +191,3 @@ export function calculateStateLwf(input: StateLwfInput): StateLwfResult {
       };
   }
 }
-

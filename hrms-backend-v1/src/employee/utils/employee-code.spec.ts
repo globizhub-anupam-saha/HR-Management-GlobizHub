@@ -16,12 +16,17 @@ describe('Department-Scoped Employee Code Generator', () => {
         }),
       },
       department: {
-        findUnique: jest.fn().mockImplementation(({ where }: { where: { id: string } }) => {
-          if (where.id === 'dept-eng') return Promise.resolve({ name: 'Engineering' });
-          if (where.id === 'dept-hr') return Promise.resolve({ name: 'Human Resources' });
-          if (where.id === 'dept-med') return Promise.resolve({ name: 'Medical' });
-          return Promise.resolve(null);
-        }),
+        findUnique: jest
+          .fn()
+          .mockImplementation(({ where }: { where: { id: string } }) => {
+            if (where.id === 'dept-eng')
+              return Promise.resolve({ name: 'Engineering' });
+            if (where.id === 'dept-hr')
+              return Promise.resolve({ name: 'Human Resources' });
+            if (where.id === 'dept-med')
+              return Promise.resolve({ name: 'Medical' });
+            return Promise.resolve(null);
+          }),
       },
       employee: {
         findMany: jest.fn(),
@@ -96,4 +101,3 @@ describe('Department-Scoped Employee Code Generator', () => {
     expect(transferredCode).toBe('EMP-HR-003');
   });
 });
-

@@ -115,7 +115,8 @@ export class CredentialService {
     );
 
     return {
-      message: 'Professional credential submitted successfully for verification.',
+      message:
+        'Professional credential submitted successfully for verification.',
       credential: {
         ...credential,
         ...statusInfo,
@@ -303,7 +304,9 @@ export class CredentialService {
         verifiedById,
         verifiedAt: new Date(),
         rejectionReason:
-          dto.status === 'REJECTED' ? dto.rejectionReason || 'Rejected by reviewer' : null,
+          dto.status === 'REJECTED'
+            ? dto.rejectionReason || 'Rejected by reviewer'
+            : null,
       },
     });
 
@@ -422,4 +425,3 @@ export class CredentialService {
     };
   }
 }
-

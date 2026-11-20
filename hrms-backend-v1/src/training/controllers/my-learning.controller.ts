@@ -92,14 +92,21 @@ export class MyLearningController {
       }),
     ]);
 
-    const completedCount = enrollments.filter((e) => e.status === 'COMPLETED').length;
-    const totalHoursSpent = enrollments.reduce((sum, e) => sum + (e.actualHoursSpent || 0), 0);
+    const completedCount = enrollments.filter(
+      (e) => e.status === 'COMPLETED',
+    ).length;
+    const totalHoursSpent = enrollments.reduce(
+      (sum, e) => sum + (e.actualHoursSpent || 0),
+      0,
+    );
 
     return {
       summary: {
         totalEnrolled: enrollments.length,
         completedCount,
-        inProgressCount: enrollments.filter((e) => e.status === 'IN_PROGRESS' || e.status === 'ENROLLED').length,
+        inProgressCount: enrollments.filter(
+          (e) => e.status === 'IN_PROGRESS' || e.status === 'ENROLLED',
+        ).length,
         totalHoursSpent: Math.round(totalHoursSpent * 10) / 10,
         certificatesEarned: certificates.length,
         competenciesCount: competencies.length,

@@ -172,8 +172,7 @@ export class CandidateConversionService {
     const conversionResult = await this.prisma.$transaction(async (tx) => {
       // 2.1 Generate sequential employee code following Company Settings format
       const targetDeptId =
-        acceptedVersion.departmentId ||
-        application.jobRequisition.departmentId;
+        acceptedVersion.departmentId || application.jobRequisition.departmentId;
 
       const employeeCode = await this.sequenceService.generateEmployeeCode(
         companyId,

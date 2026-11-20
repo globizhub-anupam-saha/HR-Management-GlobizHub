@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import {
@@ -99,7 +103,9 @@ export class TrainingEnrollmentService {
       data: {
         ...(dto.status && { status: dto.status }),
         ...(dto.completionDate !== undefined && {
-          completionDate: dto.completionDate ? new Date(dto.completionDate) : null,
+          completionDate: dto.completionDate
+            ? new Date(dto.completionDate)
+            : null,
         }),
         ...(dto.completionPercentage !== undefined && {
           completionPercentage: dto.completionPercentage,
@@ -150,16 +156,19 @@ export class TrainingEnrollmentService {
         if (planWithProgram?.program?.competencies?.length) {
           const updaterId = user.sub || user.id;
           for (const pc of planWithProgram.program.competencies) {
-            const currentRecord = await this.prisma.employeeCompetency.findUnique({
-              where: {
-                employeeId_competencyId: {
-                  employeeId: existing.employeeId,
-                  competencyId: pc.competencyId,
+            const currentRecord =
+              await this.prisma.employeeCompetency.findUnique({
+                where: {
+                  employeeId_competencyId: {
+                    employeeId: existing.employeeId,
+                    competencyId: pc.competencyId,
+                  },
                 },
-              },
-            });
+              });
 
-            const currentRank = currentRecord ? PROFICIENCY_RANK[currentRecord.currentLevel] || 0 : 0;
+            const currentRank = currentRecord
+              ? PROFICIENCY_RANK[currentRecord.currentLevel] || 0
+              : 0;
             const targetRank = PROFICIENCY_RANK[pc.targetLevel] || 2;
 
             if (targetRank >= currentRank) {
@@ -192,7 +201,10 @@ export class TrainingEnrollmentService {
           }
         }
       } catch (err) {
-        console.error('Error auto-updating competencies on enrollment completion:', err);
+        console.error(
+          'Error auto-updating competencies on enrollment completion:',
+          err,
+        );
       }
     }
 
@@ -250,9 +262,12 @@ export class TrainingEnrollmentService {
         },
         update: {
           status: rec.status,
-          attendedHours: rec.attendedHours !== undefined ? rec.attendedHours : undefined,
+          attendedHours:
+            rec.attendedHours !== undefined ? rec.attendedHours : undefined,
           checkInTime: rec.checkInTime ? new Date(rec.checkInTime) : undefined,
-          checkOutTime: rec.checkOutTime ? new Date(rec.checkOutTime) : undefined,
+          checkOutTime: rec.checkOutTime
+            ? new Date(rec.checkOutTime)
+            : undefined,
           notes: rec.notes !== undefined ? rec.notes : undefined,
         },
       });
@@ -262,10 +277,18 @@ export class TrainingEnrollmentService {
         where: { enrollmentId: enrollment.id },
       });
 
-      const totalHours = allAttendances.reduce((sum, a) => sum + (a.attendedHours || 0), 0);
-      const attendedSessions = allAttendances.filter((a) => a.status === 'PRESENT' || a.status === 'LATE').length;
+      const totalHours = allAttendances.reduce(
+        (sum, a) => sum + (a.attendedHours || 0),
+        0,
+      );
+      const attendedSessions = allAttendances.filter(
+        (a) => a.status === 'PRESENT' || a.status === 'LATE',
+      ).length;
       const totalSessions = allAttendances.length;
-      const completionPercentage = totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 0;
+      const completionPercentage =
+        totalSessions > 0
+          ? Math.round((attendedSessions / totalSessions) * 100)
+          : 0;
 
       await this.prisma.trainingEnrollment.update({
         where: { id: enrollment.id },

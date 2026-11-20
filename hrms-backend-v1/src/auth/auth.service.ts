@@ -55,7 +55,9 @@ export class AuthService {
       select: { id: true },
     });
     if (existingUser) {
-      throw new ConflictException('An account already exists with this email address');
+      throw new ConflictException(
+        'An account already exists with this email address',
+      );
     }
 
     // 2. Cooldown check: prevent requesting resend within 45 seconds
@@ -69,7 +71,9 @@ export class AuthService {
     if (recentOtp) {
       const waitSeconds = Math.max(
         1,
-        Math.ceil((recentOtp.createdAt.getTime() + 45 * 1000 - Date.now()) / 1000),
+        Math.ceil(
+          (recentOtp.createdAt.getTime() + 45 * 1000 - Date.now()) / 1000,
+        ),
       );
       throw new HttpException(
         `Please wait ${waitSeconds}s before requesting a new verification code`,
@@ -99,7 +103,9 @@ export class AuthService {
 
     // 5. Send Email via Resend
     await this.emailService.sendRegistrationOtpEmail(normalizedEmail, otp);
-    this.logger.log(`[Registration OTP] Generated verification code for ${normalizedEmail}: ${otp}`);
+    this.logger.log(
+      `[Registration OTP] Generated verification code for ${normalizedEmail}: ${otp}`,
+    );
 
     return {
       success: true,
@@ -126,19 +132,28 @@ export class AuthService {
     });
 
     if (!record) {
-      throw new BadRequestException('No pending verification code found. Please request a new code.');
+      throw new BadRequestException(
+        'No pending verification code found. Please request a new code.',
+      );
     }
 
     if (new Date() > record.expiresAt) {
-      throw new BadRequestException('Verification code has expired. Please request a new code.');
+      throw new BadRequestException(
+        'Verification code has expired. Please request a new code.',
+      );
     }
 
     if (record.attempts >= 5) {
-      throw new BadRequestException('Too many incorrect attempts. Please request a new verification code.');
+      throw new BadRequestException(
+        'Too many incorrect attempts. Please request a new verification code.',
+      );
     }
 
     // Check hash
-    const inputHash = crypto.createHash('sha256').update(cleanOtp).digest('hex');
+    const inputHash = crypto
+      .createHash('sha256')
+      .update(cleanOtp)
+      .digest('hex');
     if (inputHash !== record.otpHash) {
       await this.prisma.emailOtp.update({
         where: { id: record.id },
@@ -397,7 +412,9 @@ export class AuthService {
       if (trialPlan) {
         const trialDays = trialPlan.trialDays || 14;
         const now = new Date();
-        const trialEndsAt = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        const trialEndsAt = new Date(
+          now.getTime() + trialDays * 24 * 60 * 60 * 1000,
+        );
         await this.prisma.subscription.create({
           data: {
             companyId: company.id,
@@ -409,10 +426,14 @@ export class AuthService {
             currentPeriodEnd: trialEndsAt,
           },
         });
-        this.logger.log(`Auto-provisioned Free Trial subscription for company: ${company.name} (${company.id})`);
+        this.logger.log(
+          `Auto-provisioned Free Trial subscription for company: ${company.name} (${company.id})`,
+        );
       }
     } catch (subErr: any) {
-      this.logger.error(`Failed to auto-provision trial subscription for company ${company.id}: ${subErr?.message}`);
+      this.logger.error(
+        `Failed to auto-provision trial subscription for company ${company.id}: ${subErr?.message}`,
+      );
     }
 
     // 5. Process and Invite Additional Employees (from Bulk Excel/CSV upload or comma-separated emails)
@@ -472,7 +493,11 @@ export class AuthService {
     if (uniqueInvites.length > 0) {
       // S-04 / P0: Asynchronously dispatch bulk onboarding and email invitations so HTTP registration returns instantly
       setImmediate(() => {
-        this.processBulkInvitesBackground(company.id, newAdmin.id, uniqueInvites).catch((err) => {
+        this.processBulkInvitesBackground(
+          company.id,
+          newAdmin.id,
+          uniqueInvites,
+        ).catch((err) => {
           this.logger.error(
             `Failed background bulk invites for company ${company.id}: ${err?.message}`,
             err?.stack,
@@ -683,7 +708,7 @@ export class AuthService {
       this.logger.log(
         `Completed background bulk invite processing for company ${companyId}`,
       );
-    } catch (err: any) {
+    } catch (_err: any) {
       this.logger.error(
         `Background bulk invite worker error for company ${companyId}: ${err?.message}`,
         err?.stack,
@@ -703,7 +728,10 @@ export class AuthService {
         });
 
         if (platformUser && platformUser.isActive) {
-          const isPlatformMatch = await bcrypt.compare(pass, platformUser.password);
+          const isPlatformMatch = await bcrypt.compare(
+            pass,
+            platformUser.password,
+          );
           if (isPlatformMatch) {
             // Update login metrics
             await this.prisma.platformUser.update({
@@ -751,7 +779,7 @@ export class AuthService {
             };
           }
         }
-      } catch (err: any) {
+      } catch (_err: any) {
         // Fall through to Employee lookup
       }
     }
@@ -789,15 +817,20 @@ export class AuthService {
     }
 
     // S-03: Block logins if the invitation has not been accepted yet
-    if (Boolean(user.inviteToken)) {
+    if (user.inviteToken) {
       throw new UnauthorizedException(
         'Your account is pending activation. Please set your password using the invitation link sent to your email.',
       );
     }
 
     // Block deactivated or terminated accounts
-    if (user.employmentStatus === 'TERMINATED' || user.employmentStatus === 'RESIGNED') {
-      throw new ForbiddenException('Your employee account is no longer active.');
+    if (
+      user.employmentStatus === 'TERMINATED' ||
+      user.employmentStatus === 'RESIGNED'
+    ) {
+      throw new ForbiddenException(
+        'Your employee account is no longer active.',
+      );
     }
 
     // If the employee already accepted their invite, ensure status is ACTIVE
@@ -934,7 +967,10 @@ export class AuthService {
 
   async setPassword(dto: SetPasswordDto) {
     // S-14: Hash the incoming raw token before comparing with the stored hash
-    const hashedToken = crypto.createHash('sha256').update(dto.token).digest('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(dto.token)
+      .digest('hex');
     // 1. Find the employee by their hashed invite token
     const employee = await this.prisma.employee.findUnique({
       where: { inviteToken: hashedToken },
@@ -963,7 +999,10 @@ export class AuthService {
         password: hashedPassword,
         inviteToken: null,
         resetPasswordExpires: null,
-        employmentStatus: employee.employmentStatus === 'INVITED' ? 'ACTIVE' : employee.employmentStatus,
+        employmentStatus:
+          employee.employmentStatus === 'INVITED'
+            ? 'ACTIVE'
+            : employee.employmentStatus,
       },
     });
 
@@ -1054,8 +1093,14 @@ export class AuthService {
       throw new BadRequestException('Invalid or missing reset token');
     }
 
-    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters long');
+    if (
+      !newPassword ||
+      typeof newPassword !== 'string' ||
+      newPassword.length < 8
+    ) {
+      throw new BadRequestException(
+        'Password must be at least 8 characters long',
+      );
     }
 
     // 1. Hash the incoming token so we can compare it to the DB
@@ -1082,7 +1127,10 @@ export class AuthService {
         password: hashedPassword,
         resetPasswordToken: null,
         resetPasswordExpires: null,
-        employmentStatus: employee.employmentStatus === 'INVITED' ? 'ACTIVE' : employee.employmentStatus,
+        employmentStatus:
+          employee.employmentStatus === 'INVITED'
+            ? 'ACTIVE'
+            : employee.employmentStatus,
       },
     });
 
@@ -1110,4 +1158,3 @@ export class AuthService {
     return { designation: employee?.designation || null };
   }
 }
-

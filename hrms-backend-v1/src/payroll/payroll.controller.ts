@@ -75,10 +75,7 @@ export class PayrollController {
   // HR/Admin: Track real-time progress of a batch payroll job
   @Get('batch/:jobId')
   @RequirePermissions('payroll.manage')
-  async getBatchProgress(
-    @Request() req,
-    @Param('jobId') jobId: string,
-  ) {
+  async getBatchProgress(@Request() req, @Param('jobId') jobId: string) {
     return this.payrollService.getBatchRunProgress(req.user.companyId, jobId);
   }
 
@@ -227,7 +224,10 @@ export class PayrollController {
     @Request() req,
     @Param('employeeId') employeeId: string,
   ) {
-    return this.payrollService.getSalaryStructure(req.user.companyId, employeeId);
+    return this.payrollService.getSalaryStructure(
+      req.user.companyId,
+      employeeId,
+    );
   }
 
   // HR/Admin: Set an employee's salary structure (supports both /salary-structure and /salary-structure/:employeeId)
@@ -295,14 +295,8 @@ export class PayrollController {
 
   @Delete('templates/:id')
   @RequirePermissions('payroll.manage')
-  async deleteTemplate(
-    @Request() req,
-    @Param('id') id: string,
-  ) {
-    return this.payrollService.deleteSalaryTemplate(
-      req.user.companyId,
-      id,
-    );
+  async deleteTemplate(@Request() req, @Param('id') id: string) {
+    return this.payrollService.deleteSalaryTemplate(req.user.companyId, id);
   }
 
   // ==========================================

@@ -17,4 +17,3 @@ import { PlatformAuthModule } from '../auth/platform-auth.module';
   exports: [PlatformSubscriptionService, ModuleEntitlementGuard],
 })
 export class PlatformSubscriptionModule {}
-

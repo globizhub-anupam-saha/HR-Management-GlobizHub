@@ -14,7 +14,9 @@ export class EmailService {
   async sendPasswordResetEmail(email: string, resetUrl: string) {
     try {
       const fromEmail =
-        process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <onboarding@resend.dev>';
+        process.env.RESEND_FROM_EMAIL ||
+        process.env.SENDER_EMAIL ||
+        'GlobizHR <onboarding@resend.dev>';
       const { error } = await this.resend.emails.send({
         from: fromEmail,
         to: email,
@@ -87,7 +89,10 @@ export class EmailService {
       });
 
       if (error) {
-        console.error('Failed to send registration OTP email via Resend:', error);
+        console.error(
+          'Failed to send registration OTP email via Resend:',
+          error,
+        );
       }
     } catch (error) {
       console.error('Failed to send registration OTP email via Resend:', error);
@@ -102,7 +107,9 @@ export class EmailService {
   ) {
     const magicLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/set-password?token=${inviteToken}`;
     const fromEmail =
-      process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <onboarding@resend.dev>';
+      process.env.RESEND_FROM_EMAIL ||
+      process.env.SENDER_EMAIL ||
+      'GlobizHR <onboarding@resend.dev>';
     try {
       const { error } = await this.resend.emails.send({
         from: fromEmail,
@@ -121,10 +128,16 @@ export class EmailService {
       });
 
       if (error) {
-        console.error('Resend API returned error for employee invitation:', error);
+        console.error(
+          'Resend API returned error for employee invitation:',
+          error,
+        );
       }
     } catch (emailError) {
-      console.error('Failed to send onboarding invitation email via Resend:', emailError);
+      console.error(
+        'Failed to send onboarding invitation email via Resend:',
+        emailError,
+      );
     }
   }
 
@@ -142,15 +155,29 @@ export class EmailService {
     portalUrl?: string;
   }) {
     const fromEmail =
-      process.env.RESEND_FROM_EMAIL || process.env.SENDER_EMAIL || 'GlobizHR <payroll@resend.dev>';
+      process.env.RESEND_FROM_EMAIL ||
+      process.env.SENDER_EMAIL ||
+      'GlobizHR <payroll@resend.dev>';
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     const monthName = monthNames[params.month - 1] || `Month ${params.month}`;
     const earnings = params.breakdown?.earnings || {};
     const deductions = params.breakdown?.deductions || {};
-    const viewUrl = params.portalUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspace/payroll/my-payslips`;
+    const viewUrl =
+      params.portalUrl ||
+      `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspace/payroll/my-payslips`;
 
     try {
       const { error } = await this.resend.emails.send({

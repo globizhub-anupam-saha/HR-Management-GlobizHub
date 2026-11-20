@@ -66,6 +66,11 @@ export class EmployeePositionChangeController {
     @Param('id') id: string,
     @Body() dto: ApplyPositionChangeDto,
   ) {
-    return this.service.applyApprovedChange(req.user.companyId, id, req.user, dto);
+    return this.service.applyApprovedChange(
+      req.user.companyId,
+      id,
+      req.user,
+      dto,
+    );
   }
 }

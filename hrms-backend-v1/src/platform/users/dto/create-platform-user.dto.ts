@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsIn,
+} from 'class-validator';
 import { PlatformRoleType } from '../../../../generated/prisma/enums';
 
 export class CreatePlatformUserDto {
@@ -19,7 +25,12 @@ export class CreatePlatformUserDto {
   lastName: string;
 
   @IsString()
-  @IsIn(['SUPER_ADMIN', 'PLATFORM_ADMIN', 'BILLING_ADMIN', 'SUPPORT_ADMIN', 'PLATFORM_ANALYST'])
+  @IsIn([
+    'SUPER_ADMIN',
+    'PLATFORM_ADMIN',
+    'BILLING_ADMIN',
+    'SUPPORT_ADMIN',
+    'PLATFORM_ANALYST',
+  ])
   role: PlatformRoleType;
 }
-

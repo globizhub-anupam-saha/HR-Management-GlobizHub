@@ -135,8 +135,18 @@ describe('Payroll SaaS Enterprise Features', () => {
     it('immediately returns a job ticket and offloads processing without blocking HTTP thread', async () => {
       mockPrisma.payrollBatchRun.findFirst.mockResolvedValue(null);
       mockPrisma.employee.findMany.mockResolvedValue([
-        { id: 'emp-1', firstName: 'Alice', lastName: 'Smith', employeeCode: 'EMP001' },
-        { id: 'emp-2', firstName: 'Bob', lastName: 'Jones', employeeCode: 'EMP002' },
+        {
+          id: 'emp-1',
+          firstName: 'Alice',
+          lastName: 'Smith',
+          employeeCode: 'EMP001',
+        },
+        {
+          id: 'emp-2',
+          firstName: 'Bob',
+          lastName: 'Jones',
+          employeeCode: 'EMP002',
+        },
       ]);
       mockPrisma.payrollBatchRun.create.mockResolvedValue({
         id: 'job-run-777',
@@ -175,7 +185,10 @@ describe('Payroll SaaS Enterprise Features', () => {
         departmentId: null,
       });
 
-      const progress = await batchQueueService.getBatchRunProgress('comp-1', 'job-run-777');
+      const progress = await batchQueueService.getBatchRunProgress(
+        'comp-1',
+        'job-run-777',
+      );
 
       expect(progress.jobId).toBe('job-run-777');
       expect(progress.status).toBe('PROCESSING');
@@ -186,7 +199,10 @@ describe('Payroll SaaS Enterprise Features', () => {
   });
 
   describe('Feature D: Subscription Tier Gating Guard', () => {
-    const createMockContext = (companyPlan: string, requiredTier?: PayrollFeatureTier): ExecutionContext => {
+    const createMockContext = (
+      companyPlan: string,
+      requiredTier?: PayrollFeatureTier,
+    ): ExecutionContext => {
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(requiredTier);
       return {
         getHandler: () => ({}),
@@ -200,7 +216,9 @@ describe('Payroll SaaS Enterprise Features', () => {
     };
 
     it('allows access to Starter features for Normal plan', async () => {
-      mockPrisma.company.findUnique.mockResolvedValue({ subscription: 'NORMAL' });
+      mockPrisma.company.findUnique.mockResolvedValue({
+        subscription: 'NORMAL',
+      });
       const context = createMockContext('NORMAL', PayrollFeatureTier.STARTER);
 
       const canActivate = await tierGuard.canActivate(context);
@@ -208,10 +226,14 @@ describe('Payroll SaaS Enterprise Features', () => {
     });
 
     it('blocks Normal (Starter) plan from accessing Growth statutory returns', async () => {
-      mockPrisma.company.findUnique.mockResolvedValue({ subscription: 'NORMAL' });
+      mockPrisma.company.findUnique.mockResolvedValue({
+        subscription: 'NORMAL',
+      });
       const context = createMockContext('NORMAL', PayrollFeatureTier.GROWTH);
 
-      await expect(tierGuard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(tierGuard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('allows Pro (Growth) plan to access Statutory returns', async () => {
@@ -226,24 +248,35 @@ describe('Payroll SaaS Enterprise Features', () => {
       mockPrisma.company.findUnique.mockResolvedValue({ subscription: 'PRO' });
       const context = createMockContext('PRO', PayrollFeatureTier.ENTERPRISE);
 
-      await expect(tierGuard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(tierGuard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('allows Enterprise plan to access all advanced payroll capabilities', async () => {
-      mockPrisma.company.findUnique.mockResolvedValue({ subscription: 'ENTERPRISE' });
-      const context = createMockContext('ENTERPRISE', PayrollFeatureTier.ENTERPRISE);
+      mockPrisma.company.findUnique.mockResolvedValue({
+        subscription: 'ENTERPRISE',
+      });
+      const context = createMockContext(
+        'ENTERPRISE',
+        PayrollFeatureTier.ENTERPRISE,
+      );
 
       const canActivate = await tierGuard.canActivate(context);
       expect(canActivate).toBe(true);
     });
 
     it('grants full preview access during Free Trial', async () => {
-      mockPrisma.company.findUnique.mockResolvedValue({ subscription: 'FREE_TRIAL' });
-      const context = createMockContext('FREE_TRIAL', PayrollFeatureTier.ENTERPRISE);
+      mockPrisma.company.findUnique.mockResolvedValue({
+        subscription: 'FREE_TRIAL',
+      });
+      const context = createMockContext(
+        'FREE_TRIAL',
+        PayrollFeatureTier.ENTERPRISE,
+      );
 
       const canActivate = await tierGuard.canActivate(context);
       expect(canActivate).toBe(true);
     });
   });
 });
-

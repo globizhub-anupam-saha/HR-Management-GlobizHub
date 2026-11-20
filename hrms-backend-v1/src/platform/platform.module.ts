@@ -31,4 +31,3 @@ import { PlatformSupportModule } from './support/platform-support.module';
   ],
 })
 export class PlatformModule {}
-

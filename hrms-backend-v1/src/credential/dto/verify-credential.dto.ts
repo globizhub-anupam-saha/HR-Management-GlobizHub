@@ -10,4 +10,3 @@ export class VerifyCredentialDto {
   @IsOptional()
   rejectionReason?: string;
 }
-

@@ -15,7 +15,10 @@ export interface ReconciliationReport {
     contributionsCount: number;
     challansCount: number;
     paymentsCount: number;
-    breakdownByCategory: Record<string, { employee: number; employer: number; total: number }>;
+    breakdownByCategory: Record<
+      string,
+      { employee: number; employer: number; total: number }
+    >;
   };
   notes?: string;
 }
@@ -30,7 +33,11 @@ export class StatutoryReconciliationService {
   /**
    * Reconciles a Statutory Return against computed contributions, challans, and payments.
    */
-  async reconcileReturn(companyId: string, returnId: string, customNotes?: string) {
+  async reconcileReturn(
+    companyId: string,
+    returnId: string,
+    customNotes?: string,
+  ) {
     const statutoryReturn = await this.prisma.statutoryReturn.findFirst({
       where: { id: returnId, companyId },
       include: {
@@ -51,7 +58,15 @@ export class StatutoryReconciliationService {
     // Determine category filter based on return type (PF or ESI)
     const categoryFilter =
       statutoryReturn.type === 'PF'
-        ? ['PF', 'EPS', 'EDLI', 'Administrative', 'EPF_EE', 'EPF_ER_PENSION', 'EPF_ER_DIFF']
+        ? [
+            'PF',
+            'EPS',
+            'EDLI',
+            'Administrative',
+            'EPF_EE',
+            'EPF_ER_PENSION',
+            'EPF_ER_DIFF',
+          ]
         : ['ESI', 'ESIC'];
 
     let contributions = await this.prisma.statutoryContribution.findMany({
@@ -88,7 +103,10 @@ export class StatutoryReconciliationService {
 
     // 2. Aggregate Contributions
     let totalContributionAmt = 0;
-    const breakdownByCategory: Record<string, { employee: number; employer: number; total: number }> = {};
+    const breakdownByCategory: Record<
+      string,
+      { employee: number; employer: number; total: number }
+    > = {};
 
     for (const c of contributions) {
       const emp = Number(c.employeeAmount) || 0;
@@ -97,7 +115,11 @@ export class StatutoryReconciliationService {
       totalContributionAmt += sum;
 
       if (!breakdownByCategory[c.category]) {
-        breakdownByCategory[c.category] = { employee: 0, employer: 0, total: 0 };
+        breakdownByCategory[c.category] = {
+          employee: 0,
+          employer: 0,
+          total: 0,
+        };
       }
       breakdownByCategory[c.category].employee += emp;
       breakdownByCategory[c.category].employer += empyr;
@@ -141,11 +163,16 @@ export class StatutoryReconciliationService {
 
     // 4. Compute Discrepancy
     // Compare total computed contributions vs challans or payments
-    const diffWithChallan = Math.abs(Math.round(totalContributionAmt) - Math.round(totalChallanAmt));
-    const diffWithPaid = Math.abs(Math.round(totalContributionAmt) - Math.round(totalPaidAmt));
+    const diffWithChallan = Math.abs(
+      Math.round(totalContributionAmt) - Math.round(totalChallanAmt),
+    );
+    const diffWithPaid = Math.abs(
+      Math.round(totalContributionAmt) - Math.round(totalPaidAmt),
+    );
 
     // A return is MATCHED if there is at least one challan and the contribution matches the challan within +/- 1 INR tolerance (due to roundings)
-    const isMatched = statutoryReturn.challans.length > 0 && diffWithChallan <= 1;
+    const isMatched =
+      statutoryReturn.challans.length > 0 && diffWithChallan <= 1;
     const status = isMatched ? 'MATCHED' : 'MISMATCH';
 
     const discrepancies = {
@@ -169,7 +196,8 @@ export class StatutoryReconciliationService {
       } else if (diffWithPaid > 1) {
         notes = `Challan generated matches contributions, but pending full payment (Paid: ₹${totalPaidAmt}, Due: ₹${totalChallanAmt}).`;
       } else {
-        notes = 'Perfect match: computed payroll contributions, generated challan, and recorded payments align.';
+        notes =
+          'Perfect match: computed payroll contributions, generated challan, and recorded payments align.';
       }
     }
 
@@ -196,7 +224,11 @@ export class StatutoryReconciliationService {
   /**
    * Retrieves reconciliation history for a specific statutory return or all returns in an establishment.
    */
-  async getReconciliations(companyId: string, returnId?: string, establishmentId?: string) {
+  async getReconciliations(
+    companyId: string,
+    returnId?: string,
+    establishmentId?: string,
+  ) {
     const where: any = {
       return: {
         companyId,
@@ -230,4 +262,3 @@ export class StatutoryReconciliationService {
     });
   }
 }
-

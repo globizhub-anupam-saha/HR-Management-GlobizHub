@@ -31,7 +31,7 @@ const getEncryptionKey = (): Buffer => {
   if (!envKey) {
     throw new Error(
       'ENCRYPTION_KEY environment variable is not set. ' +
-        'Generate one with: node -e "require(\'crypto\').randomBytes(32).toString(\'hex\')". ' +
+        "Generate one with: node -e \"require('crypto').randomBytes(32).toString('hex')\". " +
         'Server cannot start without it — PII fields cannot be encrypted.',
     );
   }

@@ -20,4 +20,3 @@ export class PlatformDashboardController {
     return this.dashboardService.triggerSnapshotRecalculation();
   }
 }
-

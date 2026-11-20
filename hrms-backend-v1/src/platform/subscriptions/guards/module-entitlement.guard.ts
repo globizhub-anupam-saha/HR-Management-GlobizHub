@@ -39,7 +39,9 @@ export class ModuleEntitlementGuard implements CanActivate {
 
     const companyId = user?.companyId;
     if (!companyId) {
-      throw new ForbiddenException('Tenant company context required for module access validation');
+      throw new ForbiddenException(
+        'Tenant company context required for module access validation',
+      );
     }
 
     // 1. Check Organization-specific overrides first
@@ -104,4 +106,3 @@ export class ModuleEntitlementGuard implements CanActivate {
     return true;
   }
 }
-

@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateOrganizationDto {
   @IsString()
@@ -70,4 +76,3 @@ export class CreateOrganizationDto {
   @IsString()
   planCode?: string = 'PLAN_FREE';
 }
-

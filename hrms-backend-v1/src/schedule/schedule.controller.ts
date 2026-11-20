@@ -58,10 +58,7 @@ export class ScheduleController {
   // ==========================================
   @Get('matrix')
   @RequirePermissions('schedule.view')
-  async getRosterMatrix(
-    @Request() req,
-    @Query() query: QueryRosterMatrixDto,
-  ) {
+  async getRosterMatrix(@Request() req, @Query() query: QueryRosterMatrixDto) {
     return this.scheduleService.getRosterMatrix(
       req.user.companyId,
       req.user.sub,
@@ -75,10 +72,7 @@ export class ScheduleController {
   // ==========================================
   @Post('bulk-assign')
   @RequirePermissions('schedule.create')
-  async bulkAssignSchedule(
-    @Request() req,
-    @Body() dto: BulkAssignScheduleDto,
-  ) {
+  async bulkAssignSchedule(@Request() req, @Body() dto: BulkAssignScheduleDto) {
     return this.scheduleService.bulkAssignSchedule(
       req.user.companyId,
       dto,

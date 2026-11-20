@@ -891,7 +891,8 @@ export class AttendanceService {
           r.status === 'PROXY_SHIFT_SWAP',
       ).length,
       late: rows.filter((r) => r.isLate || r.status === 'LATE').length,
-      halfDay: rows.filter((r) => r.status === 'HALF_DAY' || r.isHalfDay).length,
+      halfDay: rows.filter((r) => r.status === 'HALF_DAY' || r.isHalfDay)
+        .length,
       absent: rows.filter((r) => r.status === 'ABSENT').length,
       onLeave: rows.filter((r) => r.status === 'ON_LEAVE').length,
     };

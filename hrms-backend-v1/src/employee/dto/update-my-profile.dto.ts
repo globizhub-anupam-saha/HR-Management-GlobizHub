@@ -5,10 +5,7 @@ import {
   IsDateString,
   MaxLength,
 } from 'class-validator';
-import {
-  BloodGroup,
-  Gender,
-} from '../../../generated/prisma/client';
+import { BloodGroup, Gender } from '../../../generated/prisma/client';
 
 /**
  * S-01 fix: only the fields an employee is allowed to set on their own profile.

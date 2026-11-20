@@ -298,8 +298,7 @@ export class AttendanceCronService {
       totalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
     }
 
-    const minFullDay =
-      employee.company.settings?.minimumHoursForFullDay ?? 8.0;
+    const minFullDay = employee.company.settings?.minimumHoursForFullDay ?? 8.0;
     let isHalfDay = false;
 
     if (record.checkInTime) {

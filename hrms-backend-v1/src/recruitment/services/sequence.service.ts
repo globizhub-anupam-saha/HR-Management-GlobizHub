@@ -125,4 +125,3 @@ export class SequenceService {
     return code;
   }
 }
-

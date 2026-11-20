@@ -15,7 +15,8 @@ describe('PlatformAuthGuard', () => {
         findUnique: jest.fn(),
       },
     };
-    process.env.JWT_SECRET = 'test_jwt_secret_must_be_long_enough_32_bytes_test';
+    process.env.JWT_SECRET =
+      'test_jwt_secret_must_be_long_enough_32_bytes_test';
     guard = new PlatformAuthGuard(jwtService, prismaService);
   });
 
@@ -34,7 +35,9 @@ describe('PlatformAuthGuard', () => {
 
   it('should throw UnauthorizedException if no token is present', async () => {
     const context = createMockContext();
-    await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('should throw ForbiddenException if token is from tenant HRMS (missing isPlatform: true)', async () => {
@@ -46,7 +49,9 @@ describe('PlatformAuthGuard', () => {
       isPlatform: false,
     });
 
-    await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should allow access if token has isPlatform: true and active PlatformUser', async () => {
@@ -69,4 +74,3 @@ describe('PlatformAuthGuard', () => {
     expect(req.platformUser.id).toBe('platform-user-1');
   });
 });
-

@@ -53,7 +53,11 @@ export class PlatformSupportController {
     @Body() dto: CreateTicketDto,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.supportService.createTicket(dto, currentUser.id, currentUser.email);
+    return this.supportService.createTicket(
+      dto,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Post('tickets/:id/reply')
@@ -62,7 +66,9 @@ export class PlatformSupportController {
     @Body() dto: ReplyTicketDto,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    const actorName = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email;
+    const actorName =
+      `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() ||
+      currentUser.email;
     return this.supportService.replyTicket(id, dto, currentUser.id, actorName);
   }
 
@@ -73,7 +79,12 @@ export class PlatformSupportController {
     @Body('assigneeId') assigneeId: string,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.supportService.updateStatus(id, status, assigneeId, currentUser.id, currentUser.email);
+    return this.supportService.updateStatus(
+      id,
+      status,
+      assigneeId,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 }
-

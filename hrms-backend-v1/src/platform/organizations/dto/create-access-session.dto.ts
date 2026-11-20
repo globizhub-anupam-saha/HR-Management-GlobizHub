@@ -1,8 +1,18 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateAccessSessionDto {
   @IsString()
-  @IsNotEmpty({ message: 'A clear reason is required to initiate a controlled support session' })
+  @IsNotEmpty({
+    message:
+      'A clear reason is required to initiate a controlled support session',
+  })
   reason: string;
 
   @IsOptional()
@@ -11,4 +21,3 @@ export class CreateAccessSessionDto {
   @Max(240)
   durationMinutes?: number = 60;
 }
-

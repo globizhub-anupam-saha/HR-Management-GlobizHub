@@ -23,9 +23,14 @@ export class JobOfferController {
 
   private ensureCanManageOffers(role: string) {
     if (
-      !['SUPER_ADMIN', 'HR_HEAD', 'OWNER', 'ADMIN', 'RECRUITER', 'MANAGER'].includes(
-        role,
-      )
+      ![
+        'SUPER_ADMIN',
+        'HR_HEAD',
+        'OWNER',
+        'ADMIN',
+        'RECRUITER',
+        'MANAGER',
+      ].includes(role)
     ) {
       throw new ForbiddenException(
         'You do not have permission to manage recruitment offers.',
@@ -34,10 +39,7 @@ export class JobOfferController {
   }
 
   @Post('offers')
-  async createOfferDirect(
-    @Request() req,
-    @Body() body: any,
-  ) {
+  async createOfferDirect(@Request() req, @Body() body: any) {
     this.ensureCanManageOffers(req.user.role);
     const applicationId = body.applicationId || body.candidateApplicationId;
     return this.jobOfferService.createOffer(

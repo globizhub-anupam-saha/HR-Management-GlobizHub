@@ -607,7 +607,9 @@ export class DocumentService {
     const isCompanyDoc = document.category === DocumentCategory.COMPANY;
 
     if (!isPrivileged && !isOwner && !isCompanyDoc) {
-      throw new ForbiddenException('You are not authorized to view this document.');
+      throw new ForbiddenException(
+        'You are not authorized to view this document.',
+      );
     }
 
     const docs = await this.attachSecureUrls([document]);
@@ -617,11 +619,7 @@ export class DocumentService {
   // ==========================================
   // 10. E-Signature / Acknowledgement
   // ==========================================
-  async signDocument(
-    documentId: string,
-    userId: string,
-    companyId: string,
-  ) {
+  async signDocument(documentId: string, userId: string, companyId: string) {
     const document = await this.prisma.document.findUnique({
       where: { id: documentId },
       include: { employee: true },
@@ -640,7 +638,9 @@ export class DocumentService {
     const isCompanyPolicy = document.category === DocumentCategory.COMPANY;
 
     if (!isAssigned && !isCompanyPolicy) {
-      throw new ForbiddenException('You are not authorized to sign this document.');
+      throw new ForbiddenException(
+        'You are not authorized to sign this document.',
+      );
     }
 
     // P0 Multi-Tenant / Multi-Employee Safety:

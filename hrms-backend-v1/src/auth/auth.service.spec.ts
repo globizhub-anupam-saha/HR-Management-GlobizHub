@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
 import { AuditService } from '../audit/audit.service';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -179,7 +180,9 @@ describe('AuthService', () => {
 
       const result = await service.resetPassword(token, newPassword);
 
-      expect(result).toEqual({ message: 'Password has been reset successfully' });
+      expect(result).toEqual({
+        message: 'Password has been reset successfully',
+      });
       expect(prisma.employee.update).toHaveBeenCalledWith({
         where: { id: 'employee-1' },
         data: {
@@ -261,7 +264,7 @@ describe('AuthService', () => {
 
   describe('verifyRegistrationOtp', () => {
     it('verifies valid OTP successfully', async () => {
-      const crypto = require('crypto');
+      // import handled at top
       const testOtp = '123456';
       const otpHash = crypto.createHash('sha256').update(testOtp).digest('hex');
 
@@ -274,7 +277,10 @@ describe('AuthService', () => {
       });
       prisma.emailOtp.update.mockResolvedValue({});
 
-      const res = await service.verifyRegistrationOtp('user@example.com', testOtp);
+      const res = await service.verifyRegistrationOtp(
+        'user@example.com',
+        testOtp,
+      );
 
       expect(res.success).toBe(true);
       expect(res.verified).toBe(true);
@@ -285,7 +291,7 @@ describe('AuthService', () => {
     });
 
     it('rejects incorrect OTP and increments attempt count', async () => {
-      const crypto = require('crypto');
+      // import handled at top
       const testOtp = '123456';
       const otpHash = crypto.createHash('sha256').update(testOtp).digest('hex');
 

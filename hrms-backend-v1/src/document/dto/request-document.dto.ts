@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsEnum, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 import { DocumentCategory } from '../../../generated/prisma/client';
 
 export class RequestDocumentDto {

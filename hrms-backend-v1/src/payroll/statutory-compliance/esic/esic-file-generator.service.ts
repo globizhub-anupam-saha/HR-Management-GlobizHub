@@ -1,5 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { EsicMemberRecord, EsicGenerationResult } from './esic-provider.interface';
+import {
+  EsicMemberRecord,
+  EsicGenerationResult,
+} from './esic-provider.interface';
 
 @Injectable()
 export class EsicFileGeneratorService {
@@ -7,14 +10,20 @@ export class EsicFileGeneratorService {
    * Generates the ESIC Monthly Contribution upload file formatted strictly per ESIC employer portal requirements.
    * Fields: IP_NUMBER,IP_NAME,NO_OF_DAYS,TOTAL_MONTHLY_WAGES,REASON_FOR_ZERO_WAGES,LAST_WORKING_DAY
    */
-  generateEsicContributionFile(records: EsicMemberRecord[]): EsicGenerationResult {
+  generateEsicContributionFile(
+    records: EsicMemberRecord[],
+  ): EsicGenerationResult {
     if (!records || records.length === 0) {
-      throw new BadRequestException('No eligible ESIC insured person records found');
+      throw new BadRequestException(
+        'No eligible ESIC insured person records found',
+      );
     }
 
     const lines: string[] = [];
     // ESIC Portal upload specification
-    lines.push('IP Number,IP Name,No of Days for which wages paid,Total Monthly Wages,Reason Code for Zero wages,Last Working Day');
+    lines.push(
+      'IP Number,IP Name,No of Days for which wages paid,Total Monthly Wages,Reason Code for Zero wages,Last Working Day',
+    );
 
     let totalWages = 0;
     let totalEeContribution = 0;
@@ -28,7 +37,10 @@ export class EsicFileGeneratorService {
         );
       }
 
-      const cleanName = record.ipName.replace(/[,\r\n]/g, '').trim().substring(0, 80);
+      const cleanName = record.ipName
+        .replace(/[,\r\n]/g, '')
+        .trim()
+        .substring(0, 80);
 
       totalWages += record.totalMonthlyWages;
       totalEeContribution += record.eeContribution;
@@ -58,4 +70,3 @@ export class EsicFileGeneratorService {
     };
   }
 }
-

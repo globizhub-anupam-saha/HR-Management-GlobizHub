@@ -31,11 +31,14 @@ export class EsicCalculatorService {
     const monthlyWages = Math.round(input.grossSalary);
 
     // Rule: Exemption from employee share for daily wage up to Rs. 176
-    const dailyWage = noOfDaysWagesPaid > 0 ? monthlyWages / noOfDaysWagesPaid : 0;
+    const dailyWage =
+      noOfDaysWagesPaid > 0 ? monthlyWages / noOfDaysWagesPaid : 0;
     const isExemptDailyWage = dailyWage > 0 && dailyWage <= 176;
 
     // 1. Employee contribution: 0.75%
-    const eeContribution = isExemptDailyWage ? 0 : Math.ceil(monthlyWages * eeRate);
+    const eeContribution = isExemptDailyWage
+      ? 0
+      : Math.ceil(monthlyWages * eeRate);
 
     // 2. Employer contribution: 3.25% (ESIC rounds to nearest whole rupee)
     const erContribution = Math.ceil(monthlyWages * erRate);
@@ -54,4 +57,3 @@ export class EsicCalculatorService {
     };
   }
 }
-

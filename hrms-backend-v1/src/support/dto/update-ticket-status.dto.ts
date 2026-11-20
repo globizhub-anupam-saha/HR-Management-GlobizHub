@@ -10,4 +10,3 @@ export class UpdateTicketStatusDto {
   @IsString()
   resolutionNotes?: string;
 }
-

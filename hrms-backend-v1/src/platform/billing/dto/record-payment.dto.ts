@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, IsIn } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsIn,
+} from 'class-validator';
 
 export class RecordPaymentDto {
   @IsString()
@@ -33,4 +40,3 @@ export class RecordPaymentDto {
   @IsOptional()
   failureReason?: string;
 }
-

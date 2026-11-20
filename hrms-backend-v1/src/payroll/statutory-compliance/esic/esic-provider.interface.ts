@@ -23,7 +23,11 @@ export interface ESICProvider {
   /**
    * Future Phase 2/3: Upload monthly contribution through authorized ESIC API
    */
-  uploadContribution?(filePath: string, employerCode: string): Promise<{ success: boolean; challanNumber?: string; message: string }>;
-  fetchChallanStatus?(challanNumber: string): Promise<{ status: string; paidDate?: Date }>;
+  uploadContribution?(
+    filePath: string,
+    employerCode: string,
+  ): Promise<{ success: boolean; challanNumber?: string; message: string }>;
+  fetchChallanStatus?(
+    challanNumber: string,
+  ): Promise<{ status: string; paidDate?: Date }>;
 }
-

@@ -52,7 +52,8 @@ export class PayrollBatchQueueService implements OnModuleInit {
           status: 'FAILED',
           errorLog: JSON.stringify([
             {
-              reason: 'Execution interrupted: Server restarted or terminated while batch was active. Please trigger a new run.',
+              reason:
+                'Execution interrupted: Server restarted or terminated while batch was active. Please trigger a new run.',
               timestamp: new Date().toISOString(),
             },
           ]),
@@ -161,7 +162,10 @@ export class PayrollBatchQueueService implements OnModuleInit {
         actorId,
         employees,
       ).catch((err) => {
-        this.logger.error(`Fatal error in batch run ${batchRun.id}: ${err.message}`, err.stack);
+        this.logger.error(
+          `Fatal error in batch run ${batchRun.id}: ${err.message}`,
+          err.stack,
+        );
       });
     });
 
@@ -184,21 +188,36 @@ export class PayrollBatchQueueService implements OnModuleInit {
     month: number,
     year: number,
     actorId: string,
-    employees: Array<{ id: string; firstName: string; lastName: string; employeeCode: string | null }>,
+    employees: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      employeeCode: string | null;
+    }>,
   ): Promise<void> {
-    this.logger.log(`Starting background processing for batch run ${runId} (${employees.length} employees)`);
+    this.logger.log(
+      `Starting background processing for batch run ${runId} (${employees.length} employees)`,
+    );
 
-    const existingRecords = (await this.prisma.payrollRecord.findMany({
-      where: { companyId, month, year },
-      select: { employeeId: true },
-    })) || [];
-    const existingIds = new Set((existingRecords || []).map((r) => r.employeeId));
+    const existingRecords =
+      (await this.prisma.payrollRecord.findMany({
+        where: { companyId, month, year },
+        select: { employeeId: true },
+      })) || [];
+    const existingIds = new Set(
+      (existingRecords || []).map((r) => r.employeeId),
+    );
 
     let processedCount = 0;
     let successCount = 0;
     let failureCount = 0;
     let skippedCount = 0;
-    const errorDetails: Array<{ employeeId: string; code?: string | null; name: string; reason: string }> = [];
+    const errorDetails: Array<{
+      employeeId: string;
+      code?: string | null;
+      name: string;
+      reason: string;
+    }> = [];
 
     const CHUNK_SIZE = 10;
 
@@ -231,7 +250,10 @@ export class PayrollBatchQueueService implements OnModuleInit {
           );
           successCount++;
         } catch (err: any) {
-          if (err.message && err.message.includes('No active salary structure')) {
+          if (
+            err.message &&
+            err.message.includes('No active salary structure')
+          ) {
             skippedCount++;
             errorDetails.push({
               employeeId: emp.id,
@@ -305,7 +327,10 @@ export class PayrollBatchQueueService implements OnModuleInit {
 
     const percentComplete =
       run.totalEmployees > 0
-        ? Math.min(100, Math.round((run.processedCount / run.totalEmployees) * 100))
+        ? Math.min(
+            100,
+            Math.round((run.processedCount / run.totalEmployees) * 100),
+          )
         : 100;
 
     return {
@@ -329,11 +354,7 @@ export class PayrollBatchQueueService implements OnModuleInit {
   /**
    * Lists batch run history for a company.
    */
-  async listBatchRuns(
-    companyId: string,
-    month?: number,
-    year?: number,
-  ) {
+  async listBatchRuns(companyId: string, month?: number, year?: number) {
     return this.prisma.payrollBatchRun.findMany({
       where: {
         companyId,

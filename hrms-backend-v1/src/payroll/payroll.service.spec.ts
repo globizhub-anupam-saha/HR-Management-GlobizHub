@@ -260,8 +260,18 @@ describe('PayrollService', () => {
 
       // 2 night shifts attended
       prisma.attendance.findMany.mockResolvedValue([
-        { status: 'PRESENT', isHalfDay: false, overtimeHours: 0, shift: { isNightShift: true } },
-        { status: 'PRESENT', isHalfDay: false, overtimeHours: 0, shift: { isNightShift: true } },
+        {
+          status: 'PRESENT',
+          isHalfDay: false,
+          overtimeHours: 0,
+          shift: { isNightShift: true },
+        },
+        {
+          status: 'PRESENT',
+          isHalfDay: false,
+          overtimeHours: 0,
+          shift: { isNightShift: true },
+        },
       ]);
 
       await service.generateMonthlyPayroll(
@@ -318,20 +328,32 @@ describe('PayrollService', () => {
             ifscCode: null,
             department: { name: 'Engineering' },
             designation: { name: 'Senior Developer' },
-            statutoryProfiles: [{ epfoUan: '100123456789', esicIpNumber: null }],
+            statutoryProfiles: [
+              { epfoUan: '100123456789', esicIpNumber: null },
+            ],
           },
         },
       ]);
 
-      const csv = await service.generateMonthlySalarySheetCsv('company-1', 5, 2026);
+      const csv = await service.generateMonthlySalarySheetCsv(
+        'company-1',
+        5,
+        2026,
+      );
 
       // Verify UTF-8 BOM for Excel compatibility
       expect(csv.startsWith('\uFEFF')).toBe(true);
 
       // Verify EPFO ECR headers are present
-      expect(csv).toContain('UAN,Member Name,Gross Wages,EPF Wages,EPS Wages,EDLI Wages');
-      expect(csv).toContain('EE Share Remitted (12%),EPS Share Remitted (8.33%),ER EPF Difference (3.67%),NCP Days');
-      expect(csv).toContain('Scheduled Working Days,Days Present,Unpaid Days (LOP),Basic Pay,Allowances,Arrears');
+      expect(csv).toContain(
+        'UAN,Member Name,Gross Wages,EPF Wages,EPS Wages,EDLI Wages',
+      );
+      expect(csv).toContain(
+        'EE Share Remitted (12%),EPS Share Remitted (8.33%),ER EPF Difference (3.67%),NCP Days',
+      );
+      expect(csv).toContain(
+        'Scheduled Working Days,Days Present,Unpaid Days (LOP),Basic Pay,Allowances,Arrears',
+      );
 
       // Verify calculated values
       // Gross = 25000 + 15000 + 2000 = 42000
@@ -344,9 +366,9 @@ describe('PayrollService', () => {
       expect(csv).toContain('"Rahul Sharma"');
       expect(csv).toContain('42000'); // Gross Wages
       expect(csv).toContain('15000'); // EPF Wages
-      expect(csv).toContain('1800');  // EE 12%
-      expect(csv).toContain('1250');  // ER EPS
-      expect(csv).toContain('550');   // ER Diff
+      expect(csv).toContain('1800'); // EE 12%
+      expect(csv).toContain('1250'); // ER EPS
+      expect(csv).toContain('550'); // ER Diff
       expect(csv).toContain('38500.00'); // Net Salary
     });
   });

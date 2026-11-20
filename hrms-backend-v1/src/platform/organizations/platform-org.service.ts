@@ -50,7 +50,9 @@ export class PlatformOrgService {
 
     const orderBy: any = {};
     const validSortFields = ['createdAt', 'name', 'status', 'subscription'];
-    const sortField = validSortFields.includes(query.sortBy || '') ? query.sortBy : 'createdAt';
+    const sortField = validSortFields.includes(query.sortBy || '')
+      ? query.sortBy
+      : 'createdAt';
     orderBy[sortField!] = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [total, companies] = await Promise.all([
@@ -142,7 +144,14 @@ export class PlatformOrgService {
           orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
-            creator: { select: { id: true, firstName: true, lastName: true, email: true } },
+            creator: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
           },
         },
         _count: {
@@ -259,7 +268,10 @@ export class PlatformOrgService {
         maxPlanEmployees: company.subscriptions[0]?.plan?.maxEmployees || 25,
         totalAttendances: company._count.attendances,
         totalTasks: company._count.tasks,
-        estimatedStorageMb: (company._count.attendances * 0.002 + company._count.employees * 0.5).toFixed(2),
+        estimatedStorageMb: (
+          company._count.attendances * 0.002 +
+          company._count.employees * 0.5
+        ).toFixed(2),
       },
 
       // 6. Activity & Audit History
@@ -289,7 +301,11 @@ export class PlatformOrgService {
   /**
    * Manual Organization Onboarding by Platform Super Admin
    */
-  async create(dto: CreateOrganizationDto, actorId?: string, actorEmail?: string) {
+  async create(
+    dto: CreateOrganizationDto,
+    actorId?: string,
+    actorEmail?: string,
+  ) {
     const email = dto.email.trim().toLowerCase();
     const adminEmail = dto.adminEmail.trim().toLowerCase();
 
@@ -300,21 +316,33 @@ export class PlatformOrgService {
     ]);
 
     if (existingCompany) {
-      throw new ConflictException(`An organization with email "${email}" already exists`);
+      throw new ConflictException(
+        `An organization with email "${email}" already exists`,
+      );
     }
     if (existingEmployee) {
-      throw new ConflictException(`An employee/admin with email "${adminEmail}" already exists`);
+      throw new ConflictException(
+        `An employee/admin with email "${adminEmail}" already exists`,
+      );
     }
 
     const hashedPassword = await bcrypt.hash(dto.adminPassword, 10);
-    const slug = dto.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '') + '-' + Math.random().toString(36).substring(2, 6);
+    const slug =
+      dto.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '') +
+      '-' +
+      Math.random().toString(36).substring(2, 6);
 
     // Auto-generate employee code
-    const empCode = `${dto.name.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || 'EMP'}-001`;
+    const empCode = `${
+      dto.name
+        .replace(/[^a-zA-Z]/g, '')
+        .substring(0, 3)
+        .toUpperCase() || 'EMP'
+    }-001`;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const company = await tx.company.create({
@@ -353,19 +381,39 @@ export class PlatformOrgService {
               officialEmail: email,
               officialPhone: dto.phone,
               timeZone: 'Asia/Kolkata',
-              workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              workingDays: [
+                'Monday',
+                'Tuesday',
+                'Wednesday',
+                'Thursday',
+                'Friday',
+              ],
               attendanceMethod: 'GPS_OR_WIFI',
               enableGps: true,
             },
           },
           departments: {
-            create: [{ name: 'Executive' }, { name: 'Operations' }, { name: 'Engineering' }],
+            create: [
+              { name: 'Executive' },
+              { name: 'Operations' },
+              { name: 'Engineering' },
+            ],
           },
           roles: {
-            create: [{ name: 'Director' }, { name: 'Lead' }, { name: 'Associate' }],
+            create: [
+              { name: 'Director' },
+              { name: 'Lead' },
+              { name: 'Associate' },
+            ],
           },
           shifts: {
-            create: [{ name: 'Standard General Shift', startTime: '09:00', endTime: '18:00' }],
+            create: [
+              {
+                name: 'Standard General Shift',
+                startTime: '09:00',
+                endTime: '18:00',
+              },
+            ],
           },
         },
         include: {
@@ -409,10 +457,16 @@ export class PlatformOrgService {
             targetEntity: 'Company',
             targetId: result.id,
             companyId: result.id,
-            afterState: { id: result.id, name: result.name, email: result.email } as any,
+            afterState: {
+              id: result.id,
+              name: result.name,
+              email: result.email,
+            } as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log organization creation audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log organization creation audit', err),
+        );
     }
 
     return result;
@@ -448,8 +502,8 @@ export class PlatformOrgService {
       targetStatus === 'SUSPENDED'
         ? 'ORG_SUSPEND'
         : targetStatus === 'VERIFIED'
-        ? 'ORG_ACTIVATE'
-        : 'ORG_STATUS_UPDATE';
+          ? 'ORG_ACTIVATE'
+          : 'ORG_STATUS_UPDATE';
 
     if (actorId && actorEmail) {
       this.prisma.platformAuditLog
@@ -467,7 +521,9 @@ export class PlatformOrgService {
             reason: dto.reason || null,
           },
         })
-        .catch((err) => this.logger.error('Failed to log org status update audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log org status update audit', err),
+        );
     }
 
     return updated;
@@ -521,7 +577,10 @@ export class PlatformOrgService {
         targetId: company.id,
         companyId: company.id,
         reason: dto.reason,
-        beforeState: { durationMinutes: duration, expiresAt: expiresAt.toISOString() } as any,
+        beforeState: {
+          durationMinutes: duration,
+          expiresAt: expiresAt.toISOString(),
+        } as any,
         ipAddress,
         userAgent,
       },
@@ -541,4 +600,3 @@ export class PlatformOrgService {
     };
   }
 }
-

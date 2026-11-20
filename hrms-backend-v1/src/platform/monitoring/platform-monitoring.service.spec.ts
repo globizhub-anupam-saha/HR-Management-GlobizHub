@@ -63,4 +63,3 @@ describe('PlatformMonitoringService', () => {
     expect(health.metrics.totalTenants).toBe(15);
   });
 });
-

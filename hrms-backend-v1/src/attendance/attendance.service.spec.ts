@@ -39,7 +39,10 @@ describe('AttendanceService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AttendanceService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        AttendanceService,
+        { provide: PrismaService, useValue: prisma },
+      ],
     }).compile();
 
     service = module.get<AttendanceService>(AttendanceService);
@@ -133,7 +136,9 @@ describe('AttendanceService', () => {
 
       expect(csv.startsWith('\uFEFF')).toBe(true);
       expect(csv).toContain('Employee ID,Employee Name,Email,Department');
-      expect(csv).toContain('"EMP001","Alice Smith","alice@example.com","Engineering"');
+      expect(csv).toContain(
+        '"EMP001","Alice Smith","alice@example.com","Engineering"',
+      );
       expect(csv).toContain('"ABSENT"');
     });
   });

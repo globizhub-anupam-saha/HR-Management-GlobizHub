@@ -20,11 +20,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
     }),
   ],
   controllers: [PlatformAuthController],
-  providers: [
-    PlatformAuthService,
-    PlatformAuthGuard,
-    PlatformRolesGuard,
-  ],
+  providers: [PlatformAuthService, PlatformAuthGuard, PlatformRolesGuard],
   exports: [
     PlatformAuthService,
     PlatformAuthGuard,
@@ -33,4 +29,3 @@ import { PrismaModule } from '../../prisma/prisma.module';
   ],
 })
 export class PlatformAuthModule {}
-

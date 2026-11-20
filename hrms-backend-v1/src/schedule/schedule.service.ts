@@ -96,7 +96,9 @@ export class ScheduleService {
     actorId?: string,
   ) {
     if (!['SUPER_ADMIN', 'HR_HEAD', 'OWNER'].includes(userRole)) {
-      throw new ForbiddenException('Only Admins and HR Heads can create shift templates.');
+      throw new ForbiddenException(
+        'Only Admins and HR Heads can create shift templates.',
+      );
     }
     const shift = await this.prisma.shift.create({
       data: { ...dto, companyId },
@@ -132,7 +134,9 @@ export class ScheduleService {
     actorId?: string,
   ) {
     if (!['SUPER_ADMIN', 'HR_HEAD', 'OWNER'].includes(userRole)) {
-      throw new ForbiddenException('Only Admins and HR Heads can edit shift templates.');
+      throw new ForbiddenException(
+        'Only Admins and HR Heads can edit shift templates.',
+      );
     }
 
     const shift = await this.prisma.shift.findFirst({
@@ -221,19 +225,27 @@ export class ScheduleService {
       });
 
       if (!manager) {
-        throw new ForbiddenException('Manager profile not found in organization.');
+        throw new ForbiddenException(
+          'Manager profile not found in organization.',
+        );
       }
 
       const directReportSet = new Set(manager.directReports.map((d) => d.id));
 
       const employees = await this.prisma.employee.findMany({
         where: { id: { in: targetEmployeeIds }, companyId },
-        select: { id: true, departmentId: true, firstName: true, lastName: true },
+        select: {
+          id: true,
+          departmentId: true,
+          firstName: true,
+          lastName: true,
+        },
       });
 
       for (const emp of employees) {
         const isDirect = directReportSet.has(emp.id);
-        const isSameDept = manager.departmentId && emp.departmentId === manager.departmentId;
+        const isSameDept =
+          manager.departmentId && emp.departmentId === manager.departmentId;
         if (!isDirect && !isSameDept) {
           throw new ForbiddenException(
             `You only have permission to manage shifts for employees in your department or direct reports. Access denied for ${emp.firstName} ${emp.lastName}.`,
@@ -243,7 +255,9 @@ export class ScheduleService {
       return;
     }
 
-    throw new ForbiddenException('You do not have permission to schedule or assign shifts.');
+    throw new ForbiddenException(
+      'You do not have permission to schedule or assign shifts.',
+    );
   }
 
   // ========================================================
@@ -269,7 +283,9 @@ export class ScheduleService {
       return conflicts;
     }
 
-    const [tHours, tMinutes] = (targetShift.startTime || '09:00').split(':').map(Number);
+    const [tHours, tMinutes] = (targetShift.startTime || '09:00')
+      .split(':')
+      .map(Number);
     const targetStart = new Date(date);
     targetStart.setUTCHours(tHours, tMinutes, 0, 0);
 
@@ -284,17 +300,23 @@ export class ScheduleService {
     });
 
     if (prevSchedule && !prevSchedule.isDayOff && prevSchedule.shift) {
-      const [pEndH, pEndM] = (prevSchedule.shift.endTime || '17:00').split(':').map(Number);
+      const [pEndH, pEndM] = (prevSchedule.shift.endTime || '17:00')
+        .split(':')
+        .map(Number);
       const prevEnd = new Date(prevDate);
 
       // If previous shift was a night shift or cross-midnight
-      if (prevSchedule.shift.isNightShift || pEndH < Number(prevSchedule.shift.startTime.split(':')[0])) {
+      if (
+        prevSchedule.shift.isNightShift ||
+        pEndH < Number(prevSchedule.shift.startTime.split(':')[0])
+      ) {
         // Ends on current date morning
         prevEnd.setUTCDate(prevEnd.getUTCDate() + 1);
       }
       prevEnd.setUTCHours(pEndH, pEndM, 0, 0);
 
-      const restHours = (targetStart.getTime() - prevEnd.getTime()) / (1000 * 60 * 60);
+      const restHours =
+        (targetStart.getTime() - prevEnd.getTime()) / (1000 * 60 * 60);
 
       if (restHours < 11 && restHours >= 0) {
         conflicts.push({
@@ -349,7 +371,9 @@ export class ScheduleService {
     userRole: string,
     actorId?: string,
   ) {
-    await this.assertManagerScope(companyId, actorId || '', userRole, [dto.employeeId]);
+    await this.assertManagerScope(companyId, actorId || '', userRole, [
+      dto.employeeId,
+    ]);
 
     const targetDate = new Date(dto.date);
     targetDate.setUTCHours(0, 0, 0, 0);
@@ -375,7 +399,8 @@ export class ScheduleService {
         success: false,
         requiresOverride: true,
         conflicts,
-        message: 'Statutory compliance conflicts detected. Pass overrideConflict: true with justification to proceed.',
+        message:
+          'Statutory compliance conflicts detected. Pass overrideConflict: true with justification to proceed.',
       };
     }
 
@@ -448,11 +473,18 @@ export class ScheduleService {
     }
 
     if (targetEmployeeIds.length === 0) {
-      throw new BadRequestException('No active employees selected for bulk assignment.');
+      throw new BadRequestException(
+        'No active employees selected for bulk assignment.',
+      );
     }
 
     // 2. Assert Manager Scope
-    await this.assertManagerScope(companyId, actorId || '', userRole, targetEmployeeIds);
+    await this.assertManagerScope(
+      companyId,
+      actorId || '',
+      userRole,
+      targetEmployeeIds,
+    );
 
     const start = new Date(dto.startDate);
     start.setUTCHours(0, 0, 0, 0);
@@ -580,13 +612,22 @@ export class ScheduleService {
     actorId?: string,
   ) {
     if (!dto.pattern || dto.pattern.length === 0) {
-      throw new BadRequestException('A rotation pattern array must contain at least one step.');
+      throw new BadRequestException(
+        'A rotation pattern array must contain at least one step.',
+      );
     }
     if (!dto.employeeIds || dto.employeeIds.length === 0) {
-      throw new BadRequestException('Select at least one employee for the rotational pattern.');
+      throw new BadRequestException(
+        'Select at least one employee for the rotational pattern.',
+      );
     }
 
-    await this.assertManagerScope(companyId, actorId || '', userRole, dto.employeeIds);
+    await this.assertManagerScope(
+      companyId,
+      actorId || '',
+      userRole,
+      dto.employeeIds,
+    );
 
     const startDate = new Date(dto.startDate);
     startDate.setUTCHours(0, 0, 0, 0);
@@ -604,7 +645,9 @@ export class ScheduleService {
 
     // Preload shifts for quick compliance checking
     const shiftsMap = new Map<string, any>();
-    const shiftIds = dto.pattern.map((p) => p.shiftId).filter(Boolean) as string[];
+    const shiftIds = dto.pattern
+      .map((p) => p.shiftId)
+      .filter(Boolean) as string[];
     if (shiftIds.length > 0) {
       const shifts = await this.prisma.shift.findMany({
         where: { id: { in: shiftIds }, companyId },
@@ -619,7 +662,9 @@ export class ScheduleService {
       shiftDate.setUTCDate(shiftDate.getUTCDate() + dayOffset);
 
       const step = dto.pattern[dayOffset % patternLength];
-      const targetShift = step.shiftId ? shiftsMap.get(step.shiftId) || null : null;
+      const targetShift = step.shiftId
+        ? shiftsMap.get(step.shiftId) || null
+        : null;
       const isDayOff = step.isDayOff || !step.shiftId;
 
       for (const empId of dto.employeeIds) {
@@ -725,7 +770,9 @@ export class ScheduleService {
     end.setUTCHours(0, 0, 0, 0);
 
     // Manager Scoping: if manager, restrict to their department/direct reports
-    let deptFilter: any = query.departmentId ? { departmentId: query.departmentId } : {};
+    let deptFilter: any = query.departmentId
+      ? { departmentId: query.departmentId }
+      : {};
     if (userRole === 'MANAGER') {
       const manager = await this.prisma.employee.findUnique({
         where: { id: actorId },
@@ -734,7 +781,9 @@ export class ScheduleService {
       const directReportIds = manager?.directReports.map((d) => d.id) || [];
       deptFilter = {
         OR: [
-          ...(manager?.departmentId ? [{ departmentId: manager.departmentId }] : []),
+          ...(manager?.departmentId
+            ? [{ departmentId: manager.departmentId }]
+            : []),
           { id: { in: directReportIds } },
         ],
       };
@@ -831,7 +880,9 @@ export class ScheduleService {
             isOverride: false,
             isDayOff: sched.isDayOff || !sched.shiftId,
             shiftId: sched.shiftId,
-            shiftName: sched.isDayOff ? 'Day Off' : sched.shift?.name || 'Unassigned',
+            shiftName: sched.isDayOff
+              ? 'Day Off'
+              : sched.shift?.name || 'Unassigned',
             startTime: sched.shift?.startTime || null,
             endTime: sched.shift?.endTime || null,
             isNightShift: sched.shift?.isNightShift || false,

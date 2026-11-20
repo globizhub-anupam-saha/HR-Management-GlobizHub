@@ -29,7 +29,13 @@ export class TrainingAssessmentService {
           select: { id: true, title: true, planNumber: true },
         },
         employee: {
-          select: { id: true, firstName: true, lastName: true, employeeCode: true, department: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            employeeCode: true,
+            department: true,
+          },
         },
         assessor: {
           select: { id: true, firstName: true, lastName: true },
@@ -44,7 +50,12 @@ export class TrainingAssessmentService {
       where: { companyId, planId },
       include: {
         employee: {
-          select: { id: true, firstName: true, lastName: true, employeeCode: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            employeeCode: true,
+          },
         },
         assessor: {
           select: { id: true, firstName: true, lastName: true },
@@ -54,7 +65,11 @@ export class TrainingAssessmentService {
     });
   }
 
-  async createAssessment(companyId: string, user: any, dto: CreateAssessmentDto) {
+  async createAssessment(
+    companyId: string,
+    user: any,
+    dto: CreateAssessmentDto,
+  ) {
     const plan = await this.prisma.trainingPlan.findFirst({
       where: { id: dto.planId, companyId },
     });
@@ -66,7 +81,9 @@ export class TrainingAssessmentService {
       where: { planId: dto.planId, employeeId: dto.employeeId },
     });
     if (!enrollment) {
-      throw new NotFoundException('Employee is not enrolled in this training plan');
+      throw new NotFoundException(
+        'Employee is not enrolled in this training plan',
+      );
     }
 
     const assessorId = user.sub || user.id;
@@ -85,7 +102,9 @@ export class TrainingAssessmentService {
         result: dto.result || 'PENDING',
         attemptNumber: dto.attemptNumber || 1,
         assessorId,
-        assessorName: dto.assessorName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        assessorName:
+          dto.assessorName ||
+          `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         assessedAt: dto.assessedAt ? new Date(dto.assessedAt) : new Date(),
         feedback: dto.feedback?.trim(),
         evidenceUrl: dto.evidenceUrl,
@@ -127,7 +146,10 @@ export class TrainingAssessmentService {
         scoreAchieved: dto.scoreAchieved,
         result: dto.result,
         feedback: dto.feedback !== undefined ? dto.feedback : existing.feedback,
-        evidenceUrl: dto.evidenceUrl !== undefined ? dto.evidenceUrl : existing.evidenceUrl,
+        evidenceUrl:
+          dto.evidenceUrl !== undefined
+            ? dto.evidenceUrl
+            : existing.evidenceUrl,
         assessorId,
         assessedAt: new Date(),
       },
@@ -157,16 +179,19 @@ export class TrainingAssessmentService {
 
         if (planWithProgram?.program?.competencies?.length) {
           for (const pc of planWithProgram.program.competencies) {
-            const currentRecord = await this.prisma.employeeCompetency.findUnique({
-              where: {
-                employeeId_competencyId: {
-                  employeeId: existing.employeeId,
-                  competencyId: pc.competencyId,
+            const currentRecord =
+              await this.prisma.employeeCompetency.findUnique({
+                where: {
+                  employeeId_competencyId: {
+                    employeeId: existing.employeeId,
+                    competencyId: pc.competencyId,
+                  },
                 },
-              },
-            });
+              });
 
-            const currentRank = currentRecord ? PROFICIENCY_RANK[currentRecord.currentLevel] || 0 : 0;
+            const currentRank = currentRecord
+              ? PROFICIENCY_RANK[currentRecord.currentLevel] || 0
+              : 0;
             const targetRank = PROFICIENCY_RANK[pc.targetLevel] || 2;
 
             if (targetRank >= currentRank) {
@@ -193,7 +218,8 @@ export class TrainingAssessmentService {
                   assessedById: assessorId,
                   assessmentDate: new Date(),
                   verificationStatus: 'VERIFIED',
-                  evidenceUrl: dto.evidenceUrl || existing.evidenceUrl || undefined,
+                  evidenceUrl:
+                    dto.evidenceUrl || existing.evidenceUrl || undefined,
                   notes: `Auto-verified upon passing assessment "${existing.title}" in training plan "${planWithProgram.title}".`,
                 },
               });
@@ -202,7 +228,10 @@ export class TrainingAssessmentService {
         }
       } catch (err) {
         // Log error without breaking assessment response
-        console.error('Error auto-updating employee competencies from passed assessment:', err);
+        console.error(
+          'Error auto-updating employee competencies from passed assessment:',
+          err,
+        );
       }
     }
 
@@ -237,7 +266,13 @@ export class TrainingAssessmentService {
       where,
       include: {
         employee: {
-          select: { id: true, firstName: true, lastName: true, employeeCode: true, department: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            employeeCode: true,
+            department: true,
+          },
         },
         plan: {
           select: { id: true, title: true, planNumber: true },
@@ -250,7 +285,11 @@ export class TrainingAssessmentService {
     });
   }
 
-  async createCertificate(companyId: string, user: any, dto: CreateCertificateDto) {
+  async createCertificate(
+    companyId: string,
+    user: any,
+    dto: CreateCertificateDto,
+  ) {
     const created = await this.prisma.trainingCertificate.create({
       data: {
         companyId,

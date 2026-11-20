@@ -76,7 +76,9 @@ export class NotificationService {
     dto: BroadcastNotificationDto,
   ) {
     if (!dto.title?.trim() || !dto.message?.trim()) {
-      throw new BadRequestException('Notification title and message are required');
+      throw new BadRequestException(
+        'Notification title and message are required',
+      );
     }
 
     // 1. Resolve target employees
@@ -98,7 +100,9 @@ export class NotificationService {
         },
         include: { notificationSettings: true },
       });
-    } else if (dto.targetAudience === NotificationTargetAudience.SPECIFIC_EMPLOYEES) {
+    } else if (
+      dto.targetAudience === NotificationTargetAudience.SPECIFIC_EMPLOYEES
+    ) {
       if (!dto.employeeIds || dto.employeeIds.length === 0) {
         throw new BadRequestException('Please select at least one employee');
       }
@@ -127,15 +131,19 @@ export class NotificationService {
       // If urgent, deliver regardless of preference
       if (isUrgent) return true;
       // If announcement type, check companyAnnouncements setting
-      if (dto.type === 'ANNOUNCEMENT' && emp.notificationSettings?.companyAnnouncements === false) {
+      if (
+        dto.type === 'ANNOUNCEMENT' &&
+        emp.notificationSettings?.companyAnnouncements === false
+      ) {
         return false;
       }
       return true;
     });
 
-    const finalTitle = isUrgent && !dto.title.toUpperCase().startsWith('[URGENT]')
-      ? `[URGENT] ${dto.title}`
-      : dto.title;
+    const finalTitle =
+      isUrgent && !dto.title.toUpperCase().startsWith('[URGENT]')
+        ? `[URGENT] ${dto.title}`
+        : dto.title;
 
     // 3. Bulk insert notifications for each recipient
     if (finalRecipients.length > 0) {
@@ -155,7 +163,11 @@ export class NotificationService {
 
     // 4. Optionally create an Announcement record (for dashboard widgets)
     let announcementRecord: Announcement | null = null;
-    if (dto.createAnnouncement !== false && (dto.targetAudience === NotificationTargetAudience.ALL || dto.type === 'ANNOUNCEMENT')) {
+    if (
+      dto.createAnnouncement !== false &&
+      (dto.targetAudience === NotificationTargetAudience.ALL ||
+        dto.type === 'ANNOUNCEMENT')
+    ) {
       announcementRecord = await this.prisma.announcement.create({
         data: {
           companyId,
