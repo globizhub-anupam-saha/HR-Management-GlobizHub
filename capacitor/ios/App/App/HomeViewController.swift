@@ -429,7 +429,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -92),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -100),
             contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
 
@@ -1898,7 +1898,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             bottomNavBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bottomNavBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottomNavBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -72),
+            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
 
             bottomNavContainer.topAnchor.constraint(equalTo: bottomNavBar.topAnchor),
             bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),

@@ -6,6 +6,8 @@ import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -13,7 +15,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.globiz.hr.network.ApiClient;
 
@@ -150,13 +154,51 @@ public class AppHeaderHelper {
     public static void applyWindowInsets(AppCompatActivity activity) {
         if (activity == null) return;
 
-        // Ensure status bar is white with dark icons (Android 6.0+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-            activity.getWindow().setStatusBarColor(Color.WHITE);
+        Window window = activity.getWindow();
+        if (window != null) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.WHITE);
+            window.setNavigationBarColor(Color.WHITE);
+
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
+            if (insetsController != null) {
+                insetsController.setAppearanceLightStatusBars(true);
+                insetsController.setAppearanceLightNavigationBars(true);
+            }
         }
 
-        // 1. Status Bar Inset: Prevents top bar from colliding with notification drawer & camera cutouts
+        final int initialStatusHeight = getStatusBarHeight(activity);
+        final int initialNavHeight = 0;
+
+        // Apply immediately so there is never a flash of overlapping header during activity transition
+        applyInsetsToViews(activity, initialStatusHeight, initialNavHeight);
+
+        // Listen on root content frame to capture real dynamic camera cutouts & gesture bar insets
+        View rootView = activity.findViewById(android.R.id.content);
+        if (rootView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
+                Insets statusInsets = insets.getInsets(
+                        WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.displayCutout()
+                );
+                int topInset = Math.max(statusInsets.top, getStatusBarHeight(activity));
+
+                Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                int bottomInset = navInsets.bottom;
+
+                applyInsetsToViews(activity, topInset, bottomInset);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(rootView);
+        }
+    }
+
+    private static void applyInsetsToViews(AppCompatActivity activity, int topInset, int bottomInset) {
+        if (activity == null) return;
+
+        // 1. Status Bar Inset: Locks topBar to (64dp + topInset).
+        // topBarContent has height=64dp and layout_alignParentBottom=true,
+        // so the topInset area is pure blank whitespace behind the system status bar/punch hole.
         View topBar = activity.findViewById(R.id.topBar);
         if (topBar == null) topBar = activity.findViewById(R.id.settingsTopBar);
         if (topBar == null) topBar = activity.findViewById(R.id.notificationsTopBar);
@@ -164,55 +206,47 @@ public class AppHeaderHelper {
         if (topBar == null) topBar = activity.findViewById(R.id.deleteAccountTopBar);
 
         if (topBar != null) {
-            final View tb = topBar;
-            final int initialStatusHeight = getStatusBarHeight(activity);
-            final int originalHeight = dpToPx(activity, 64);
-
-            tb.setPadding(tb.getPaddingLeft(), initialStatusHeight, tb.getPaddingRight(), tb.getPaddingBottom());
-            ViewGroup.LayoutParams lp = tb.getLayoutParams();
+            int originalHeight = dpToPx(activity, 64);
+            ViewGroup.LayoutParams lp = topBar.getLayoutParams();
             if (lp != null) {
-                lp.height = originalHeight + initialStatusHeight;
-                tb.setLayoutParams(lp);
+                lp.height = originalHeight + topInset;
+                topBar.setLayoutParams(lp);
             }
-
-            ViewCompat.setOnApplyWindowInsetsListener(tb, (v, insets) -> {
-                Insets statusInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.displayCutout());
-                int topInset = Math.max(statusInsets.top, initialStatusHeight);
-                v.setPadding(v.getPaddingLeft(), topInset, v.getPaddingRight(), v.getPaddingBottom());
-                ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
-                if (layoutParams != null) {
-                    layoutParams.height = originalHeight + topInset;
-                    v.setLayoutParams(layoutParams);
-                }
-                return insets;
-            });
         }
 
         // 2. Navigation Bar Inset: Lifts the bottom navigation bar comfortably up for thumbs & gesture bar
         View bottomNavBar = activity.findViewById(R.id.bottomNavBar);
-        if (bottomNavBar != null) {
-            final View bnb = bottomNavBar;
-            final int comfortLift = dpToPx(activity, 12);
-            final int baseNavHeight = dpToPx(activity, 64);
+        final int comfortLift = dpToPx(activity, 16);
+        final int baseNavHeight = dpToPx(activity, 60);
+        final int totalNavHeight = baseNavHeight + bottomInset + comfortLift;
 
-            bnb.setPadding(bnb.getPaddingLeft(), 0, bnb.getPaddingRight(), comfortLift);
-            ViewGroup.LayoutParams bLp = bnb.getLayoutParams();
+        if (bottomNavBar != null) {
+            bottomNavBar.setPadding(0, dpToPx(activity, 4), 0, bottomInset + comfortLift);
+            ViewGroup.LayoutParams bLp = bottomNavBar.getLayoutParams();
             if (bLp != null) {
-                bLp.height = baseNavHeight + comfortLift;
-                bnb.setLayoutParams(bLp);
+                bLp.height = totalNavHeight;
+                bottomNavBar.setLayoutParams(bLp);
             }
 
-            ViewCompat.setOnApplyWindowInsetsListener(bnb, (v, insets) -> {
-                Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-                int bottomPadding = navInsets.bottom + comfortLift;
-                v.setPadding(v.getPaddingLeft(), 0, v.getPaddingRight(), bottomPadding);
-                ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
-                if (layoutParams != null) {
-                    layoutParams.height = baseNavHeight + bottomPadding;
-                    v.setLayoutParams(layoutParams);
-                }
-                return insets;
-            });
+            // Adjust main ScrollView padding bottom so cards scroll above the elevated navbar
+            View scrollView = activity.findViewById(R.id.scrollView);
+            if (scrollView != null) {
+                scrollView.setPadding(
+                        scrollView.getPaddingLeft(),
+                        scrollView.getPaddingTop(),
+                        scrollView.getPaddingRight(),
+                        totalNavHeight + dpToPx(activity, 16)
+                );
+            }
+            View rvModules = activity.findViewById(R.id.rvModules);
+            if (rvModules != null) {
+                rvModules.setPadding(
+                        rvModules.getPaddingLeft(),
+                        rvModules.getPaddingTop(),
+                        rvModules.getPaddingRight(),
+                        totalNavHeight + dpToPx(activity, 16)
+                );
+            }
         } else {
             // For screens without a bottom navigation bar (Settings, Notifications, Customize, etc.),
             // apply navigation bar insets to the scroll/content container so bottom actions stay comfortably reachable
@@ -222,24 +256,25 @@ public class AppHeaderHelper {
             if (contentContainer == null) contentContainer = activity.findViewById(R.id.btnDoDeleteAccount);
 
             if (contentContainer != null) {
-                final View cc = contentContainer;
-                final int initialBottom = cc.getPaddingBottom();
-                final int comfortMargin = dpToPx(activity, 16);
-                ViewCompat.setOnApplyWindowInsetsListener(cc, (v, insets) -> {
-                    Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), initialBottom + navInsets.bottom + comfortMargin);
-                    return insets;
-                });
+                contentContainer.setPadding(
+                        contentContainer.getPaddingLeft(),
+                        contentContainer.getPaddingTop(),
+                        contentContainer.getPaddingRight(),
+                        bottomInset + dpToPx(activity, 24)
+                );
             }
         }
     }
 
     public static int getStatusBarHeight(Context context) {
+        int statusBarHeight = 0;
         int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
-            return context.getResources().getDimensionPixelSize(resourceId);
+            statusBarHeight = context.getResources().getDimensionPixelSize(resourceId);
         }
-        return dpToPx(context, 28);
+        // Modern punch-hole / notch displays need at least 38-42dp safe clearance
+        int minSafeHeight = dpToPx(context, 40);
+        return Math.max(statusBarHeight, minSafeHeight);
     }
 
     public static int dpToPx(Context context, int dp) {

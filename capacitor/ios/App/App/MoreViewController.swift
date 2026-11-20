@@ -92,8 +92,8 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         initModules()
         setupTopBar()
         setupSearchBar()
-        setupBottomNavBar()
         setupTableView()
+        setupBottomNavBar()
         filterModulesByRole()
 
         let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleBack))
@@ -104,6 +104,7 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setupBottomNavBar()
+        view.bringSubviewToFront(bottomNavBar)
         filterModulesByRole()
         updateHeaderState()
         updateNotificationBadge()
@@ -340,7 +341,7 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             bottomNavBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bottomNavBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottomNavBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -72),
+            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
 
             bottomNavContainer.topAnchor.constraint(equalTo: bottomNavBar.topAnchor),
             bottomNavContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
@@ -476,8 +477,8 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         tableView.rowHeight = 52
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.contentInset.bottom = 68
-        tableView.scrollIndicatorInsets.bottom = 68
+        tableView.contentInset.bottom = 88
+        tableView.scrollIndicatorInsets.bottom = 88
         tableView.register(MoreModuleCell.self, forCellReuseIdentifier: MoreModuleCell.identifier)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)

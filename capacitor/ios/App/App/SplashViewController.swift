@@ -97,7 +97,7 @@ class SplashViewController: UIViewController {
             nextVC = MoreViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteSettings") {
             nextVC = SettingsViewController()
-        } else if AuthService.shared.isLoggedIn {
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteHome") || AuthService.shared.isLoggedIn {
             nextVC = HomeViewController()
         } else if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
             nextVC = SignInViewController()
