@@ -1055,67 +1055,56 @@
                     android:layout_marginBottom="12dp"
                     android:background="#F1F5F9" />
 
-                <!-- Authentic Green Gradient Legend Row -->
+                <!-- Real-time Status Legend: No Record (Blank), On Time (Green), Late (Yellow) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- Activity Scale (Less ■ ■ ■ ■ ■ More) -->
-                    <LinearLayout
+                    <!-- No Record -->
+                    <View
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginEnd="5dp"
+                        android:background="@drawable/bg_box_heatmap_blank" />
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:layout_marginEnd="16dp"
+                        android:text="No Record"
+                        android:textColor="#64748B"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="5dp"
-                            android:text="Less"
-                            android:textColor="#64748B"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                    <!-- On Time (Green) -->
+                    <View
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginEnd="5dp"
+                        android:background="@drawable/bg_box_heatmap_ontime" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="16dp"
+                        android:text="On Time"
+                        android:textColor="#16A34A"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
-                        <View
-                            android:layout_width="11dp"
-                            android:layout_height="11dp"
-                            android:layout_marginEnd="3dp"
-                            android:background="@drawable/bg_box_github_empty" />
-
-                        <View
-                            android:layout_width="11dp"
-                            android:layout_height="11dp"
-                            android:layout_marginEnd="3dp"
-                            android:background="@drawable/bg_box_github_level1" />
-
-                        <View
-                            android:layout_width="11dp"
-                            android:layout_height="11dp"
-                            android:layout_marginEnd="3dp"
-                            android:background="@drawable/bg_box_github_level2" />
-
-                        <View
-                            android:layout_width="11dp"
-                            android:layout_height="11dp"
-                            android:layout_marginEnd="3dp"
-                            android:background="@drawable/bg_box_github_level3" />
-
-                        <View
-                            android:layout_width="11dp"
-                            android:layout_height="11dp"
-                            android:layout_marginEnd="5dp"
-                            android:background="@drawable/bg_box_github_level4" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="More"
-                            android:textColor="#64748B"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                    <!-- Late (Yellow) -->
+                    <View
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginEnd="5dp"
+                        android:background="@drawable/bg_box_heatmap_late" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Late"
+                        android:textColor="#CA8A04"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
 

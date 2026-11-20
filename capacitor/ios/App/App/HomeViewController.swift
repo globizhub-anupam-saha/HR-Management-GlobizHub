@@ -242,6 +242,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         updateGreeting()
         loadProfile()
         loadAttendanceStats()
+        loadRealAttendanceHistoryForHeatmap()
         loadRealLeaves()
         loadRealHolidays()
         loadRealSchedule()
@@ -1014,31 +1015,126 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         ])
     }
 
-    // MARK: - Authentic GitHub Green Style Attendance Activity Heatmap
+    // MARK: - Attendance Activity Heatmap (Real-time On-Time Green / Late Yellow / Blank No Record)
+    private struct RealAttendanceRecord {
+        let dateKey: String // yyyy-MM-dd
+        let inDate: Date
+        let outDate: Date?
+        let isLate: Bool
+        let clockInFormatted: String
+        let clockOutFormatted: String
+    }
+    private var attendanceHistoryMap: [String: RealAttendanceRecord] = [:]
+
     private struct HeatmapDayData {
         let dayNumber: Int
-        var statusType: Int // 0 = Future, 1 = Weekend/Off, 2 = Short (<8h, Light Green), 3 = Exact 8h (Mid Green), 4 = Overtime (Dark Green), 5 = Heavy Overtime (Deep Forest Green)
-        var hours: Int
-        var minutes: Int
-        let isToday: Bool
+        var hasRecord: Bool
+        var isLate: Bool // false = On Time (Green), true = Late (Yellow)
+        var isToday: Bool
+        var isFuture: Bool
+        var isWeekend: Bool
         let formattedDate: String
         var fullDate: Date? = nil
         var shiftSummary: String = ""
-        var clockInTime: String = "09:00 AM"
-        var clockOutTime: String = "05:00 PM"
+        var clockInTime: String = "--:--"
+        var clockOutTime: String = "--:--"
     }
 
-    // GitHub Color Palette
-    private let ghEmptyColor = UIColor(red: 235/255, green: 237/255, blue: 240/255, alpha: 1.0) // #EBEDF0 Empty / Off
-    private let ghEmptyBorder = UIColor(red: 208/255, green: 215/255, blue: 222/255, alpha: 1.0) // #D0D7DE
-    private let ghLightGreen = UIColor(red: 155/255, green: 233/255, blue: 168/255, alpha: 1.0) // #9BE9A8 (Level 1: Short Day <8h)
-    private let ghLightBorder = UIColor(red: 134/255, green: 239/255, blue: 172/255, alpha: 1.0) // #86EFAC
-    private let ghMidGreen = UIColor(red: 64/255, green: 196/255, blue: 99/255, alpha: 1.0)     // #40C463 (Level 2: Standard 8h)
-    private let ghMidBorder = UIColor(red: 34/255, green: 197/255, blue: 94/255, alpha: 1.0)   // #22C55E
-    private let ghDarkGreen = UIColor(red: 48/255, green: 161/255, blue: 78/255, alpha: 1.0)   // #30A14E (Level 3: Overtime >8h)
-    private let ghDarkBorder = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)  // #16A34A
-    private let ghDeepForest = UIColor(red: 33/255, green: 110/255, blue: 57/255, alpha: 1.0)  // #216E39 (Level 4: Heavy Overtime >9.5h)
-    private let ghDeepBorder = UIColor(red: 20/255, green: 83/255, blue: 45/255, alpha: 1.0)   // #14532D
+    // Heatmap Real Palette: Green = On Time, Yellow = Late, Blank = No Record
+    private let ghOnTimeColor = UIColor(red: 34/255, green: 197/255, blue: 94/255, alpha: 1.0)   // #22C55E
+    private let ghOnTimeBorder = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)  // #16A34A
+    private let ghLateColor = UIColor(red: 234/255, green: 179/255, blue: 8/255, alpha: 1.0)     // #EAB308
+    private let ghLateBorder = UIColor(red: 202/255, green: 138/255, blue: 4/255, alpha: 1.0)   // #CA8A04
+    private let ghBlankColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)  // #F1F5F9
+    private let ghBlankBorder = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0) // #E2E8F0
+
+    private func syncTodayAttendanceRecord() {
+        if isCheckedIn, let startDate = checkInDate {
+            let keyFmt = DateFormatter()
+            keyFmt.dateFormat = "yyyy-MM-dd"
+            keyFmt.locale = Locale(identifier: "en_US_POSIX")
+            let todayKey = keyFmt.string(from: startDate)
+
+            let timeFmt = DateFormatter()
+            timeFmt.locale = Locale(identifier: "en_US_POSIX")
+            timeFmt.dateFormat = "hh:mm a"
+            let clockInStr = timeFmt.string(from: startDate)
+
+            let cal = Calendar.current
+            let h = cal.component(.hour, from: startDate)
+            let m = cal.component(.minute, from: startDate)
+            let isLate = (h > 9 || (h == 9 && m > 15))
+
+            let rec = RealAttendanceRecord(
+                dateKey: todayKey,
+                inDate: startDate,
+                outDate: nil,
+                isLate: isLate,
+                clockInFormatted: clockInStr,
+                clockOutFormatted: "In Progress"
+            )
+            attendanceHistoryMap[todayKey] = rec
+        }
+    }
+
+    private func loadRealAttendanceHistoryForHeatmap() {
+        AuthService.shared.getMyAttendanceHistory { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch result {
+                case .success(let records):
+                    self.attendanceHistoryMap.removeAll()
+                    let apiFmt = ISO8601DateFormatter()
+                    let keyFmt = DateFormatter()
+                    keyFmt.dateFormat = "yyyy-MM-dd"
+                    keyFmt.locale = Locale(identifier: "en_US_POSIX")
+                    let timeFmt = DateFormatter()
+                    timeFmt.locale = Locale(identifier: "en_US_POSIX")
+                    timeFmt.dateFormat = "hh:mm a"
+
+                    let cal = Calendar.current
+
+                    for record in records {
+                        guard let clockInRaw = record["clockIn"] as? String,
+                              let inDate = apiFmt.date(from: clockInRaw) else { continue }
+                        let dateKey = keyFmt.string(from: inDate)
+                        let inFormatted = timeFmt.string(from: inDate)
+
+                        var outDate: Date? = nil
+                        var outFormatted = "In Progress"
+                        if let clockOutRaw = record["clockOut"] as? String,
+                           let parsedOut = apiFmt.date(from: clockOutRaw) {
+                            outDate = parsedOut
+                            outFormatted = timeFmt.string(from: parsedOut)
+                        }
+
+                        let h = cal.component(.hour, from: inDate)
+                        let m = cal.component(.minute, from: inDate)
+                        let isLate = (h > 9 || (h == 9 && m > 15))
+
+                        let item = RealAttendanceRecord(
+                            dateKey: dateKey,
+                            inDate: inDate,
+                            outDate: outDate,
+                            isLate: isLate,
+                            clockInFormatted: inFormatted,
+                            clockOutFormatted: outFormatted
+                        )
+                        self.attendanceHistoryMap[dateKey] = item
+                    }
+                case .failure:
+                    break
+                }
+
+                self.syncTodayAttendanceRecord()
+                if self.heatmapModeSegmented.selectedSegmentIndex == 1 {
+                    self.renderYearlyHeatmap()
+                } else {
+                    self.renderMonthlyHeatmap()
+                }
+            }
+        }
+    }
 
     private func setupMonthlyHeatmapCard() {
         monthlyHeatmapCard.backgroundColor = .white
@@ -1224,31 +1320,47 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let legendStack = UIStackView()
         legendStack.axis = .horizontal
         legendStack.distribution = .fill
+        legendStack.spacing = 14
         legendStack.alignment = .center
 
-        let leftLegend = UIStackView()
-        leftLegend.axis = .horizontal
-        leftLegend.spacing = 4
-        leftLegend.alignment = .center
+        // No Record (Blank)
+        let noRecStack = UIStackView()
+        noRecStack.axis = .horizontal
+        noRecStack.spacing = 5
+        noRecStack.alignment = .center
+        noRecStack.addArrangedSubview(makeHeatmapLegendSquare(color: ghBlankColor, border: ghBlankBorder))
+        let noRecLabel = UILabel()
+        noRecLabel.text = "No Record"
+        noRecLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        noRecLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        noRecStack.addArrangedSubview(noRecLabel)
+        legendStack.addArrangedSubview(noRecStack)
 
-        let lessLabel = UILabel()
-        lessLabel.text = "Less"
-        lessLabel.font = .systemFont(ofSize: 10, weight: .medium)
-        lessLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        leftLegend.addArrangedSubview(lessLabel)
+        // On Time (Green)
+        let onTimeStack = UIStackView()
+        onTimeStack.axis = .horizontal
+        onTimeStack.spacing = 5
+        onTimeStack.alignment = .center
+        onTimeStack.addArrangedSubview(makeHeatmapLegendSquare(color: ghOnTimeColor, border: ghOnTimeBorder))
+        let onTimeLabel = UILabel()
+        onTimeLabel.text = "On Time"
+        onTimeLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        onTimeLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
+        onTimeStack.addArrangedSubview(onTimeLabel)
+        legendStack.addArrangedSubview(onTimeStack)
 
-        leftLegend.addArrangedSubview(makeHeatmapLegendSquare(color: ghEmptyColor, border: ghEmptyBorder))
-        leftLegend.addArrangedSubview(makeHeatmapLegendSquare(color: ghLightGreen, border: ghLightBorder))
-        leftLegend.addArrangedSubview(makeHeatmapLegendSquare(color: ghMidGreen, border: ghMidBorder))
-        leftLegend.addArrangedSubview(makeHeatmapLegendSquare(color: ghDarkGreen, border: ghDarkBorder))
-        leftLegend.addArrangedSubview(makeHeatmapLegendSquare(color: ghDeepForest, border: ghDeepBorder))
-
-        let moreLabel = UILabel()
-        moreLabel.text = "More"
-        moreLabel.font = .systemFont(ofSize: 10, weight: .medium)
-        moreLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        leftLegend.addArrangedSubview(moreLabel)
-        legendStack.addArrangedSubview(leftLegend)
+        // Late (Yellow)
+        let lateStack = UIStackView()
+        lateStack.axis = .horizontal
+        lateStack.spacing = 5
+        lateStack.alignment = .center
+        lateStack.addArrangedSubview(makeHeatmapLegendSquare(color: ghLateColor, border: ghLateBorder))
+        let lateLabel = UILabel()
+        lateLabel.text = "Late"
+        lateLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        lateLabel.textColor = UIColor(red: 202/255, green: 138/255, blue: 4/255, alpha: 1.0)
+        lateStack.addArrangedSubview(lateLabel)
+        legendStack.addArrangedSubview(lateStack)
 
         paddingStack.addArrangedSubview(legendStack)
 
@@ -1316,7 +1428,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         renderMonthlyHeatmap()
     }
 
-    // --- RENDER 1: MONTHLY GITHUB GREEN GRID ---
+    // --- RENDER 1: MONTHLY GRID (Real-time Green On-Time / Yellow Late / Blank No Record) ---
     private func renderMonthlyHeatmap() {
         heatmapGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         todayHeatmapBoxView = nil
@@ -1341,90 +1453,81 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let isCurrentMonth = cal.isDate(heatmapCurrentDate, equalTo: Date(), toGranularity: .month)
         let todayDay = isCurrentMonth ? cal.component(.day, from: Date()) : -1
 
-        var daysWorkedCount = 0
-        var overtimeCount = 0
-        var totalMinutesLogged = 0
         var todayDayData: HeatmapDayData?
+
+        let keyFmt = DateFormatter()
+        keyFmt.dateFormat = "yyyy-MM-dd"
+        keyFmt.locale = Locale(identifier: "en_US_POSIX")
+
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "EEEE, MMMM d, yyyy"
 
         for d in 1...daysInMonth {
             var dayComps = comps
             dayComps.day = d
             let date = cal.date(from: dayComps) ?? Date()
             let dow = cal.component(.weekday, from: date)
-            let isWeekend = (dow == 1) // Sunday only is weekly off; Mon-Sat are working days
+            let isWeekend = (dow == 1) // Sunday only is weekly off
             let isToday = (isCurrentMonth && d == todayDay)
-
-            let dateFmt = DateFormatter()
-            dateFmt.dateFormat = "EEEE, MMMM d, yyyy"
             let formattedDate = dateFmt.string(from: date)
 
-            var statusType = 0
-            var hours = 0
-            var minutes = 0
+            let dateKey = keyFmt.string(from: date)
+            let isFuture = isCurrentMonth && d > todayDay
+
+            var hasRecord = false
+            var isLate = false
+            var inTime = "--:--"
+            var outTime = "--:--"
             var shiftDesc = ""
-            var inTime = "09:00 AM"
-            var outTime = "05:00 PM"
 
-            if isCurrentMonth && d > todayDay {
-                statusType = 0
-                shiftDesc = "Upcoming Shift: 09:00 AM - 05:00 PM • Target: 08h 00m"
-                inTime = "09:00 AM"
-                outTime = "05:00 PM"
-            } else if isToday {
-                if isCheckedIn, let startDate = checkInDate {
-                    let elapsed = max(0, Int(Date().timeIntervalSince(startDate) - accumulatedBreakDuration))
-                    hours = elapsed / 3600
-                    minutes = (elapsed % 3600) / 60
-                    let tf = DateFormatter()
-                    tf.locale = Locale(identifier: "en_US_POSIX")
-                    tf.dateFormat = "hh:mm a"
-                    inTime = tf.string(from: startDate)
-                    outTime = "In Progress"
-                } else {
-                    hours = 8
-                    minutes = 35
-                    inTime = "09:12 AM"
-                    outTime = "05:47 PM"
-                }
+            if let record = attendanceHistoryMap[dateKey] {
+                hasRecord = true
+                isLate = record.isLate
+                inTime = record.clockInFormatted
+                outTime = record.clockOutFormatted
+                shiftDesc = "Clock In: \(inTime)  •  Shift End: \(outTime)"
+            } else if isToday && isCheckedIn, let startDate = checkInDate {
+                hasRecord = true
+                let tf = DateFormatter()
+                tf.locale = Locale(identifier: "en_US_POSIX")
+                tf.dateFormat = "hh:mm a"
+                inTime = tf.string(from: startDate)
+                outTime = "In Progress"
 
-                if hours >= 8 {
-                    statusType = 3 // Standard Shift Completed (Mid Green)
-                } else {
-                    statusType = 2 // Short / Partial Day (Light Green)
-                }
-
-                if !isWeekend {
-                    daysWorkedCount += 1
-                    totalMinutesLogged += (hours * 60 + minutes)
-                }
-                shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
-            } else if isWeekend {
-                statusType = 1
-                inTime = "Weekly Off"
-                outTime = "Weekly Off"
-                shiftDesc = "Weekly Off • No shift required"
+                let h = cal.component(.hour, from: startDate)
+                let m = cal.component(.minute, from: startDate)
+                isLate = (h > 9 || (h == 9 && m > 15))
+                shiftDesc = "Clock In: \(inTime)  •  Shift End: In Progress"
             } else {
-                let pattern = (d * 7 + 11) % 10
-                if pattern <= 1 {
-                    statusType = 2 // Short Day (Light Green)
-                    hours = 6 + (d % 2)
-                    minutes = 20 + ((d * 5) % 35)
-                    inTime = "09:25 AM"
-                    outTime = String(format: "04:%02d PM", minutes)
-                    shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
-                } else {
-                    statusType = 3 // Standard Shift Completed (Mid Green)
-                    hours = 8
-                    minutes = 0
+                hasRecord = false
+                if isWeekend {
+                    inTime = "Weekly Off"
+                    outTime = "Weekly Off"
+                    shiftDesc = "Weekly Off  •  No punch recorded"
+                } else if isFuture {
                     inTime = "09:00 AM"
                     outTime = "06:00 PM"
-                    shiftDesc = "Clock In: 09:00 AM  •  Shift End: 06:00 PM"
+                    shiftDesc = "Upcoming  •  Shift: 09:00 AM – 06:00 PM"
+                } else {
+                    inTime = "No Record"
+                    outTime = "No Record"
+                    shiftDesc = "No punch record for this date"
                 }
-                daysWorkedCount += 1
-                totalMinutesLogged += (hours * 60 + minutes)
             }
 
-            let data = HeatmapDayData(dayNumber: d, statusType: statusType, hours: hours, minutes: minutes, isToday: isToday, formattedDate: formattedDate, fullDate: date, shiftSummary: shiftDesc, clockInTime: inTime, clockOutTime: outTime)
+            let data = HeatmapDayData(
+                dayNumber: d,
+                hasRecord: hasRecord,
+                isLate: isLate,
+                isToday: isToday,
+                isFuture: isFuture,
+                isWeekend: isWeekend,
+                formattedDate: formattedDate,
+                fullDate: date,
+                shiftSummary: shiftDesc,
+                clockInTime: inTime,
+                clockOutTime: outTime
+            )
             currentHeatmapDays.append(data)
             if isToday {
                 todayDayData = data
@@ -1466,37 +1569,23 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 lbl.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
             ])
 
-            switch data.statusType {
-            case 5: // Heavy Overtime -> Deep Forest Green
-                cell.backgroundColor = ghDeepForest
+            if data.hasRecord {
+                if data.isLate {
+                    cell.backgroundColor = ghLateColor // Yellow #EAB308
+                    cell.layer.borderWidth = 0.5
+                    cell.layer.borderColor = ghLateBorder.cgColor
+                    lbl.textColor = UIColor(red: 120/255, green: 53/255, blue: 15/255, alpha: 1.0)
+                } else {
+                    cell.backgroundColor = ghOnTimeColor // Green #22C55E
+                    cell.layer.borderWidth = 0.5
+                    cell.layer.borderColor = ghOnTimeBorder.cgColor
+                    lbl.textColor = .white
+                }
+            } else {
+                cell.backgroundColor = ghBlankColor // Blank #F1F5F9
                 cell.layer.borderWidth = 0.5
-                cell.layer.borderColor = ghDeepBorder.cgColor
-                lbl.textColor = .white
-            case 4: // Overtime -> Dark Green
-                cell.backgroundColor = ghDarkGreen
-                cell.layer.borderWidth = 0.5
-                cell.layer.borderColor = ghDarkBorder.cgColor
-                lbl.textColor = .white
-            case 3: // Exact 8h -> Mid Green
-                cell.backgroundColor = ghMidGreen
-                cell.layer.borderWidth = 0.5
-                cell.layer.borderColor = ghMidBorder.cgColor
-                lbl.textColor = .white
-            case 2: // Short Day -> Light Green
-                cell.backgroundColor = ghLightGreen
-                cell.layer.borderWidth = 0.5
-                cell.layer.borderColor = ghLightBorder.cgColor
-                lbl.textColor = UIColor(red: 20/255, green: 83/255, blue: 45/255, alpha: 1.0)
-            case 1: // Off Day
-                cell.backgroundColor = ghEmptyColor
-                cell.layer.borderWidth = 0.5
-                cell.layer.borderColor = ghEmptyBorder.cgColor
+                cell.layer.borderColor = ghBlankBorder.cgColor
                 lbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
-            default: // Future Day
-                cell.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
-                cell.layer.borderWidth = 0.5
-                cell.layer.borderColor = ghEmptyBorder.cgColor
-                lbl.textColor = UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
             }
 
             if data.isToday {
@@ -1517,11 +1606,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             }
         }
 
-        heatmapStatDaysWorkedLabel.text = "  \(daysWorkedCount) Days Active  "
-        heatmapStatOvertimeLabel.text = "  \(overtimeCount) Overtime  "
-        let totalH = totalMinutesLogged / 60
-        heatmapStatTotalHoursLabel.text = "  \(totalH)h Total  "
-
         if let todayData = todayDayData {
             updateHeatmapDayDetail(data: todayData)
         } else if let first = currentHeatmapDays.first {
@@ -1529,7 +1613,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
-    // --- RENDER 2: FULL YEAR 52-WEEK AUTHENTIC GITHUB MATRIX ---
+    // --- RENDER 2: FULL YEAR 52-WEEK MATRIX (Real-time On-Time Green / Late Yellow / Blank No Record) ---
     private func renderYearlyHeatmap() {
         yearViewContentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         allYearDaysData.removeAll()
@@ -1565,77 +1649,68 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         yearViewContentStack.addArrangedSubview(leftDayLabelsStack)
 
         var daysData: [HeatmapDayData] = []
-        var totalDaysWorked = 0
-        var totalOvertimeDays = 0
-        var totalMinutesYear = 0
-
         var currentDate = oneYearAgo
         let dayFmt = DateFormatter()
         dayFmt.dateFormat = "EEEE, MMM d, yyyy"
+
+        let keyFmt = DateFormatter()
+        keyFmt.dateFormat = "yyyy-MM-dd"
+        keyFmt.locale = Locale(identifier: "en_US_POSIX")
 
         for i in 0..<365 {
             let dow = cal.component(.weekday, from: currentDate)
             let isWeekend = (dow == 1) // Sunday only is weekly off
             let isToday = cal.isDateInToday(currentDate)
 
-            var statusType = 0
-            var hours = 0
-            var minutes = 0
+            let dateKey = keyFmt.string(from: currentDate)
+            var hasRecord = false
+            var isLate = false
+            var inTime = "--:--"
+            var outTime = "--:--"
             var shiftDesc = ""
-            var inTime = "09:00 AM"
-            var outTime = "05:00 PM"
 
-            if isToday {
-                hours = 8
-                minutes = 0
-                statusType = 3 // Shift Completed
-                totalDaysWorked += 1
-                totalMinutesYear += (hours * 60 + minutes)
-                inTime = "09:00 AM"
-                outTime = isCheckedIn ? "In Progress" : "06:00 PM"
-                shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
-            } else if isWeekend {
-                statusType = 1
-                inTime = "Weekly Off"
-                outTime = "Weekly Off"
-                shiftDesc = "Weekly Off • No shift hours"
+            if let record = attendanceHistoryMap[dateKey] {
+                hasRecord = true
+                isLate = record.isLate
+                inTime = record.clockInFormatted
+                outTime = record.clockOutFormatted
+                shiftDesc = "Clock In: \(inTime)  •  Shift End: \(outTime)"
+            } else if isToday && isCheckedIn, let startDate = checkInDate {
+                hasRecord = true
+                let tf = DateFormatter()
+                tf.locale = Locale(identifier: "en_US_POSIX")
+                tf.dateFormat = "hh:mm a"
+                inTime = tf.string(from: startDate)
+                outTime = "In Progress"
+
+                let h = cal.component(.hour, from: startDate)
+                let m = cal.component(.minute, from: startDate)
+                isLate = (h > 9 || (h == 9 && m > 15))
+                shiftDesc = "Clock In: \(inTime)  •  Shift End: In Progress"
             } else {
-                let pseudo = (i * 13 + 7) % 100
-                if pseudo < 8 {
-                    // Approved Leave
-                    statusType = 0
+                hasRecord = false
+                if isWeekend {
+                    inTime = "Weekly Off"
+                    outTime = "Weekly Off"
+                    shiftDesc = "Weekly Off  •  No punch recorded"
+                } else if currentDate > today {
                     inTime = "09:00 AM"
                     outTime = "06:00 PM"
-                    shiftDesc = "Approved Annual Leave"
-                } else if pseudo < 20 {
-                    // Short day (<8h)
-                    statusType = 2
-                    hours = 6 + (i % 2)
-                    minutes = 15 + ((i * 7) % 35)
-                    totalDaysWorked += 1
-                    totalMinutesYear += (hours * 60 + minutes)
-                    inTime = "09:30 AM"
-                    outTime = "04:30 PM"
-                    shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
+                    shiftDesc = "Upcoming  •  Shift: 09:00 AM – 06:00 PM"
                 } else {
-                    // Standard completed day
-                    statusType = 3
-                    hours = 8
-                    minutes = 0
-                    totalDaysWorked += 1
-                    totalMinutesYear += (hours * 60 + minutes)
-                    inTime = "09:00 AM"
-                    outTime = "06:00 PM"
-                    shiftDesc = "Clock In: 09:00 AM  •  Shift End: 06:00 PM"
+                    inTime = "No Record"
+                    outTime = "No Record"
+                    shiftDesc = "No punch record for this date"
                 }
             }
 
             let dayData = HeatmapDayData(
                 dayNumber: i,
-                statusType: statusType,
-                hours: hours,
-                minutes: minutes,
+                hasRecord: hasRecord,
+                isLate: isLate,
                 isToday: isToday,
+                isFuture: currentDate > today,
+                isWeekend: isWeekend,
                 formattedDate: dayFmt.string(from: currentDate),
                 fullDate: currentDate,
                 shiftSummary: shiftDesc,
@@ -1693,25 +1768,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     cell.isUserInteractionEnabled = true
                     cell.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapYearHeatmapCell(_:))))
 
-                    switch d.statusType {
-                    case 5: // Heavy Overtime -> Deep Forest Green
-                        cell.backgroundColor = ghDeepForest
-                        cell.layer.borderColor = ghDeepBorder.cgColor
-                    case 4: // Overtime -> Dark Green
-                        cell.backgroundColor = ghDarkGreen
-                        cell.layer.borderColor = ghDarkBorder.cgColor
-                    case 3: // Exact 8h -> Mid Green
-                        cell.backgroundColor = ghMidGreen
-                        cell.layer.borderColor = ghMidBorder.cgColor
-                    case 2: // Short Day -> Light Green
-                        cell.backgroundColor = ghLightGreen
-                        cell.layer.borderColor = ghLightBorder.cgColor
-                    case 1: // Off Day -> Empty Gray
-                        cell.backgroundColor = ghEmptyColor
-                        cell.layer.borderColor = ghEmptyBorder.cgColor
-                    default: // Future / Leave
-                        cell.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
-                        cell.layer.borderColor = ghEmptyBorder.cgColor
+                    if d.hasRecord {
+                        if d.isLate {
+                            cell.backgroundColor = ghLateColor
+                            cell.layer.borderColor = ghLateBorder.cgColor
+                        } else {
+                            cell.backgroundColor = ghOnTimeColor
+                            cell.layer.borderColor = ghOnTimeBorder.cgColor
+                        }
+                    } else {
+                        cell.backgroundColor = ghBlankColor
+                        cell.layer.borderColor = ghBlankBorder.cgColor
                     }
 
                     if d.isToday {
@@ -1731,11 +1798,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
             yearViewContentStack.addArrangedSubview(weekCol)
         }
-
-        heatmapStatDaysWorkedLabel.text = "  \(totalDaysWorked) Days Active  "
-        heatmapStatOvertimeLabel.text = "  \(totalOvertimeDays) Overtime  "
-        let totalHYear = totalMinutesYear / 60
-        heatmapStatTotalHoursLabel.text = "  \(totalHYear)h Total  "
 
         // Auto-scroll to latest week (right edge)
         DispatchQueue.main.async { [weak self] in
@@ -1774,22 +1836,15 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         selectedHeatmapDay = data.dayNumber
         heatmapDetailDateLabel.text = data.formattedDate
 
-        if data.statusType == 1 {
-            heatmapDetailHoursLabel.text = "Clock In: Weekly Off  •  Shift End: Weekly Off"
-        } else if data.isToday {
-            if isCheckedIn, let startDate = checkInDate {
-                let timeFormatter = DateFormatter()
-                timeFormatter.locale = Locale(identifier: "en_US_POSIX")
-                timeFormatter.dateFormat = "hh:mm a"
-                let punchTimeStr = timeFormatter.string(from: startDate)
-                heatmapDetailHoursLabel.text = "Clock In: \(punchTimeStr)  •  Shift: In Progress"
-            } else {
-                heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Shift End: \(data.clockOutTime)"
-            }
-        } else if data.statusType == 0 {
-            heatmapDetailHoursLabel.text = "Clock In: 09:00 AM  •  Shift End: 06:00 PM"
+        if data.hasRecord {
+            let badge = data.isLate ? " • Late (Yellow)" : " • On Time (Green)"
+            heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Shift End: \(data.clockOutTime)\(badge)"
+        } else if data.isWeekend {
+            heatmapDetailHoursLabel.text = "Weekly Off  •  No punch recorded"
+        } else if data.isFuture {
+            heatmapDetailHoursLabel.text = "Upcoming  •  Shift: 09:00 AM – 06:00 PM"
         } else {
-            heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Shift End: \(data.clockOutTime)"
+            heatmapDetailHoursLabel.text = "No Record  •  Absent / Not Logged"
         }
     }
 
@@ -1799,28 +1854,16 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let isCurrentMonth = cal.isDate(heatmapCurrentDate, equalTo: Date(), toGranularity: .month)
         guard isCurrentMonth else { return }
 
-        let bg: UIColor
-
-        // Activity level colors for live punch timer:
-        // 1. < 8 hours: Light Green #9BE9A8
-        // 2. Exact 8 hours: Mid Green #40C463
-        // 3. 8h to 9.5h: Dark Green #30A14E
-        // 4. > 9.5 hours: Deep Forest Green #216E39
-        if h > 9 || (h == 9 && m >= 30) {
-            bg = ghDeepForest
-            label.textColor = .white
-        } else if h > 8 || (h == 8 && (m > 0 || s > 0)) {
-            bg = ghDarkGreen
-            label.textColor = .white
-        } else if h == 8 && m == 0 {
-            bg = ghMidGreen
-            label.textColor = .white
-        } else {
-            bg = ghLightGreen
-            label.textColor = UIColor(red: 20/255, green: 83/255, blue: 45/255, alpha: 1.0)
+        var isLate = false
+        if let startDate = checkInDate {
+            let punchH = cal.component(.hour, from: startDate)
+            let punchM = cal.component(.minute, from: startDate)
+            isLate = (punchH > 9 || (punchH == 9 && punchM > 15))
         }
 
+        let bg = isLate ? ghLateColor : ghOnTimeColor
         box.backgroundColor = bg
+        label.textColor = isLate ? UIColor(red: 120/255, green: 53/255, blue: 15/255, alpha: 1.0) : .white
 
         if let yBox = todayYearBoxView {
             yBox.backgroundColor = bg
@@ -1831,8 +1874,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             let tf = DateFormatter()
             tf.locale = Locale(identifier: "en_US_POSIX")
             tf.dateFormat = "hh:mm a"
-            let inStr = (checkInDate != nil) ? tf.string(from: checkInDate!) : "09:12 AM"
-            heatmapDetailHoursLabel.text = "Clock In: \(inStr)  •  Shift: In Progress"
+            let inStr = (checkInDate != nil) ? tf.string(from: checkInDate!) : "09:00 AM"
+            let badge = isLate ? " • Late (Yellow)" : " • On Time (Green)"
+            heatmapDetailHoursLabel.text = "Clock In: \(inStr)  •  Shift: In Progress\(badge)"
         }
     }
 
@@ -2143,6 +2187,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 switch result {
                 case .success:
                     self.loadAttendanceStats()
+                    self.syncTodayAttendanceRecord()
+                    self.loadRealAttendanceHistoryForHeatmap()
                 case .failure(let err):
                     let errStr = err.localizedDescription.lowercased()
                     if !errStr.contains("already") {
@@ -2943,6 +2989,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.checkInDate = self.parseIsoDate(inStr)
                     self.updateUIForAttendance(clockedIn: true)
                     self.startTimer()
+                    self.syncTodayAttendanceRecord()
+                    self.renderMonthlyHeatmap()
                 } else {
                     self.isCheckedIn = false
                     self.checkInDate = nil

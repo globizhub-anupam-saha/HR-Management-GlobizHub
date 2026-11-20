@@ -64,8 +64,10 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
@@ -148,6 +150,16 @@ public class HomeActivity extends AppCompatActivity {
     private int selectedHeatmapDay = -1;
     private boolean isYearHeatmapMode = false;
     private final List<HeatmapDayData> allYearDaysData = new ArrayList<>();
+
+    private static class RealAttendanceRecord {
+        String dateKey;
+        Date inDate;
+        Date outDate;
+        boolean isLate;
+        String clockInFormatted;
+        String clockOutFormatted;
+    }
+    private final Map<String, RealAttendanceRecord> attendanceHistoryMap = new HashMap<>();
 
     // Skeleton Views
     private LinearLayout llHomeCardsContainer;
@@ -254,6 +266,7 @@ public class HomeActivity extends AppCompatActivity {
         updateGreeting();
         loadUserProfile();
         loadAttendanceStats();
+        loadAttendanceHistoryForHeatmap();
         loadSchedule();
         loadLeaveBalance();
         loadHolidays();
@@ -1539,18 +1552,132 @@ public class HomeActivity extends AppCompatActivity {
         updateHeatmapTodayLive(h, m, s);
     }
 
-    // --- GitHub-Style Attendance Activity Heatmap (Month & Full Year) ---
+    // --- Attendance Activity Heatmap (Real-time On-Time Green / Late Yellow / Blank No Record) ---
     private static class HeatmapDayData {
         int dayNumber;
-        int statusType; // 0 = Future/Leave, 1 = Off/Weekend, 2 = Short Day (<8h, Light Green), 3 = Exact 8h (Mid Green), 4 = Overtime (Dark Green), 5 = Heavy Overtime (Deep Forest Green)
+        boolean hasRecord;
+        boolean isLate; // false = On Time (Green), true = Late (Yellow)
+        boolean isToday;
+        boolean isFuture;
+        boolean isWeekend;
         long hours;
         long minutes;
-        boolean isToday;
         String formattedDate;
         Date fullDate;
         String shiftSummary;
-        String clockInTime = "09:00 AM";
-        String clockOutTime = "05:00 PM";
+        String clockInTime = "--:--";
+        String clockOutTime = "--:--";
+    }
+
+    private void syncTodayAttendanceRecord() {
+        if (isCheckedIn && checkInDateTime != null) {
+            SimpleDateFormat keyFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+            String todayKey = keyFmt.format(checkInDateTime);
+
+            RealAttendanceRecord rec = new RealAttendanceRecord();
+            rec.inDate = checkInDateTime;
+            rec.dateKey = todayKey;
+            rec.clockInFormatted = timeFmt.format(checkInDateTime);
+            rec.clockOutFormatted = "In Progress";
+
+            Calendar c = Calendar.getInstance();
+            c.setTime(checkInDateTime);
+            int h = c.get(Calendar.HOUR_OF_DAY);
+            int m = c.get(Calendar.MINUTE);
+            rec.isLate = (h > 9 || (h == 9 && m > 15));
+
+            attendanceHistoryMap.put(todayKey, rec);
+        }
+    }
+
+    private void loadAttendanceHistoryForHeatmap() {
+        if (apiClient == null) return;
+        String token = apiClient.getToken();
+        if (token == null || token.isEmpty()) return;
+
+        apiClient.getMyAttendanceHistory(token, new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray response) {
+                attendanceHistoryMap.clear();
+                SimpleDateFormat apiFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+                SimpleDateFormat keyFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+
+                if (response != null) {
+                    for (int i = 0; i < response.length(); i++) {
+                        try {
+                            JSONObject obj = response.getJSONObject(i);
+                            String clockInRaw = obj.optString("clockIn", null);
+                            String clockOutRaw = obj.optString("clockOut", null);
+                            if (clockInRaw != null && !clockInRaw.isEmpty() && !"null".equalsIgnoreCase(clockInRaw)) {
+                                Date inDate = null;
+                                try {
+                                    inDate = apiFmt.parse(clockInRaw);
+                                } catch (Exception ignored) {
+                                    SimpleDateFormat isoZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                                    isoZ.setTimeZone(TimeZone.getTimeZone("UTC"));
+                                    inDate = isoZ.parse(clockInRaw);
+                                }
+                                if (inDate != null) {
+                                    RealAttendanceRecord rec = new RealAttendanceRecord();
+                                    rec.inDate = inDate;
+                                    rec.dateKey = keyFmt.format(inDate);
+                                    rec.clockInFormatted = timeFmt.format(inDate);
+
+                                    if (clockOutRaw != null && !clockOutRaw.isEmpty() && !"null".equalsIgnoreCase(clockOutRaw)) {
+                                        try {
+                                            rec.outDate = apiFmt.parse(clockOutRaw);
+                                        } catch (Exception ignored) {
+                                            SimpleDateFormat isoZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                                            isoZ.setTimeZone(TimeZone.getTimeZone("UTC"));
+                                            rec.outDate = isoZ.parse(clockOutRaw);
+                                        }
+                                        if (rec.outDate != null) {
+                                            rec.clockOutFormatted = timeFmt.format(rec.outDate);
+                                        } else {
+                                            rec.clockOutFormatted = "Shift Ended";
+                                        }
+                                    } else {
+                                        rec.clockOutFormatted = "In Progress";
+                                    }
+
+                                    Calendar c = Calendar.getInstance();
+                                    c.setTime(inDate);
+                                    int h = c.get(Calendar.HOUR_OF_DAY);
+                                    int m = c.get(Calendar.MINUTE);
+                                    rec.isLate = (h > 9 || (h == 9 && m > 15));
+
+                                    attendanceHistoryMap.put(rec.dateKey, rec);
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                syncTodayAttendanceRecord();
+
+                runOnUiThread(() -> {
+                    if (isYearHeatmapMode) {
+                        renderYearlyHeatmap();
+                    } else {
+                        renderMonthlyHeatmap();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error, int statusCode) {
+                syncTodayAttendanceRecord();
+                runOnUiThread(() -> {
+                    if (isYearHeatmapMode) {
+                        renderYearlyHeatmap();
+                    } else {
+                        renderMonthlyHeatmap();
+                    }
+                });
+            }
+        });
     }
 
     private void setHeatmapMode(boolean isYear) {
@@ -1608,12 +1735,9 @@ public class HomeActivity extends AppCompatActivity {
         int firstDayOfWeek = tempCal.get(Calendar.DAY_OF_WEEK); // 1 = Sunday, 2 = Monday, ...
         int offset = (firstDayOfWeek + 5) % 7; // Monday = 0, ..., Sunday = 6
 
-        int daysWorkedCount = 0;
-        int overtimeCount = 0;
-        long totalMinutesLogged = 0;
-
         List<HeatmapDayData> monthDays = new ArrayList<>();
         HeatmapDayData todayDayData = null;
+        SimpleDateFormat keyFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
         for (int d = 1; d <= daysInMonth; d++) {
             tempCal.set(Calendar.DAY_OF_MONTH, d);
@@ -1625,71 +1749,50 @@ public class HomeActivity extends AppCompatActivity {
             data.isToday = (isCurrentMonth && d == todayDay);
             data.fullDate = tempCal.getTime();
             data.formattedDate = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.US).format(tempCal.getTime());
+            data.isWeekend = isWeekend;
 
-            if (isCurrentMonth && d > todayDay) {
-                // Future days
-                data.statusType = 0;
-                data.hours = 0;
-                data.minutes = 0;
-                data.clockInTime = "09:00 AM";
-                data.clockOutTime = "05:00 PM";
-                data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
-            } else if (data.isToday) {
-                // Today: Check if currently checked in or completed
-                if (isCheckedIn && checkInDateTime != null) {
-                    long elapsedSec = Math.max(0, (System.currentTimeMillis() - checkInDateTime.getTime() - accumulatedBreakTimeMs) / 1000);
-                    data.hours = elapsedSec / 3600;
-                    data.minutes = (elapsedSec % 3600) / 60;
-                } else {
-                    // Seed active day hours
-                    data.hours = 8;
-                    data.minutes = 35;
-                }
+            String dateKey = keyFmt.format(tempCal.getTime());
+            boolean isFuture = isCurrentMonth && d > todayDay;
+            data.isFuture = isFuture;
 
-                if (data.hours >= 8) {
-                    data.statusType = 3; // Standard Shift Completed (Mid Green)
-                } else {
-                    data.statusType = 2; // Short Day (<8h, Light Green)
-                }
-
-                if (!isWeekend) {
-                    daysWorkedCount++;
-                    totalMinutesLogged += (data.hours * 60 + data.minutes);
-                }
-                SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
-                data.clockInTime = (checkInDateTime != null) ? timeFmt.format(checkInDateTime) : "09:12 AM";
-                data.clockOutTime = isCheckedIn ? "In Progress" : "05:47 PM";
+            RealAttendanceRecord record = attendanceHistoryMap.get(dateKey);
+            if (record != null) {
+                data.hasRecord = true;
+                data.isLate = record.isLate;
+                data.clockInTime = record.clockInFormatted;
+                data.clockOutTime = record.clockOutFormatted;
                 data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
-                todayDayData = data;
-            } else if (isWeekend) {
-                data.statusType = 1; // Off Day
-                data.hours = 0;
-                data.minutes = 0;
-                data.clockInTime = "Weekly Off";
-                data.clockOutTime = "Weekly Off";
-                data.shiftSummary = "Clock In: Weekly Off  •  Shift End: Weekly Off";
+            } else if (data.isToday && isCheckedIn && checkInDateTime != null) {
+                data.hasRecord = true;
+                Calendar c = Calendar.getInstance();
+                c.setTime(checkInDateTime);
+                int h = c.get(Calendar.HOUR_OF_DAY);
+                int m = c.get(Calendar.MINUTE);
+                data.isLate = (h > 9 || (h == 9 && m > 15));
+                SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+                data.clockInTime = timeFmt.format(checkInDateTime);
+                data.clockOutTime = "In Progress";
+                data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: In Progress";
             } else {
-                // Past Weekday: Realistically patterned attendance
-                int pattern = (d * 7 + 11) % 10;
-                if (pattern <= 1) {
-                    // Short Day (< 8 hours) -> Light Green
-                    data.statusType = 2;
-                    data.hours = 6 + (d % 2);
-                    data.minutes = 20 + ((d * 5) % 35);
-                    data.clockInTime = "09:25 AM";
-                    data.clockOutTime = String.format(Locale.getDefault(), "04:%02d PM", data.minutes);
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
-                } else {
-                    // Standard 8 Hours Completed -> Mid Green
-                    data.statusType = 3;
-                    data.hours = 8;
-                    data.minutes = 0;
+                // Completely blank for days with no record (no fake/dummy pattern)
+                data.hasRecord = false;
+                if (isWeekend) {
+                    data.clockInTime = "Weekly Off";
+                    data.clockOutTime = "Weekly Off";
+                    data.shiftSummary = "Weekly Off  •  No punch recorded";
+                } else if (isFuture) {
                     data.clockInTime = "09:00 AM";
-                    data.clockOutTime = "05:00 PM";
-                    data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
+                    data.clockOutTime = "06:00 PM";
+                    data.shiftSummary = "Upcoming  •  Shift: 09:00 AM – 06:00 PM";
+                } else {
+                    data.clockInTime = "No Record";
+                    data.clockOutTime = "No Record";
+                    data.shiftSummary = "No punch record for this date";
                 }
-                daysWorkedCount++;
-                totalMinutesLogged += (data.hours * 60 + data.minutes);
+            }
+
+            if (data.isToday) {
+                todayDayData = data;
             }
 
             monthDays.add(data);
@@ -1722,32 +1825,17 @@ public class HomeActivity extends AppCompatActivity {
 
             int bgRes;
             int textColor;
-            switch (data.statusType) {
-                case 5: // Heavy Overtime (Deep Forest Green)
-                    bgRes = R.drawable.bg_box_github_level4;
+            if (data.hasRecord) {
+                if (data.isLate) {
+                    bgRes = R.drawable.bg_box_heatmap_late; // Yellow #EAB308
+                    textColor = Color.parseColor("#78350F");
+                } else {
+                    bgRes = R.drawable.bg_box_heatmap_ontime; // Green #22C55E
                     textColor = Color.WHITE;
-                    break;
-                case 4: // Overtime (Dark Green)
-                    bgRes = R.drawable.bg_box_github_level3;
-                    textColor = Color.WHITE;
-                    break;
-                case 3: // Exact 8h (Mid Green)
-                    bgRes = R.drawable.bg_box_github_level2;
-                    textColor = Color.WHITE;
-                    break;
-                case 2: // Short Day (Light Green)
-                    bgRes = R.drawable.bg_box_github_level1;
-                    textColor = Color.parseColor("#14532D");
-                    break;
-                case 1: // Off Day (Empty Gray)
-                    bgRes = R.drawable.bg_box_github_empty;
-                    textColor = Color.parseColor("#94A3B8");
-                    break;
-                case 0: // Future Day
-                default:
-                    bgRes = R.drawable.bg_box_github_future;
-                    textColor = Color.parseColor("#CBD5E1");
-                    break;
+                }
+            } else {
+                bgRes = R.drawable.bg_box_heatmap_blank; // Blank #F1F5F9
+                textColor = Color.parseColor("#94A3B8");
             }
 
             cell.setBackgroundResource(bgRes);
@@ -1767,7 +1855,7 @@ public class HomeActivity extends AppCompatActivity {
                 todayHeatmapBoxView = cell;
                 todayHeatmapBoxText = tvDay;
                 View ring = new View(this);
-                ring.setBackgroundResource(R.drawable.bg_box_github_today_ring);
+                ring.setBackgroundResource(R.drawable.bg_box_heatmap_today_ring);
                 cell.addView(ring, new FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             }
@@ -1795,7 +1883,7 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    // --- RENDER 2: FULL YEAR 52-WEEK AUTHENTIC GITHUB MATRIX ---
+    // --- RENDER 2: FULL YEAR 52-WEEK AUTHENTIC MATRIX ---
     private void renderYearlyHeatmap() {
         if (layoutHeatmapYearMatrix == null) return;
         layoutHeatmapYearMatrix.removeAllViews();
@@ -1806,14 +1894,11 @@ public class HomeActivity extends AppCompatActivity {
         cal.setTime(today);
         cal.add(Calendar.DAY_OF_YEAR, -364);
 
-        int totalDaysWorked = 0;
-        int totalOvertimeDays = 0;
-        long totalMinutesYear = 0;
-
         SimpleDateFormat dayFmt = new SimpleDateFormat("EEEE, MMM d, yyyy", Locale.US);
         SimpleDateFormat monthHeaderFmt = new SimpleDateFormat("MMM", Locale.US);
+        SimpleDateFormat keyFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
-        // Generate 365 days of activity since joining
+        // Generate 365 days of activity
         for (int i = 0; i < 365; i++) {
             Date currentDate = cal.getTime();
             int dow = cal.get(Calendar.DAY_OF_WEEK);
@@ -1828,53 +1913,42 @@ public class HomeActivity extends AppCompatActivity {
             data.fullDate = currentDate;
             data.formattedDate = dayFmt.format(currentDate);
             data.isToday = isToday;
+            data.isWeekend = isWeekend;
 
-            if (isToday) {
-                data.hours = 8;
-                data.minutes = 35;
-                data.statusType = 3; // Standard Shift Completed (Mid Green)
-                totalDaysWorked++;
-                totalMinutesYear += (data.hours * 60 + data.minutes);
-                data.clockInTime = "09:12 AM";
-                data.clockOutTime = isCheckedIn ? "In Progress" : "05:47 PM";
+            String dateKey = keyFmt.format(currentDate);
+            RealAttendanceRecord record = attendanceHistoryMap.get(dateKey);
+
+            if (record != null) {
+                data.hasRecord = true;
+                data.isLate = record.isLate;
+                data.clockInTime = record.clockInFormatted;
+                data.clockOutTime = record.clockOutFormatted;
                 data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
-            } else if (isWeekend) {
-                data.statusType = 1; // Off Day
-                data.hours = 0;
-                data.minutes = 0;
-                data.clockInTime = "Weekly Off";
-                data.clockOutTime = "Weekly Off";
-                data.shiftSummary = "Clock In: Weekly Off  •  Shift End: Weekly Off";
+            } else if (isToday && isCheckedIn && checkInDateTime != null) {
+                data.hasRecord = true;
+                Calendar c = Calendar.getInstance();
+                c.setTime(checkInDateTime);
+                int h = c.get(Calendar.HOUR_OF_DAY);
+                int m = c.get(Calendar.MINUTE);
+                data.isLate = (h > 9 || (h == 9 && m > 15));
+                SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+                data.clockInTime = timeFmt.format(checkInDateTime);
+                data.clockOutTime = "In Progress";
+                data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: In Progress";
             } else {
-                int pseudo = (i * 13 + 7) % 100;
-                if (pseudo < 8) {
-                    // Approved Leave
-                    data.statusType = 0;
-                    data.hours = 0;
-                    data.minutes = 0;
+                data.hasRecord = false;
+                if (isWeekend) {
+                    data.clockInTime = "Weekly Off";
+                    data.clockOutTime = "Weekly Off";
+                    data.shiftSummary = "Weekly Off  •  No punch recorded";
+                } else if (currentDate.after(today)) {
                     data.clockInTime = "09:00 AM";
-                    data.clockOutTime = "05:00 PM";
-                    data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
-                } else if (pseudo < 20) {
-                    // Short day (<8h) -> Light Green
-                    data.statusType = 2;
-                    data.hours = 6 + (i % 2);
-                    data.minutes = 15 + ((i * 7) % 35);
-                    totalDaysWorked++;
-                    totalMinutesYear += (data.hours * 60 + data.minutes);
-                    data.clockInTime = "09:30 AM";
-                    data.clockOutTime = "04:30 PM";
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
+                    data.clockOutTime = "06:00 PM";
+                    data.shiftSummary = "Upcoming  •  Shift: 09:00 AM – 06:00 PM";
                 } else {
-                    // Standard completed day -> Mid Green
-                    data.statusType = 3;
-                    data.hours = 8;
-                    data.minutes = 0;
-                    totalDaysWorked++;
-                    totalMinutesYear += (data.hours * 60 + data.minutes);
-                    data.clockInTime = "09:00 AM";
-                    data.clockOutTime = "05:00 PM";
-                    data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
+                    data.clockInTime = "No Record";
+                    data.clockOutTime = "No Record";
+                    data.shiftSummary = "No punch record for this date";
                 }
             }
 
@@ -1889,7 +1963,6 @@ public class HomeActivity extends AppCompatActivity {
         leftParams.rightMargin = dpToPx(4);
         leftCol.setLayoutParams(leftParams);
 
-        // Top spacer matching month label height
         View topSpacer = new View(this);
         topSpacer.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(16)));
         leftCol.addView(topSpacer);
@@ -1948,32 +2021,16 @@ public class HomeActivity extends AppCompatActivity {
                 cell.setLayoutParams(cParams);
 
                 int bgRes;
-                switch (dayData.statusType) {
-                    case 5:
-                        bgRes = R.drawable.bg_box_github_level4;
-                        break;
-                    case 4:
-                        bgRes = R.drawable.bg_box_github_level3;
-                        break;
-                    case 3:
-                        bgRes = R.drawable.bg_box_github_level2;
-                        break;
-                    case 2:
-                        bgRes = R.drawable.bg_box_github_level1;
-                        break;
-                    case 1:
-                        bgRes = R.drawable.bg_box_github_empty;
-                        break;
-                    case 0:
-                    default:
-                        bgRes = R.drawable.bg_box_github_future;
-                        break;
+                if (dayData.hasRecord) {
+                    bgRes = dayData.isLate ? R.drawable.bg_box_heatmap_late : R.drawable.bg_box_heatmap_ontime;
+                } else {
+                    bgRes = R.drawable.bg_box_heatmap_blank;
                 }
                 cell.setBackgroundResource(bgRes);
 
                 if (dayData.isToday) {
                     View ring = new View(this);
-                    ring.setBackgroundResource(R.drawable.bg_box_github_today_ring);
+                    ring.setBackgroundResource(R.drawable.bg_box_heatmap_today_ring);
                     cell.addView(ring, new FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
                 }
@@ -2015,20 +2072,15 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (tvHeatmapDetailHours != null) {
-            if (data.statusType == 1) {
-                tvHeatmapDetailHours.setText("Clock In: Weekly Off  •  Shift End: Weekly Off");
-            } else if (data.isToday) {
-                if (isCheckedIn && checkInDateTime != null) {
-                    SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm a", Locale.US);
-                    String punchTimeStr = timeFormatter.format(checkInDateTime);
-                    tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Shift End: In Progress");
-                } else {
-                    tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime);
-                }
-            } else if (data.statusType == 0) {
-                tvHeatmapDetailHours.setText("Clock In: 09:00 AM  •  Shift End: 05:00 PM");
+            if (data.hasRecord) {
+                String badge = data.isLate ? " • Late (Yellow)" : " • On Time (Green)";
+                tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime + badge);
+            } else if (data.isWeekend) {
+                tvHeatmapDetailHours.setText("Weekly Off  •  No punch recorded");
+            } else if (data.isFuture) {
+                tvHeatmapDetailHours.setText("Upcoming  •  Shift: 09:00 AM – 06:00 PM");
             } else {
-                tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime);
+                tvHeatmapDetailHours.setText("No Record  •  Absent / Not Logged");
             }
         }
     }
@@ -2040,25 +2092,27 @@ public class HomeActivity extends AppCompatActivity {
                 today.get(Calendar.MONTH) == heatmapCalendar.get(Calendar.MONTH);
         if (!isCurrentMonth) return;
 
-        int bgRes;
-
-        if (h >= 8) {
-            bgRes = R.drawable.bg_box_github_level2;
-        } else {
-            bgRes = R.drawable.bg_box_github_level1;
+        boolean isLate = false;
+        if (checkInDateTime != null) {
+            Calendar c = Calendar.getInstance();
+            c.setTime(checkInDateTime);
+            int punchH = c.get(Calendar.HOUR_OF_DAY);
+            int punchM = c.get(Calendar.MINUTE);
+            isLate = (punchH > 9 || (punchH == 9 && punchM > 15));
         }
 
+        int bgRes = isLate ? R.drawable.bg_box_heatmap_late : R.drawable.bg_box_heatmap_ontime;
         todayHeatmapBoxView.setBackgroundResource(bgRes);
         if (todayHeatmapBoxText != null) {
-            todayHeatmapBoxText.setTextColor(h < 8 ? Color.parseColor("#14532D") : Color.WHITE);
+            todayHeatmapBoxText.setTextColor(isLate ? Color.parseColor("#78350F") : Color.WHITE);
         }
 
         if (selectedHeatmapDay == today.get(Calendar.DAY_OF_MONTH)) {
             if (tvHeatmapDetailHours != null) {
                 SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm a", Locale.US);
-                String punchTimeStr = (checkInDateTime != null) ? timeFormatter.format(checkInDateTime) : "09:12 AM";
-                String outStr = isCheckedIn ? "In Progress" : "05:47 PM";
-                tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Shift End: " + outStr);
+                String punchTimeStr = (checkInDateTime != null) ? timeFormatter.format(checkInDateTime) : "09:00 AM";
+                String badge = isLate ? " • Late (Yellow)" : " • On Time (Green)";
+                tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Shift: In Progress" + badge);
             }
         }
     }
