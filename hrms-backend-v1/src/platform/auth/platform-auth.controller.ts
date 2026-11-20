@@ -48,4 +48,3 @@ export class PlatformAuthController {
     return this.authService.register(dto, currentUser.id, currentUser.email);
   }
 }
-

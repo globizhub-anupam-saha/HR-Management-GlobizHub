@@ -25,4 +25,3 @@ export class TrainingAdminGuard implements CanActivate {
     return true;
   }
 }
-

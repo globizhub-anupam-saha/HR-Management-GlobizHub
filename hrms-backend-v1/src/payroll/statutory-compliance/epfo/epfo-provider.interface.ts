@@ -31,7 +31,11 @@ export interface EPFOProvider {
   /**
    * Future Phase 2/3: Upload ECR file through authorized EPFO API
    */
-  uploadEcr?(filePath: string, establishmentCode: string): Promise<{ success: boolean; trrn?: string; message: string }>;
-  fetchChallanStatus?(trrn: string): Promise<{ status: string; paidDate?: Date }>;
+  uploadEcr?(
+    filePath: string,
+    establishmentCode: string,
+  ): Promise<{ success: boolean; trrn?: string; message: string }>;
+  fetchChallanStatus?(
+    trrn: string,
+  ): Promise<{ status: string; paidDate?: Date }>;
 }
-

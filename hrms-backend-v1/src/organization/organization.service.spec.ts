@@ -74,7 +74,10 @@ describe('OrganizationService', () => {
     });
 
     it('should throw BadRequestException if departments belong to branch', async () => {
-      prisma.branch.findFirst.mockResolvedValue({ id: 'br-1', companyId: 'comp-1' });
+      prisma.branch.findFirst.mockResolvedValue({
+        id: 'br-1',
+        companyId: 'comp-1',
+      });
       prisma.department.count.mockResolvedValue(2);
 
       await expect(service.deleteBranch('comp-1', 'br-1')).rejects.toThrow(
@@ -83,45 +86,59 @@ describe('OrganizationService', () => {
     });
 
     it('should delete branch when no departments belong to it', async () => {
-      prisma.branch.findFirst.mockResolvedValue({ id: 'br-1', companyId: 'comp-1' });
+      prisma.branch.findFirst.mockResolvedValue({
+        id: 'br-1',
+        companyId: 'comp-1',
+      });
       prisma.department.count.mockResolvedValue(0);
       prisma.branch.delete.mockResolvedValue({ id: 'br-1' });
 
       const res = await service.deleteBranch('comp-1', 'br-1');
       expect(res).toEqual({ id: 'br-1' });
-      expect(prisma.branch.delete).toHaveBeenCalledWith({ where: { id: 'br-1' } });
+      expect(prisma.branch.delete).toHaveBeenCalledWith({
+        where: { id: 'br-1' },
+      });
     });
   });
 
   describe('deleteDepartment', () => {
     it('should throw NotFoundException if department not found', async () => {
       prisma.department.findFirst.mockResolvedValue(null);
-      await expect(service.deleteDepartment('comp-1', 'dept-99')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.deleteDepartment('comp-1', 'dept-99'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if employees belong to department', async () => {
-      prisma.department.findFirst.mockResolvedValue({ id: 'dept-1', companyId: 'comp-1' });
+      prisma.department.findFirst.mockResolvedValue({
+        id: 'dept-1',
+        companyId: 'comp-1',
+      });
       prisma.employee.count.mockResolvedValue(3);
 
-      await expect(service.deleteDepartment('comp-1', 'dept-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.deleteDepartment('comp-1', 'dept-1'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException if active job requisitions belong to department', async () => {
-      prisma.department.findFirst.mockResolvedValue({ id: 'dept-1', companyId: 'comp-1' });
+      prisma.department.findFirst.mockResolvedValue({
+        id: 'dept-1',
+        companyId: 'comp-1',
+      });
       prisma.employee.count.mockResolvedValue(0);
       prisma.jobRequisition.count.mockResolvedValue(1);
 
-      await expect(service.deleteDepartment('comp-1', 'dept-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.deleteDepartment('comp-1', 'dept-1'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should delete department when safeguards pass', async () => {
-      prisma.department.findFirst.mockResolvedValue({ id: 'dept-1', companyId: 'comp-1' });
+      prisma.department.findFirst.mockResolvedValue({
+        id: 'dept-1',
+        companyId: 'comp-1',
+      });
       prisma.employee.count.mockResolvedValue(0);
       prisma.jobRequisition.count.mockResolvedValue(0);
       prisma.role.count.mockResolvedValue(0);
@@ -141,7 +158,10 @@ describe('OrganizationService', () => {
     });
 
     it('should throw BadRequestException if employees are assigned to role', async () => {
-      prisma.role.findFirst.mockResolvedValue({ id: 'role-1', companyId: 'comp-1' });
+      prisma.role.findFirst.mockResolvedValue({
+        id: 'role-1',
+        companyId: 'comp-1',
+      });
       prisma.employee.count.mockResolvedValue(2);
 
       await expect(service.deleteRole('comp-1', 'role-1')).rejects.toThrow(
@@ -150,7 +170,10 @@ describe('OrganizationService', () => {
     });
 
     it('should delete role when no employees are assigned', async () => {
-      prisma.role.findFirst.mockResolvedValue({ id: 'role-1', companyId: 'comp-1' });
+      prisma.role.findFirst.mockResolvedValue({
+        id: 'role-1',
+        companyId: 'comp-1',
+      });
       prisma.employee.count.mockResolvedValue(0);
       prisma.role.delete.mockResolvedValue({ id: 'role-1' });
 

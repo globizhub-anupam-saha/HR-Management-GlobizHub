@@ -125,7 +125,11 @@ describe('TrainingPlanService', () => {
         status: 'PENDING_APPROVAL',
       });
 
-      const res = await service.submitForApproval(mockCompanyId, 'plan-1', mockUser);
+      const res = await service.submitForApproval(
+        mockCompanyId,
+        'plan-1',
+        mockUser,
+      );
 
       expect(res.status).toBe('PENDING_APPROVAL');
       expect(prisma.trainingApproval.create).toHaveBeenCalled();
@@ -206,8 +210,14 @@ describe('TrainingPlanService', () => {
 
       expect(res.status).toBe('COMPLETED');
       expect(prisma.trainingEnrollment.updateMany).toHaveBeenCalledWith({
-        where: { planId: 'plan-1', status: { in: ['ENROLLED', 'IN_PROGRESS'] } },
-        data: expect.objectContaining({ status: 'COMPLETED', completionPercentage: 100 }),
+        where: {
+          planId: 'plan-1',
+          status: { in: ['ENROLLED', 'IN_PROGRESS'] },
+        },
+        data: expect.objectContaining({
+          status: 'COMPLETED',
+          completionPercentage: 100,
+        }),
       });
       expect(notificationService.sendInternalNotification).toHaveBeenCalled();
     });

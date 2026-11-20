@@ -28,4 +28,3 @@ export class AdjustLeaveBalanceDto {
   @IsOptional()
   year?: number;
 }
-

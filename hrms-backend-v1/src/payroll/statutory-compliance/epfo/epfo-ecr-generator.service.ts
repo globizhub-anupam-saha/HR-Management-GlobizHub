@@ -1,5 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { EcrMemberRecord, EcrGenerationResult } from './epfo-provider.interface';
+import {
+  EcrMemberRecord,
+  EcrGenerationResult,
+} from './epfo-provider.interface';
 
 @Injectable()
 export class EpfoEcrGeneratorService {
@@ -20,7 +23,9 @@ export class EpfoEcrGeneratorService {
    */
   generateEcrText(records: EcrMemberRecord[]): EcrGenerationResult {
     if (!records || records.length === 0) {
-      throw new BadRequestException('No eligible EPFO employee records found for ECR generation');
+      throw new BadRequestException(
+        'No eligible EPFO employee records found for ECR generation',
+      );
     }
 
     const lines: string[] = [];
@@ -43,7 +48,10 @@ export class EpfoEcrGeneratorService {
       }
 
       // Sanitize member name (remove special characters that break EPFO parser)
-      const cleanName = record.memberName.replace(/[^a-zA-Z\s.]/g, '').trim().substring(0, 80);
+      const cleanName = record.memberName
+        .replace(/[^a-zA-Z\s.]/g, '')
+        .trim()
+        .substring(0, 80);
 
       totalGrossWages += record.grossWages;
       totalEpfWages += record.epfWages;
@@ -78,7 +86,12 @@ export class EpfoEcrGeneratorService {
     const totalEdliContribution = Math.round(totalEdliWages * 0.005);
 
     // Total challan deposit amount = EE EPF + ER EPF Diff + EPS + Admin + EDLI
-    const grandTotal = totalEeEpf + totalErEpfDiff + totalErEps + totalAdminCharges + totalEdliContribution;
+    const grandTotal =
+      totalEeEpf +
+      totalErEpfDiff +
+      totalErEps +
+      totalAdminCharges +
+      totalEdliContribution;
 
     return {
       content: lines.join('\r\n'),
@@ -96,4 +109,3 @@ export class EpfoEcrGeneratorService {
     };
   }
 }
-

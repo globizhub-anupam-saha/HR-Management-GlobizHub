@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { EpfoCalculatorService } from '../epfo/epfo-calculator.service';
 import { EpfoEcrGeneratorService } from '../epfo/epfo-ecr-generator.service';
@@ -74,7 +78,10 @@ export class StatutoryReturnService {
       );
     }
 
-    const rates = await this.rulesService.getActiveRules(dto.establishmentId, monthDate);
+    const rates = await this.rulesService.getActiveRules(
+      dto.establishmentId,
+      monthDate,
+    );
 
     let fileContent = '';
     let fileName = '';
@@ -105,7 +112,7 @@ export class StatutoryReturnService {
 
       if (records.length === 0) {
         throw new BadRequestException(
-          'No employees with a configured EPFO UAN found in this month\'s payroll records. Please ensure employees have their UAN entered.',
+          "No employees with a configured EPFO UAN found in this month's payroll records. Please ensure employees have their UAN entered.",
         );
       }
 
@@ -137,11 +144,12 @@ export class StatutoryReturnService {
 
       if (records.length === 0) {
         throw new BadRequestException(
-          'No employees with a configured ESIC IP Number found in this month\'s payroll records. Please ensure employees have their ESIC IP Number entered.',
+          "No employees with a configured ESIC IP Number found in this month's payroll records. Please ensure employees have their ESIC IP Number entered.",
         );
       }
 
-      const esicResult = this.esicGenerator.generateEsicContributionFile(records);
+      const esicResult =
+        this.esicGenerator.generateEsicContributionFile(records);
       fileContent = esicResult.content;
       fileName = `ESIC_CONTRIBUTION_${establishment.esicEmployerCode || 'EST'}_${dto.year}_${String(dto.month).padStart(2, '0')}.csv`;
       summary = esicResult;
@@ -183,7 +191,10 @@ export class StatutoryReturnService {
   /**
    * HR records that the return was uploaded to the government portal
    */
-  async recordPortalSubmission(companyId: string, dto: SubmitStatutoryReturnDto) {
+  async recordPortalSubmission(
+    companyId: string,
+    dto: SubmitStatutoryReturnDto,
+  ) {
     const statutoryReturn = await this.prisma.statutoryReturn.findFirst({
       where: { id: dto.returnId, companyId },
     });
@@ -284,7 +295,11 @@ export class StatutoryReturnService {
   /**
    * List returns for an establishment and year
    */
-  async listReturns(companyId: string, establishmentId?: string, year?: number) {
+  async listReturns(
+    companyId: string,
+    establishmentId?: string,
+    year?: number,
+  ) {
     const where: any = { companyId };
     if (establishmentId) where.establishmentId = establishmentId;
     if (year) {
@@ -308,4 +323,3 @@ export class StatutoryReturnService {
     });
   }
 }
-

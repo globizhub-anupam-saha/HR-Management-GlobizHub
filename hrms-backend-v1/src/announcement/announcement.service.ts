@@ -17,7 +17,7 @@ export class AnnouncementService {
     // Also populate notifications for employees so the bell lights up!
     try {
       const employees = await this.prisma.employee.findMany({
-      where: { companyId, employmentStatus: 'ACTIVE' },
+        where: { companyId, employmentStatus: 'ACTIVE' },
         include: { notificationSettings: true },
       });
 
@@ -31,7 +31,10 @@ export class AnnouncementService {
             companyId,
             userId: emp.id,
             title: `Announcement: ${title}`,
-            message: content.length > 150 ? content.substring(0, 147) + '...' : content,
+            message:
+              content.length > 150
+                ? content.substring(0, 147) + '...'
+                : content,
             type: 'ANNOUNCEMENT',
             isRead: false,
           })),

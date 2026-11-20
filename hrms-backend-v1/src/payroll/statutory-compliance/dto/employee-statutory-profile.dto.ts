@@ -1,4 +1,9 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 
 export class UpsertEmployeeStatutoryProfileDto {
   @IsString()
@@ -25,4 +30,3 @@ export class UpsertEmployeeStatutoryProfileDto {
   @IsOptional()
   effectiveTo?: string;
 }
-

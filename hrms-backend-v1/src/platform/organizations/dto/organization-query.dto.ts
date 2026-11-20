@@ -34,4 +34,3 @@ export class OrganizationQueryDto {
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

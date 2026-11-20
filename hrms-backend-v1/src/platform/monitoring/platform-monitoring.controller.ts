@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { PlatformMonitoringService } from './platform-monitoring.service';
 import { PlatformAuthGuard } from '../auth/guards/platform-auth.guard';
 import { PlatformRolesGuard } from '../auth/guards/platform-roles.guard';
@@ -41,4 +36,3 @@ export class PlatformMonitoringController {
     return this.monitoringService.getSystemHealth();
   }
 }
-

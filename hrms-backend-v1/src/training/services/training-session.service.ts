@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import { NotificationService } from '../../notification/notification.service';
-import { CreateTrainingSessionDto, UpdateTrainingSessionDto } from '../dto/session.dto';
+import {
+  CreateTrainingSessionDto,
+  UpdateTrainingSessionDto,
+} from '../dto/session.dto';
 
 @Injectable()
 export class TrainingSessionService {
@@ -12,7 +15,10 @@ export class TrainingSessionService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async findAll(companyId: string, query?: { status?: string; planId?: string }) {
+  async findAll(
+    companyId: string,
+    query?: { status?: string; planId?: string },
+  ) {
     const where: any = { companyId };
     if (query?.status) where.status = query.status;
     if (query?.planId) where.planId = query.planId;
@@ -21,7 +27,12 @@ export class TrainingSessionService {
       where,
       include: {
         plan: {
-          select: { id: true, title: true, planNumber: true, trainingType: true },
+          select: {
+            id: true,
+            title: true,
+            planNumber: true,
+            trainingType: true,
+          },
         },
         trainerEmployee: {
           select: { id: true, firstName: true, lastName: true, email: true },
@@ -44,7 +55,12 @@ export class TrainingSessionService {
         attendances: {
           include: {
             employee: {
-              select: { id: true, firstName: true, lastName: true, employeeCode: true },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                employeeCode: true,
+              },
             },
           },
         },
@@ -157,7 +173,12 @@ export class TrainingSessionService {
     return this.findOne(companyId, session.id);
   }
 
-  async update(companyId: string, id: string, user: any, dto: UpdateTrainingSessionDto) {
+  async update(
+    companyId: string,
+    id: string,
+    user: any,
+    dto: UpdateTrainingSessionDto,
+  ) {
     const existing = await this.findOne(companyId, id);
 
     const updated = await this.prisma.trainingSession.update({
@@ -167,11 +188,15 @@ export class TrainingSessionService {
         ...(dto.startTime && { startTime: new Date(dto.startTime) }),
         ...(dto.endTime && { endTime: new Date(dto.endTime) }),
         ...(dto.timeZone && { timeZone: dto.timeZone }),
-        ...(dto.trainerName !== undefined && { trainerName: dto.trainerName?.trim() }),
+        ...(dto.trainerName !== undefined && {
+          trainerName: dto.trainerName?.trim(),
+        }),
         ...(dto.trainerEmployeeId !== undefined && {
           trainerEmployeeId: dto.trainerEmployeeId,
         }),
-        ...(dto.venueOrLink !== undefined && { venueOrLink: dto.venueOrLink?.trim() }),
+        ...(dto.venueOrLink !== undefined && {
+          venueOrLink: dto.venueOrLink?.trim(),
+        }),
         ...(dto.deliveryMethod && { deliveryMethod: dto.deliveryMethod }),
         ...(dto.capacity !== undefined && { capacity: dto.capacity }),
         ...(dto.status && { status: dto.status }),

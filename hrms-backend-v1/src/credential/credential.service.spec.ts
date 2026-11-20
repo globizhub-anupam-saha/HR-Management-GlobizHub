@@ -36,7 +36,10 @@ describe('CredentialService - Healthcare Licensing & Compliance Spec', () => {
       const expiringSoonDate = new Date();
       expiringSoonDate.setDate(expiringSoonDate.getDate() + 20); // 20 days left
 
-      prisma.employee.findFirst.mockResolvedValue({ id: 'doc-1', companyId: 'hosp-1' });
+      prisma.employee.findFirst.mockResolvedValue({
+        id: 'doc-1',
+        companyId: 'hosp-1',
+      });
       prisma.professionalCredential.create.mockResolvedValue({
         id: 'cred-1',
         title: 'State Medical Council Registration',
@@ -113,4 +116,3 @@ describe('CredentialService - Healthcare Licensing & Compliance Spec', () => {
     });
   });
 });
-

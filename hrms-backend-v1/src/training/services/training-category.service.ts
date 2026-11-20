@@ -1,7 +1,14 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
-import { CreateTrainingCategoryDto, UpdateTrainingCategoryDto } from '../dto/category.dto';
+import {
+  CreateTrainingCategoryDto,
+  UpdateTrainingCategoryDto,
+} from '../dto/category.dto';
 
 @Injectable()
 export class TrainingCategoryService {
@@ -75,7 +82,12 @@ export class TrainingCategoryService {
     return created;
   }
 
-  async update(companyId: string, id: string, user: any, dto: UpdateTrainingCategoryDto) {
+  async update(
+    companyId: string,
+    id: string,
+    user: any,
+    dto: UpdateTrainingCategoryDto,
+  ) {
     const existing = await this.findOne(companyId, id);
 
     if (dto.code && dto.code.trim().toUpperCase() !== existing.code) {
@@ -96,7 +108,9 @@ export class TrainingCategoryService {
       data: {
         ...(dto.name && { name: dto.name.trim() }),
         ...(dto.code && { code: dto.code.trim().toUpperCase() }),
-        ...(dto.description !== undefined && { description: dto.description?.trim() }),
+        ...(dto.description !== undefined && {
+          description: dto.description?.trim(),
+        }),
         ...(dto.color && { color: dto.color }),
         ...(dto.icon && { icon: dto.icon }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -118,12 +132,54 @@ export class TrainingCategoryService {
 
   async seedDefaultCategories(companyId: string, user: any) {
     const defaultCategories = [
-      { name: 'Compliance & Regulatory', code: 'CAT-COMP', color: '#EF4444', icon: 'ShieldAlert', description: 'Statutory compliance, safety guidelines, and industry legal requirements' },
-      { name: 'Technical & Engineering', code: 'CAT-TECH', color: '#3B82F6', icon: 'Cpu', description: 'Software engineering, equipment operation, architecture, and technology stack' },
-      { name: 'Quality & Process Excellence', code: 'CAT-QUAL', color: '#10B981', icon: 'CheckCircle', description: 'Quality assurance, ISO/standards adherence, and continuous improvement' },
-      { name: 'Leadership & Management', code: 'CAT-LEAD', color: '#8B5CF6', icon: 'Award', description: 'Executive leadership, people management, and strategic decision making' },
-      { name: 'Safety & Emergency Procedures', code: 'CAT-SAFE', color: '#F59E0B', icon: 'AlertTriangle', description: 'Workplace health, safety drills, emergency evacuation, and hazard mitigation' },
-      { name: 'Customer & Operational Excellence', code: 'CAT-OPS', color: '#EC4899', icon: 'Users', description: 'Client communication, service delivery, logistics, and frontline operations' },
+      {
+        name: 'Compliance & Regulatory',
+        code: 'CAT-COMP',
+        color: '#EF4444',
+        icon: 'ShieldAlert',
+        description:
+          'Statutory compliance, safety guidelines, and industry legal requirements',
+      },
+      {
+        name: 'Technical & Engineering',
+        code: 'CAT-TECH',
+        color: '#3B82F6',
+        icon: 'Cpu',
+        description:
+          'Software engineering, equipment operation, architecture, and technology stack',
+      },
+      {
+        name: 'Quality & Process Excellence',
+        code: 'CAT-QUAL',
+        color: '#10B981',
+        icon: 'CheckCircle',
+        description:
+          'Quality assurance, ISO/standards adherence, and continuous improvement',
+      },
+      {
+        name: 'Leadership & Management',
+        code: 'CAT-LEAD',
+        color: '#8B5CF6',
+        icon: 'Award',
+        description:
+          'Executive leadership, people management, and strategic decision making',
+      },
+      {
+        name: 'Safety & Emergency Procedures',
+        code: 'CAT-SAFE',
+        color: '#F59E0B',
+        icon: 'AlertTriangle',
+        description:
+          'Workplace health, safety drills, emergency evacuation, and hazard mitigation',
+      },
+      {
+        name: 'Customer & Operational Excellence',
+        code: 'CAT-OPS',
+        color: '#EC4899',
+        icon: 'Users',
+        description:
+          'Client communication, service delivery, logistics, and frontline operations',
+      },
     ];
 
     const results: any[] = [];

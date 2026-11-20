@@ -12,4 +12,3 @@ import { PlatformAuthModule } from '../auth/platform-auth.module';
   exports: [PlatformDashboardService, PlatformSnapshotJob],
 })
 export class PlatformDashboardModule {}
-

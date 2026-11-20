@@ -76,7 +76,9 @@ describe('PlatformOrgService', () => {
   describe('findOne', () => {
     it('should throw NotFoundException if organization does not exist', async () => {
       prisma.company.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should aggregate 9-tab inspection data', async () => {
@@ -176,4 +178,3 @@ describe('PlatformOrgService', () => {
     });
   });
 });
-

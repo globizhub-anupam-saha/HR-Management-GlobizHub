@@ -1,4 +1,9 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class RequestCorrectionDto {
   @IsNotEmpty()
@@ -17,4 +22,3 @@ export class RequestCorrectionDto {
   @IsString()
   reason: string;
 }
-

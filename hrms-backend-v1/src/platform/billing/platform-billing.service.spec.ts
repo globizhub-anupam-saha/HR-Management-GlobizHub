@@ -12,7 +12,9 @@ describe('PlatformBillingService', () => {
         count: jest.fn().mockResolvedValue(10),
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: 'inv-1', invoiceNumber: 'INV-2026-00001' }),
+        create: jest
+          .fn()
+          .mockResolvedValue({ id: 'inv-1', invoiceNumber: 'INV-2026-00001' }),
         update: jest.fn().mockResolvedValue({ id: 'inv-1', status: 'PAID' }),
         groupBy: jest.fn().mockResolvedValue([]),
       },
@@ -20,10 +22,16 @@ describe('PlatformBillingService', () => {
         count: jest.fn().mockResolvedValue(5),
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({ id: 'pay-1', amount: 1500, status: 'SUCCEEDED' }),
+        create: jest.fn().mockResolvedValue({
+          id: 'pay-1',
+          amount: 1500,
+          status: 'SUCCEEDED',
+        }),
       },
       company: {
-        findUnique: jest.fn().mockResolvedValue({ id: 'org-1', name: 'Acme Corp' }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 'org-1', name: 'Acme Corp' }),
       },
       subscription: {
         update: jest.fn().mockResolvedValue({ id: 'sub-1', status: 'ACTIVE' }),
@@ -134,4 +142,3 @@ describe('PlatformBillingService', () => {
     );
   });
 });
-

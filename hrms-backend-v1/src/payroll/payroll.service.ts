@@ -164,10 +164,16 @@ export class PayrollService {
       const prevMonth = month === 1 ? 12 : month - 1;
       const prevYear = month === 1 ? year - 1 : year;
 
-      const cycleStart = new Date(Date.UTC(prevYear, prevMonth - 1, startDay, 0, 0, 0, 0));
-      const cycleEnd = new Date(Date.UTC(year, month - 1, endDay, 23, 59, 59, 999));
+      const cycleStart = new Date(
+        Date.UTC(prevYear, prevMonth - 1, startDay, 0, 0, 0, 0),
+      );
+      const cycleEnd = new Date(
+        Date.UTC(year, month - 1, endDay, 23, 59, 59, 999),
+      );
       const daysInCycle =
-        Math.round((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        Math.round(
+          (cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24),
+        ) + 1;
 
       return {
         cycleStart,
@@ -181,7 +187,9 @@ export class PayrollService {
 
     const cycleStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-    const cycleEnd = new Date(Date.UTC(year, month - 1, daysInMonth, 23, 59, 59, 999));
+    const cycleEnd = new Date(
+      Date.UTC(year, month - 1, daysInMonth, 23, 59, 59, 999),
+    );
 
     return {
       cycleStart,
@@ -460,8 +468,7 @@ export class PayrollService {
 
       const effectiveStart =
         leave.startDate < cycleStart ? cycleStart : leave.startDate;
-      const effectiveEnd =
-        leave.endDate > cycleEnd ? cycleEnd : leave.endDate;
+      const effectiveEnd = leave.endDate > cycleEnd ? cycleEnd : leave.endDate;
 
       const chunkDays = await this.calculateWorkingDaysInRange(
         effectiveStart,
@@ -518,7 +525,8 @@ export class PayrollService {
       totalOvertimeHours += att.overtimeHours || 0;
     }
 
-    const nightShiftRate = (company?.settings as any)?.nightShiftAllowanceRate || 0;
+    const nightShiftRate =
+      (company?.settings as any)?.nightShiftAllowanceRate || 0;
     const totalNightShiftAllowance = nightShiftsCount * nightShiftRate;
 
     // P-02: Attendance-linked LOP:
@@ -608,10 +616,7 @@ export class PayrollService {
         where: {
           employeeId,
           companyId,
-          OR: [
-            { year: { lt: year } },
-            { year, month: { lt: month } },
-          ],
+          OR: [{ year: { lt: year } }, { year, month: { lt: month } }],
         },
         orderBy: [{ year: 'asc' }, { month: 'asc' }],
       });
@@ -619,7 +624,13 @@ export class PayrollService {
       let revTotal = 0;
       for (const pr of pastRecords) {
         const prDate = new Date(Date.UTC(pr.year, pr.month - 1, 1));
-        const revStart = new Date(Date.UTC(rev.effectiveDate.getUTCFullYear(), rev.effectiveDate.getUTCMonth(), 1));
+        const revStart = new Date(
+          Date.UTC(
+            rev.effectiveDate.getUTCFullYear(),
+            rev.effectiveDate.getUTCMonth(),
+            1,
+          ),
+        );
 
         if (prDate >= revStart) {
           const diffBasic = Math.max(0, rev.newBasicSalary - pr.basicPay);
@@ -660,17 +671,20 @@ export class PayrollService {
       grossSalary: grossEarnings,
       month,
     });
-    const professionalTax = structure.professionalTax > 0 ? structure.professionalTax : statePt;
+    const professionalTax =
+      structure.professionalTax > 0 ? structure.professionalTax : statePt;
 
     // TDS: Use approved IT Declaration if present, else configured tax deduction
-    const currentFinancialYear = month >= 4 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
-    const approvedTaxDeclaration = await this.prisma.employeeTaxDeclaration.findFirst({
-      where: {
-        employeeId,
-        financialYear: currentFinancialYear,
-        status: 'APPROVED',
-      },
-    });
+    const currentFinancialYear =
+      month >= 4 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+    const approvedTaxDeclaration =
+      await this.prisma.employeeTaxDeclaration.findFirst({
+        where: {
+          employeeId,
+          financialYear: currentFinancialYear,
+          status: 'APPROVED',
+        },
+      });
 
     let calculatedTds = structure.taxDeduction || 0;
     if (approvedTaxDeclaration) {
@@ -702,7 +716,10 @@ export class PayrollService {
 
     let loanDeduction = 0;
     if (activeLoan) {
-      loanDeduction = Math.min(activeLoan.monthlyEmi, activeLoan.remainingBalance);
+      loanDeduction = Math.min(
+        activeLoan.monthlyEmi,
+        activeLoan.remainingBalance,
+      );
     }
 
     const standardDeductions =
@@ -801,7 +818,10 @@ export class PayrollService {
 
     // Record loan repayment if loan deducted
     if (loanDeduction > 0 && activeLoan) {
-      const updatedBalance = Math.max(0, activeLoan.remainingBalance - loanDeduction);
+      const updatedBalance = Math.max(
+        0,
+        activeLoan.remainingBalance - loanDeduction,
+      );
       await this.prisma.loanRepayment.create({
         data: {
           loanId: activeLoan.id,
@@ -1133,11 +1153,17 @@ export class PayrollService {
 
     const rows = records.map((r) => {
       const emp = r.employee;
-      const cleanName = `${emp.firstName} ${emp.lastName}`.trim().replace(/[^a-zA-Z\s.]/g, '');
-      const rawUan = emp.uanNumber ? decrypt(emp.uanNumber) : emp.statutoryProfiles?.[0]?.epfoUan;
+      const cleanName = `${emp.firstName} ${emp.lastName}`
+        .trim()
+        .replace(/[^a-zA-Z\s.]/g, '');
+      const rawUan = emp.uanNumber
+        ? decrypt(emp.uanNumber)
+        : emp.statutoryProfiles?.[0]?.epfoUan;
       const uan = (rawUan || '').replace(/\D/g, '').trim();
 
-      const grossWages = Math.round(r.basicPay + r.allowances + (r.arrearsPay || 0));
+      const grossWages = Math.round(
+        r.basicPay + r.allowances + (r.arrearsPay || 0),
+      );
       const epfWage = Math.min(Math.round(r.basicPay), wageCeiling);
       const epsWage = epfWage;
       const edliWage = epfWage;
@@ -1153,7 +1179,9 @@ export class PayrollService {
       const refundOfAdvances = 0;
 
       const bankName = emp.bankName ? decrypt(emp.bankName) : 'N/A';
-      const accountNumber = emp.accountNumber ? decrypt(emp.accountNumber) : 'N/A';
+      const accountNumber = emp.accountNumber
+        ? decrypt(emp.accountNumber)
+        : 'N/A';
       const ifsc = emp.ifscCode ? decrypt(emp.ifscCode) : 'N/A';
       const pan = emp.panNumber ? decrypt(emp.panNumber) : 'N/A';
 
@@ -1197,11 +1225,7 @@ export class PayrollService {
   // PAYSLIP EMAIL DISPATCH (P-18)
   // ==========================================
 
-  async sendPayslipEmail(
-    companyId: string,
-    recordId: string,
-    actorId: string,
-  ) {
+  async sendPayslipEmail(companyId: string, recordId: string, actorId: string) {
     const record = await this.prisma.payrollRecord.findUnique({
       where: { id: recordId },
       include: {
@@ -1323,7 +1347,9 @@ export class PayrollService {
       taxDeduction: Number(structureData.taxDeduction) || 0,
       professionalTax: Number(structureData.professionalTax) || 0,
       customComponents: structureData.customComponents ?? null,
-      ...(structureData.effectiveDate ? { effectiveDate: new Date(structureData.effectiveDate) } : {}),
+      ...(structureData.effectiveDate
+        ? { effectiveDate: new Date(structureData.effectiveDate) }
+        : {}),
     };
 
     // Check for existing structure to record retroactive revisions & arrears
@@ -1334,7 +1360,9 @@ export class PayrollService {
     if (existingStructure && structureData.effectiveDate) {
       const effectiveDate = new Date(structureData.effectiveDate);
       const now = new Date();
-      const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const currentMonthStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+      );
 
       // If effective date is backdated prior to current calendar month
       if (effectiveDate < currentMonthStart) {
@@ -1353,7 +1381,10 @@ export class PayrollService {
               previousCtc: prevCtc,
               newCtc: newCtc,
               effectiveDate,
-              reason: structureData.revisionReason || structureData.reason || 'Annual Appraisal / Increment Revision',
+              reason:
+                structureData.revisionReason ||
+                structureData.reason ||
+                'Annual Appraisal / Increment Revision',
               isSettled: false,
               createdById: actorId || null,
             },
@@ -1624,18 +1655,26 @@ export class PayrollService {
       },
     });
 
-    if (!employee) throw new NotFoundException('Employee not found in your company.');
+    if (!employee)
+      throw new NotFoundException('Employee not found in your company.');
     const structure = employee.salaryStructure;
     if (!structure) {
-      throw new BadRequestException('Employee does not have an active salary structure.');
+      throw new BadRequestException(
+        'Employee does not have an active salary structure.',
+      );
     }
 
     const exitDate = new Date(dto.exitDate);
-    const joiningDate = employee.joiningDate ? new Date(employee.joiningDate) : new Date(employee.createdAt);
+    const joiningDate = employee.joiningDate
+      ? new Date(employee.joiningDate)
+      : new Date(employee.createdAt);
 
     // 1. Service Tenure (Years)
     const diffMs = exitDate.getTime() - joiningDate.getTime();
-    const tenureYears = Math.max(0, parseFloat((diffMs / (365.25 * 24 * 60 * 60 * 1000)).toFixed(2)));
+    const tenureYears = Math.max(
+      0,
+      parseFloat((diffMs / (365.25 * 24 * 60 * 60 * 1000)).toFixed(2)),
+    );
 
     // 2. Gratuity (Payment of Gratuity Act, 1972)
     // Gratuity = (15 * Last drawn basic * Tenure in years) / 26
@@ -1656,10 +1695,16 @@ export class PayrollService {
     });
 
     const dailyBasicRate = structure.basicSalary / 30;
-    const leaveEncashment = parseFloat((unusedPaidLeaveDays * dailyBasicRate).toFixed(2));
+    const leaveEncashment = parseFloat(
+      (unusedPaidLeaveDays * dailyBasicRate).toFixed(2),
+    );
 
     // 4. Prorated Monthly Pay for Days Worked in Exit Month
-    const daysInExitMonth = new Date(exitDate.getFullYear(), exitDate.getMonth() + 1, 0).getDate();
+    const daysInExitMonth = new Date(
+      exitDate.getFullYear(),
+      exitDate.getMonth() + 1,
+      0,
+    ).getDate();
     const workedDaysInExitMonth = Math.min(exitDate.getDate(), daysInExitMonth);
     const grossMonthly =
       structure.basicSalary +
@@ -1669,11 +1714,15 @@ export class PayrollService {
       structure.specialAllowance +
       (structure.otherAllowances || 0);
     const dailyGrossRate = grossMonthly / daysInExitMonth;
-    const proratedSalary = parseFloat((workedDaysInExitMonth * dailyGrossRate).toFixed(2));
+    const proratedSalary = parseFloat(
+      (workedDaysInExitMonth * dailyGrossRate).toFixed(2),
+    );
 
     // 5. Notice Period Recovery
     const shortfallDays = dto.noticeShortfallDays || 0;
-    const noticeRecovery = parseFloat((shortfallDays * dailyGrossRate).toFixed(2));
+    const noticeRecovery = parseFloat(
+      (shortfallDays * dailyGrossRate).toFixed(2),
+    );
 
     // 6. Assets return check
     const hasReturnedAssets = employee.exitRecord?.hasReturnedAssets ?? false;
@@ -1682,14 +1731,17 @@ export class PayrollService {
     const additionalBonus = dto.additionalBonus || 0;
     const additionalDeductions = dto.additionalDeductions || 0;
 
-    const totalEarnings = proratedSalary + leaveEncashment + gratuity + additionalBonus;
+    const totalEarnings =
+      proratedSalary + leaveEncashment + gratuity + additionalBonus;
     const totalDeductions = noticeRecovery + additionalDeductions;
-    const netSettlementAmount = parseFloat((totalEarnings - totalDeductions).toFixed(2));
+    const netSettlementAmount = parseFloat(
+      (totalEarnings - totalDeductions).toFixed(2),
+    );
 
     return {
       employee: {
         id: employee.id,
-        name: (employee.firstName + " " + employee.lastName).trim(),
+        name: (employee.firstName + ' ' + employee.lastName).trim(),
         employeeCode: employee.employeeCode,
         joiningDate,
         exitDate,
@@ -1737,14 +1789,22 @@ export class PayrollService {
       update: {
         status: 'COMPLETED',
         exitDate: new Date(dto.exitDate),
-        exitInterviewNotes: "F&F Processed. Net Settlement: INR " + calculation.netSettlementAmount + ". " + (dto.remarks || ""),
+        exitInterviewNotes:
+          'F&F Processed. Net Settlement: INR ' +
+          calculation.netSettlementAmount +
+          '. ' +
+          (dto.remarks || ''),
       },
       create: {
         employeeId: dto.employeeId,
         exitDate: new Date(dto.exitDate),
         reason: 'RESIGNED',
         status: 'COMPLETED',
-        exitInterviewNotes: "F&F Processed. Net Settlement: INR " + calculation.netSettlementAmount + ". " + (dto.remarks || ""),
+        exitInterviewNotes:
+          'F&F Processed. Net Settlement: INR ' +
+          calculation.netSettlementAmount +
+          '. ' +
+          (dto.remarks || ''),
       },
     });
 
@@ -2220,7 +2280,8 @@ export class PayrollService {
       quarter: `Q${quarter}`,
       deductor: {
         name: company.name,
-        tan: company.gstin || (company.settings as any)?.taxId || 'NOT_CONFIGURED',
+        tan:
+          company.gstin || (company.settings as any)?.taxId || 'NOT_CONFIGURED',
         pan: company.pan || 'NOT_CONFIGURED',
         address: company.address || company.settings?.officeAddress || '',
       },
@@ -2249,11 +2310,7 @@ export class PayrollService {
     };
   }
 
-  async getConsultantPayouts(
-    companyId: string,
-    month: number,
-    year: number,
-  ) {
+  async getConsultantPayouts(companyId: string, month: number, year: number) {
     const records = await this.prisma.payrollRecord.findMany({
       where: {
         companyId,

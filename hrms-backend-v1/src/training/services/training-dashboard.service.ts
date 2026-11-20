@@ -32,12 +32,24 @@ export class TrainingDashboardService {
       totalCertificates,
     ] = await Promise.all([
       this.prisma.trainingPlan.count({ where: planWhere }),
-      this.prisma.trainingPlan.count({ where: { ...planWhere, status: 'DRAFT' } }),
-      this.prisma.trainingPlan.count({ where: { ...planWhere, status: 'PENDING_APPROVAL' } }),
-      this.prisma.trainingPlan.count({ where: { ...planWhere, status: 'APPROVED' } }),
-      this.prisma.trainingPlan.count({ where: { ...planWhere, status: 'SCHEDULED' } }),
-      this.prisma.trainingPlan.count({ where: { ...planWhere, status: 'IN_PROGRESS' } }),
-      this.prisma.trainingPlan.count({ where: { ...planWhere, status: 'COMPLETED' } }),
+      this.prisma.trainingPlan.count({
+        where: { ...planWhere, status: 'DRAFT' },
+      }),
+      this.prisma.trainingPlan.count({
+        where: { ...planWhere, status: 'PENDING_APPROVAL' },
+      }),
+      this.prisma.trainingPlan.count({
+        where: { ...planWhere, status: 'APPROVED' },
+      }),
+      this.prisma.trainingPlan.count({
+        where: { ...planWhere, status: 'SCHEDULED' },
+      }),
+      this.prisma.trainingPlan.count({
+        where: { ...planWhere, status: 'IN_PROGRESS' },
+      }),
+      this.prisma.trainingPlan.count({
+        where: { ...planWhere, status: 'COMPLETED' },
+      }),
       this.prisma.trainingProgram.count({ where: { companyId } }),
       this.prisma.competency.count({ where: { companyId } }),
       this.prisma.trainingCertificate.count({ where: { companyId } }),
@@ -49,15 +61,16 @@ export class TrainingDashboardService {
       enrollmentsWhere.employeeId = user.sub || user.id;
     }
 
-    const [totalEnrollments, completedEnrollments, inProgressEnrollments] = await Promise.all([
-      this.prisma.trainingEnrollment.count({ where: enrollmentsWhere }),
-      this.prisma.trainingEnrollment.count({
-        where: { ...enrollmentsWhere, status: 'COMPLETED' },
-      }),
-      this.prisma.trainingEnrollment.count({
-        where: { ...enrollmentsWhere, status: 'IN_PROGRESS' },
-      }),
-    ]);
+    const [totalEnrollments, completedEnrollments, inProgressEnrollments] =
+      await Promise.all([
+        this.prisma.trainingEnrollment.count({ where: enrollmentsWhere }),
+        this.prisma.trainingEnrollment.count({
+          where: { ...enrollmentsWhere, status: 'COMPLETED' },
+        }),
+        this.prisma.trainingEnrollment.count({
+          where: { ...enrollmentsWhere, status: 'IN_PROGRESS' },
+        }),
+      ]);
 
     const completionRate =
       totalEnrollments > 0
@@ -95,20 +108,22 @@ export class TrainingDashboardService {
     const expiryThreshold = new Date();
     expiryThreshold.setDate(expiryThreshold.getDate() + 60);
 
-    const expiringCertificatesCount = await this.prisma.trainingCertificate.count({
-      where: {
-        companyId,
-        expiryDate: {
-          gte: now,
-          lte: expiryThreshold,
+    const expiringCertificatesCount =
+      await this.prisma.trainingCertificate.count({
+        where: {
+          companyId,
+          expiryDate: {
+            gte: now,
+            lte: expiryThreshold,
+          },
         },
-      },
-    });
+      });
 
     // Pending position changes
-    const pendingPositionChanges = await this.prisma.employeePositionChange.count({
-      where: { companyId, status: 'PENDING_APPROVAL' },
-    });
+    const pendingPositionChanges =
+      await this.prisma.employeePositionChange.count({
+        where: { companyId, status: 'PENDING_APPROVAL' },
+      });
 
     // Recent plans
     const recentPlans = await this.prisma.trainingPlan.findMany({

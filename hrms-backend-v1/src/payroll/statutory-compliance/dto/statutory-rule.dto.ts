@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsDateString, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsDateString,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpsertStatutoryRuleDto {
@@ -23,4 +31,3 @@ export class UpsertStatutoryRuleDto {
   @IsOptional()
   effectiveTo?: string;
 }
-

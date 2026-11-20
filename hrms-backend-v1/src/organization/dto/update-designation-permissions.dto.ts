@@ -15,4 +15,3 @@ export class UpdateDesignationPermissionsDto {
   @IsOptional()
   dashboardWidgets?: string[];
 }
-

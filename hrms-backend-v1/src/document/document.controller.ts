@@ -56,10 +56,7 @@ export class DocumentController {
   }
 
   @Post('request')
-  async requestDocument(
-    @Request() req,
-    @Body() body: RequestDocumentDto,
-  ) {
+  async requestDocument(@Request() req, @Body() body: RequestDocumentDto) {
     // Convert string date to Date object if it exists
     const parsedDueDate = body.dueDate ? new Date(body.dueDate) : undefined;
     return this.documentService.requestDocument(
@@ -83,7 +80,9 @@ export class DocumentController {
     FileInterceptor('file', {
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: (_, file, cb) => {
-        if (!file.mimetype.match(/^image\/(jpeg|png|webp)|application\/pdf$/i)) {
+        if (
+          !file.mimetype.match(/^image\/(jpeg|png|webp)|application\/pdf$/i)
+        ) {
           return cb(
             new BadRequestException(
               'Only image (JPEG, PNG, WEBP) or PDF files are allowed for company letterheads.',

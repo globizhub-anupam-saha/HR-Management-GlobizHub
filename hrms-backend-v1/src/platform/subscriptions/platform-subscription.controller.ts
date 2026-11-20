@@ -24,7 +24,9 @@ import { CurrentPlatformUser } from '../auth/decorators/current-platform-user.de
 @Controller('platform')
 @UseGuards(PlatformAuthGuard, PlatformRolesGuard)
 export class PlatformSubscriptionController {
-  constructor(private readonly subscriptionService: PlatformSubscriptionService) {}
+  constructor(
+    private readonly subscriptionService: PlatformSubscriptionService,
+  ) {}
 
   // Modules metadata
   @Get('modules')
@@ -49,7 +51,11 @@ export class PlatformSubscriptionController {
     @Body() dto: CreatePlanDto,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.subscriptionService.createPlan(dto, currentUser.id, currentUser.email);
+    return this.subscriptionService.createPlan(
+      dto,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Put('plans/:id')
@@ -59,7 +65,12 @@ export class PlatformSubscriptionController {
     @Body() dto: UpdatePlanDto,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.subscriptionService.updatePlan(id, dto, currentUser.id, currentUser.email);
+    return this.subscriptionService.updatePlan(
+      id,
+      dto,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Put('plans/:id/entitlements')
@@ -84,7 +95,11 @@ export class PlatformSubscriptionController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.subscriptionService.getSubscriptionHistory({ companyId, page, limit });
+    return this.subscriptionService.getSubscriptionHistory({
+      companyId,
+      page,
+      limit,
+    });
   }
 
   @Get('subscriptions')
@@ -94,7 +109,12 @@ export class PlatformSubscriptionController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.subscriptionService.getAllSubscriptions({ search, status, page, limit });
+    return this.subscriptionService.getAllSubscriptions({
+      search,
+      status,
+      page,
+      limit,
+    });
   }
 
   @Post('subscriptions/assign')
@@ -137,4 +157,3 @@ export class PlatformSubscriptionController {
     return this.subscriptionService.getCompanyOverrides(companyId);
   }
 }
-

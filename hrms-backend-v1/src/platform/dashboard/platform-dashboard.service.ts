@@ -21,7 +21,10 @@ export class PlatformDashboardService {
   /**
    * Helper to retrieve or calculate cached metrics
    */
-  private async getCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  private async getCached<T>(
+    key: string,
+    fetcher: () => Promise<T>,
+  ): Promise<T> {
     const cached = this.memoryCache.get(key);
     const now = Date.now();
     if (cached && cached.expiresAt > now) {
@@ -39,7 +42,14 @@ export class PlatformDashboardService {
   async getOverview(period = '30d') {
     const cacheKey = `dashboard_overview_${period}`;
     return this.getCached(cacheKey, async () => {
-      const days = period === '7d' ? 7 : period === '90d' ? 90 : period === '12m' ? 365 : 30;
+      const days =
+        period === '7d'
+          ? 7
+          : period === '90d'
+            ? 90
+            : period === '12m'
+              ? 365
+              : 30;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
@@ -57,7 +67,9 @@ export class PlatformDashboardService {
       ] = await Promise.all([
         this.prisma.company.count(),
         this.prisma.company.count({ where: { status: 'VERIFIED' } }),
-        this.prisma.company.count({ where: { status: 'PENDING_VERIFICATION' } }),
+        this.prisma.company.count({
+          where: { status: 'PENDING_VERIFICATION' },
+        }),
         this.prisma.company.count({ where: { status: 'SUSPENDED' } }),
         this.prisma.employee.count(),
         this.prisma.employee.count({
@@ -105,20 +117,21 @@ export class PlatformDashboardService {
       ]);
 
       // Revenue Collections
-      const [succeededPayments, pendingPayments, failedPayments] = await Promise.all([
-        this.prisma.payment.aggregate({
-          where: { status: 'SUCCEEDED', createdAt: { gte: startDate } },
-          _sum: { amount: true },
-        }),
-        this.prisma.payment.aggregate({
-          where: { status: 'PENDING', createdAt: { gte: startDate } },
-          _sum: { amount: true },
-        }),
-        this.prisma.payment.aggregate({
-          where: { status: 'FAILED', createdAt: { gte: startDate } },
-          _sum: { amount: true },
-        }),
-      ]);
+      const [succeededPayments, pendingPayments, failedPayments] =
+        await Promise.all([
+          this.prisma.payment.aggregate({
+            where: { status: 'SUCCEEDED', createdAt: { gte: startDate } },
+            _sum: { amount: true },
+          }),
+          this.prisma.payment.aggregate({
+            where: { status: 'PENDING', createdAt: { gte: startDate } },
+            _sum: { amount: true },
+          }),
+          this.prisma.payment.aggregate({
+            where: { status: 'FAILED', createdAt: { gte: startDate } },
+            _sum: { amount: true },
+          }),
+        ]);
 
       // Plan Distribution
       const plans = await this.prisma.platformPlan.findMany({
@@ -163,14 +176,24 @@ export class PlatformDashboardService {
 
       // Format Chart Trends
       const revenueTrend = effectiveSnapshots.map((s) => ({
-        date: (s.snapshotDate instanceof Date ? s.snapshotDate : new Date(s.snapshotDate)).toISOString().split('T')[0],
+        date: (s.snapshotDate instanceof Date
+          ? s.snapshotDate
+          : new Date(s.snapshotDate)
+        )
+          .toISOString()
+          .split('T')[0],
         mrr: Number(s.mrr),
         arr: Number(s.arr),
         collected: Number(s.collectedRevenue),
       }));
 
       const tenantGrowth = effectiveSnapshots.map((s) => ({
-        date: (s.snapshotDate instanceof Date ? s.snapshotDate : new Date(s.snapshotDate)).toISOString().split('T')[0],
+        date: (s.snapshotDate instanceof Date
+          ? s.snapshotDate
+          : new Date(s.snapshotDate)
+        )
+          .toISOString()
+          .split('T')[0],
         totalOrgs: s.totalOrganizations,
         activeOrgs: s.activeOrganizations,
         churned: s.churnedCount || 0,
@@ -178,68 +201,85 @@ export class PlatformDashboardService {
 
       // Calculate previous month comparison for growth percentages
       const previousSnapshot = effectiveSnapshots[0];
-      const previousMrr = previousSnapshot ? Number(previousSnapshot.mrr) : currentMrr;
+      const previousMrr = previousSnapshot
+        ? Number(previousSnapshot.mrr)
+        : currentMrr;
       const mrrGrowthPercent =
-        previousMrr > 0 ? Number((((currentMrr - previousMrr) / previousMrr) * 100).toFixed(1)) : 0;
+        previousMrr > 0
+          ? Number(
+              (((currentMrr - previousMrr) / previousMrr) * 100).toFixed(1),
+            )
+          : 0;
 
-      const previousOrgs = previousSnapshot ? previousSnapshot.totalOrganizations : totalOrganizations;
+      const previousOrgs = previousSnapshot
+        ? previousSnapshot.totalOrganizations
+        : totalOrganizations;
       const orgGrowthPercent =
         previousOrgs > 0
-          ? Number((((totalOrganizations - previousOrgs) / previousOrgs) * 100).toFixed(1))
+          ? Number(
+              (
+                ((totalOrganizations - previousOrgs) / previousOrgs) *
+                100
+              ).toFixed(1),
+            )
           : 0;
 
       // ==========================================
       // RECENT TABLES
       // ==========================================
-      const [recentlyOnboarded, recentPaymentsList, expiringSubsList, recentAuditActivities] =
-        await Promise.all([
-          // Recently onboarded companies
-          this.prisma.company.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              slug: true,
-              status: true,
-              subscription: true,
-              createdAt: true,
-              _count: { select: { employees: true } },
-            },
-          }),
-          // Recent payments
-          this.prisma.payment.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            include: {
-              invoice: {
-                select: {
-                  invoiceNumber: true,
-                  company: { select: { id: true, name: true } },
-                },
+      const [
+        recentlyOnboarded,
+        recentPaymentsList,
+        expiringSubsList,
+        recentAuditActivities,
+      ] = await Promise.all([
+        // Recently onboarded companies
+        this.prisma.company.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            slug: true,
+            status: true,
+            subscription: true,
+            createdAt: true,
+            _count: { select: { employees: true } },
+          },
+        }),
+        // Recent payments
+        this.prisma.payment.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            invoice: {
+              select: {
+                invoiceNumber: true,
+                company: { select: { id: true, name: true } },
               },
             },
-          }),
-          // Subscriptions expiring soon
-          this.prisma.subscription.findMany({
-            where: { currentPeriodEnd: { lte: in7Days, gte: now } },
-            take: 5,
-            orderBy: { currentPeriodEnd: 'asc' },
-            include: {
-              company: { select: { id: true, name: true, email: true } },
-              plan: { select: { name: true, code: true } },
-            },
-          }),
-          // Recent platform audit events
-          this.prisma.platformAuditLog.findMany({
-            take: 6,
-            orderBy: { createdAt: 'desc' },
-            include: {
-              company: { select: { name: true } },
-            },
-          }),
-        ]);
+          },
+        }),
+        // Subscriptions expiring soon
+        this.prisma.subscription.findMany({
+          where: { currentPeriodEnd: { lte: in7Days, gte: now } },
+          take: 5,
+          orderBy: { currentPeriodEnd: 'asc' },
+          include: {
+            company: { select: { id: true, name: true, email: true } },
+            plan: { select: { name: true, code: true } },
+          },
+        }),
+        // Recent platform audit events
+        this.prisma.platformAuditLog.findMany({
+          take: 6,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            company: { select: { name: true } },
+          },
+        }),
+      ]);
 
       return {
         // High-level Primary KPI Cards
@@ -331,7 +371,10 @@ export class PlatformDashboardService {
         // Historical snapshots directly for the analytics view & time series
         snapshots: effectiveSnapshots.map((s) => ({
           id: s.id,
-          snapshotDate: (s.snapshotDate instanceof Date ? s.snapshotDate : new Date(s.snapshotDate)).toISOString(),
+          snapshotDate: (s.snapshotDate instanceof Date
+            ? s.snapshotDate
+            : new Date(s.snapshotDate)
+          ).toISOString(),
           totalOrganizations: s.totalOrganizations,
           activeOrganizations: s.activeOrganizations,
           totalEmployees: s.totalEmployees,
@@ -365,11 +408,11 @@ export class PlatformDashboardService {
     const result = await this.snapshotJob.captureSnapshotForDate(today);
     this.memoryCache.clear(); // invalidate cached dashboard overview
     return {
-      message: 'Platform daily snapshot recalculated and cache invalidated successfully.',
+      message:
+        'Platform daily snapshot recalculated and cache invalidated successfully.',
       snapshotDate: result.snapshotDate,
       totalOrganizations: result.totalOrganizations,
       mrr: Number(result.mrr),
     };
   }
 }
-

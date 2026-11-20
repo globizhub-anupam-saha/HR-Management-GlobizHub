@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { StatutoryRulesService } from './statutory-rules.service';
 import { EpfoCalculatorService } from '../epfo/epfo-calculator.service';
@@ -46,18 +50,22 @@ export class StatutoryCalculatorService {
     }
 
     const monthDate = new Date(Date.UTC(dto.year, dto.month - 1, 1));
-    const activeRates = await this.rulesService.getActiveRules(dto.establishmentId, monthDate);
+    const activeRates = await this.rulesService.getActiveRules(
+      dto.establishmentId,
+      monthDate,
+    );
 
     // Determine calculation version: find latest version and increment
-    const latestContribution = await this.prisma.statutoryContribution.findFirst({
-      where: {
-        companyId,
-        establishmentId: dto.establishmentId,
-        month: monthDate,
-      },
-      orderBy: { version: 'desc' },
-      select: { version: true },
-    });
+    const latestContribution =
+      await this.prisma.statutoryContribution.findFirst({
+        where: {
+          companyId,
+          establishmentId: dto.establishmentId,
+          month: monthDate,
+        },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      });
     const nextVersion = (latestContribution?.version ?? 0) + 1;
 
     let epfoMemberCount = 0;
@@ -131,7 +139,7 @@ export class StatutoryCalculatorService {
 
           epfoMemberCount++;
           totalEpfoEmployee += epfResult.eeEpfShare;
-          totalEpfoEmployer += (epfResult.erEpsShare + epfResult.erEpfDiff);
+          totalEpfoEmployer += epfResult.erEpsShare + epfResult.erEpfDiff;
         }
       }
 
@@ -172,7 +180,9 @@ export class StatutoryCalculatorService {
 
     // Persist all calculated contributions in a transaction
     await this.prisma.$transaction(
-      contributionsToCreate.map((data) => this.prisma.statutoryContribution.create({ data })),
+      contributionsToCreate.map((data) =>
+        this.prisma.statutoryContribution.create({ data }),
+      ),
     );
 
     // Create / Update Return entity for tracking
@@ -208,4 +218,3 @@ export class StatutoryCalculatorService {
     };
   }
 }
-

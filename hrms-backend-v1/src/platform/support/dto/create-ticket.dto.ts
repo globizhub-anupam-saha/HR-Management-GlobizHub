@@ -26,4 +26,3 @@ export class CreateTicketDto {
   @IsNotEmpty()
   initialMessage: string;
 }
-

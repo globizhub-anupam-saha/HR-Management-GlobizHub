@@ -1,4 +1,11 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AssignSubscriptionDto {
@@ -24,4 +31,3 @@ export class AssignSubscriptionDto {
   @Min(1)
   extensionDays?: number; // to extend current period / trial
 }
-

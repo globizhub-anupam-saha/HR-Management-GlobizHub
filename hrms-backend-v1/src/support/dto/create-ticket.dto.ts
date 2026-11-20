@@ -38,4 +38,3 @@ export class CreateTicketDto {
   @MaxLength(2000)
   description: string;
 }
-

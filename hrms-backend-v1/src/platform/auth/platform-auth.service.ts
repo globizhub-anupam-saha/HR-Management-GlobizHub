@@ -35,8 +35,10 @@ export class PlatformAuthService {
       });
 
       if (superAdminCount === 0) {
-        const defaultEmail = process.env.PLATFORM_ADMIN_EMAIL || 'superadmin@globizhr.com';
-        const defaultPassword = process.env.PLATFORM_ADMIN_PASSWORD || 'SuperAdmin@GlobizHR2026!';
+        const defaultEmail =
+          process.env.PLATFORM_ADMIN_EMAIL || 'superadmin@globizhr.com';
+        const defaultPassword =
+          process.env.PLATFORM_ADMIN_PASSWORD || 'SuperAdmin@GlobizHR2026!';
         const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
         await this.prisma.platformUser.create({
@@ -50,10 +52,14 @@ export class PlatformAuthService {
           },
         });
 
-        this.logger.log(`Initialized default Platform Super Admin: ${defaultEmail}`);
+        this.logger.log(
+          `Initialized default Platform Super Admin: ${defaultEmail}`,
+        );
       }
     } catch (err: any) {
-      this.logger.warn(`Could not verify/seed initial Super Admin: ${err.message}`);
+      this.logger.warn(
+        `Could not verify/seed initial Super Admin: ${err.message}`,
+      );
     }
   }
 
@@ -90,7 +96,9 @@ export class PlatformAuthService {
               userAgent,
             },
           })
-          .catch((err) => this.logger.error('Failed to log platform login audit', err));
+          .catch((err) =>
+            this.logger.error('Failed to log platform login audit', err),
+          );
 
         const payload = {
           sub: user.id,
@@ -130,13 +138,20 @@ export class PlatformAuthService {
         });
 
         if (employee) {
-          const isEmployeeMatch = await bcrypt.compare(dto.password, employee.password);
+          const isEmployeeMatch = await bcrypt.compare(
+            dto.password,
+            employee.password,
+          );
           if (isEmployeeMatch) {
             if (employee.company?.status === 'SUSPENDED') {
-              throw new UnauthorizedException('Your organization account has been suspended.');
+              throw new UnauthorizedException(
+                'Your organization account has been suspended.',
+              );
             }
             if (employee.company?.status === 'PENDING_VERIFICATION') {
-              throw new UnauthorizedException('Your organization is awaiting platform approval.');
+              throw new UnauthorizedException(
+                'Your organization is awaiting platform approval.',
+              );
             }
 
             const employeePayload = {
@@ -169,14 +184,20 @@ export class PlatformAuthService {
     throw new UnauthorizedException('Invalid platform credentials');
   }
 
-  async register(dto: PlatformRegisterDto, actorId?: string, actorEmail?: string) {
+  async register(
+    dto: PlatformRegisterDto,
+    actorId?: string,
+    actorEmail?: string,
+  ) {
     const email = dto.email.trim().toLowerCase();
     const existing = await this.prisma.platformUser.findUnique({
       where: { email },
     });
 
     if (existing) {
-      throw new ConflictException('A platform user with this email already exists');
+      throw new ConflictException(
+        'A platform user with this email already exists',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -213,7 +234,9 @@ export class PlatformAuthService {
             afterState: newUser as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log admin creation audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log admin creation audit', err),
+        );
     }
 
     return newUser;
@@ -239,4 +262,3 @@ export class PlatformAuthService {
     return user;
   }
 }
-

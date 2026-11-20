@@ -14,7 +14,11 @@ describe('EmployeePositionChangeService', () => {
   let sequenceService: any;
 
   const mockCompanyId = 'company-test-123';
-  const mockUser = { sub: 'hr-head-1', companyId: mockCompanyId, role: 'HR_HEAD' };
+  const mockUser = {
+    sub: 'hr-head-1',
+    companyId: mockCompanyId,
+    role: 'HR_HEAD',
+  };
 
   beforeEach(async () => {
     prisma = {
@@ -91,7 +95,10 @@ describe('EmployeePositionChangeService', () => {
       };
 
       prisma.employee.findFirst.mockResolvedValue(mockEmployee);
-      prisma.designation.findFirst.mockResolvedValue({ id: 'desig-new', name: 'Lead Architect' });
+      prisma.designation.findFirst.mockResolvedValue({
+        id: 'desig-new',
+        name: 'Lead Architect',
+      });
 
       const mockCreated = {
         id: 'pc-1',

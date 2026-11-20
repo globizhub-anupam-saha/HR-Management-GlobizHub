@@ -51,7 +51,10 @@ export class TrainingAssessmentController {
 
   // Certificates
   @Get('certificates')
-  async findCertificates(@Request() req, @Query('employeeId') employeeId?: string) {
+  async findCertificates(
+    @Request() req,
+    @Query('employeeId') employeeId?: string,
+  ) {
     return this.service.findCertificates(req.user.companyId, employeeId);
   }
 
@@ -72,6 +75,11 @@ export class TrainingAssessmentController {
     @Param('id') id: string,
     @Body() dto: VerifyCertificateDto,
   ) {
-    return this.service.verifyCertificate(req.user.companyId, id, req.user, dto);
+    return this.service.verifyCertificate(
+      req.user.companyId,
+      id,
+      req.user,
+      dto,
+    );
   }
 }

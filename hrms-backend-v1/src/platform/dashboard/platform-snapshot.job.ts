@@ -18,7 +18,9 @@ export class PlatformSnapshotJob implements OnModuleInit {
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleDailySnapshot() {
-    this.logger.log('Executing nightly Platform SaaS daily snapshot job (UTC Midnight)...');
+    this.logger.log(
+      'Executing nightly Platform SaaS daily snapshot job (UTC Midnight)...',
+    );
     const today = new Date();
     await this.captureSnapshotForDate(today);
   }
@@ -27,8 +29,20 @@ export class PlatformSnapshotJob implements OnModuleInit {
    * Idempotent snapshot capture for a specific date
    */
   async captureSnapshotForDate(date: Date) {
-    const startOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-    const endOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+    const startOfDay = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    );
+    const endOfDay = new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
 
     try {
       // 1. Organization Counts
@@ -139,7 +153,10 @@ export class PlatformSnapshotJob implements OnModuleInit {
 
       return snapshot;
     } catch (err: any) {
-      this.logger.error(`Failed to capture daily snapshot: ${err.message}`, err.stack);
+      this.logger.error(
+        `Failed to capture daily snapshot: ${err.message}`,
+        err.stack,
+      );
       throw err;
     }
   }
@@ -151,18 +168,21 @@ export class PlatformSnapshotJob implements OnModuleInit {
     try {
       const count = await this.prisma.dailyPlatformSnapshot.count();
       if (count === 0) {
-        this.logger.log('Generating initial 30-day historical snapshot baseline...');
+        this.logger.log(
+          'Generating initial 30-day historical snapshot baseline...',
+        );
         const today = new Date();
         for (let i = 30; i >= 0; i--) {
           const pastDate = new Date(today);
           pastDate.setDate(today.getDate() - i);
           await this.captureSnapshotForDate(pastDate);
         }
-        this.logger.log('Historical 30-day snapshot baseline generated successfully.');
+        this.logger.log(
+          'Historical 30-day snapshot baseline generated successfully.',
+        );
       }
     } catch (err: any) {
       this.logger.warn(`Could not seed historical snapshots: ${err.message}`);
     }
   }
 }
-

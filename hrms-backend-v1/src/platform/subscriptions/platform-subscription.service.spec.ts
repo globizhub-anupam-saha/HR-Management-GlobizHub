@@ -45,7 +45,9 @@ describe('PlatformSubscriptionService', () => {
       ],
     }).compile();
 
-    service = module.get<PlatformSubscriptionService>(PlatformSubscriptionService);
+    service = module.get<PlatformSubscriptionService>(
+      PlatformSubscriptionService,
+    );
   });
 
   it('should be defined', () => {
@@ -55,7 +57,12 @@ describe('PlatformSubscriptionService', () => {
   describe('getAllPlans', () => {
     it('should return all plans ordered by price', async () => {
       prisma.platformPlan.findMany.mockResolvedValue([
-        { id: 'plan-1', name: 'Starter Tier', monthlyPrice: 1499, entitlements: [] },
+        {
+          id: 'plan-1',
+          name: 'Starter Tier',
+          monthlyPrice: 1499,
+          entitlements: [],
+        },
       ]);
       const plans = await service.getAllPlans();
       expect(plans.length).toBe(1);
@@ -123,4 +130,3 @@ describe('PlatformSubscriptionService', () => {
     });
   });
 });
-

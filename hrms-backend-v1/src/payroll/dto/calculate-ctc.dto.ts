@@ -15,4 +15,3 @@ export class CalculateCtcDto {
   @IsBoolean()
   optOutPF?: boolean;
 }
-

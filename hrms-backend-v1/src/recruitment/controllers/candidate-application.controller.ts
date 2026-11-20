@@ -53,9 +53,14 @@ export class CandidateApplicationController {
     @Body() dto: UpdateApplicationStatusDto,
   ) {
     if (
-      !['SUPER_ADMIN', 'HR_HEAD', 'OWNER', 'MANAGER', 'RECRUITER', 'ADMIN'].includes(
-        req.user.role,
-      )
+      ![
+        'SUPER_ADMIN',
+        'HR_HEAD',
+        'OWNER',
+        'MANAGER',
+        'RECRUITER',
+        'ADMIN',
+      ].includes(req.user.role)
     ) {
       throw new ForbiddenException(
         'You do not have permission to update candidate application status.',
@@ -95,9 +100,6 @@ export class CandidateApplicationController {
   // 5. Get Pre-Flight Conversion Preview (Target Employee Code according to Company Settings)
   @Get(':id/conversion-preview')
   async getConversionPreview(@Request() req, @Param('id') id: string) {
-    return this.conversionService.getConversionPreview(
-      id,
-      req.user.companyId,
-    );
+    return this.conversionService.getConversionPreview(id, req.user.companyId);
   }
 }

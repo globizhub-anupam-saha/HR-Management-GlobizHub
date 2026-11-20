@@ -96,7 +96,9 @@ describe('EmployeeController - Org Chart, GDPR Export & Anonymization', () => {
       });
 
       await controller.exportEmployeeData(
-        { user: { companyId: 'comp-100', sub: 'admin-1', role: 'SUPER_ADMIN' } },
+        {
+          user: { companyId: 'comp-100', sub: 'admin-1', role: 'SUPER_ADMIN' },
+        },
         'emp-2',
       );
 
@@ -120,11 +122,14 @@ describe('EmployeeController - Org Chart, GDPR Export & Anonymization', () => {
     it('delegates to employeeService.anonymizeEmployee with companyId, employeeId, and actorId', async () => {
       employeeService.anonymizeEmployee.mockResolvedValue({
         success: true,
-        message: 'Employee personal data permanently anonymized in compliance with DPDP/GDPR.',
+        message:
+          'Employee personal data permanently anonymized in compliance with DPDP/GDPR.',
       });
 
       const res = await controller.anonymizeEmployee(
-        { user: { companyId: 'comp-100', sub: 'admin-1', role: 'SUPER_ADMIN' } },
+        {
+          user: { companyId: 'comp-100', sub: 'admin-1', role: 'SUPER_ADMIN' },
+        },
         'emp-to-erase',
       );
 

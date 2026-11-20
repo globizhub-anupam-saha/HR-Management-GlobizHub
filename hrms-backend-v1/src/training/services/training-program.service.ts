@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import { TrainingSequenceService } from './training-sequence.service';
-import { CreateTrainingProgramDto, UpdateTrainingProgramDto } from '../dto/program.dto';
+import {
+  CreateTrainingProgramDto,
+  UpdateTrainingProgramDto,
+} from '../dto/program.dto';
 
 @Injectable()
 export class TrainingProgramService {
@@ -12,7 +15,10 @@ export class TrainingProgramService {
     private readonly sequenceService: TrainingSequenceService,
   ) {}
 
-  async findAll(companyId: string, filters: { categoryId?: string; status?: string; search?: string }) {
+  async findAll(
+    companyId: string,
+    filters: { categoryId?: string; status?: string; search?: string },
+  ) {
     const where: any = { companyId };
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.status) where.status = filters.status;
@@ -87,8 +93,12 @@ export class TrainingProgramService {
         deliveryMethod: dto.deliveryMethod || 'HYBRID',
         plannedHours: dto.plannedHours || 0,
         passingScore: dto.passingScore !== undefined ? dto.passingScore : 70.0,
-        requiresAssessment: dto.requiresAssessment !== undefined ? dto.requiresAssessment : true,
-        requiresCertificate: dto.requiresCertificate !== undefined ? dto.requiresCertificate : false,
+        requiresAssessment:
+          dto.requiresAssessment !== undefined ? dto.requiresAssessment : true,
+        requiresCertificate:
+          dto.requiresCertificate !== undefined
+            ? dto.requiresCertificate
+            : false,
         validityMonths: dto.validityMonths,
         targetAudience: dto.targetAudience?.trim(),
         materialsUrl: dto.materialsUrl,
@@ -125,7 +135,12 @@ export class TrainingProgramService {
     return this.findOne(companyId, created.id);
   }
 
-  async update(companyId: string, id: string, user: any, dto: UpdateTrainingProgramDto) {
+  async update(
+    companyId: string,
+    id: string,
+    user: any,
+    dto: UpdateTrainingProgramDto,
+  ) {
     const existing = await this.findOne(companyId, id);
 
     await this.prisma.trainingProgram.update({
@@ -133,17 +148,37 @@ export class TrainingProgramService {
       data: {
         ...(dto.title && { title: dto.title.trim() }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
-        ...(dto.description !== undefined && { description: dto.description?.trim() }),
-        ...(dto.objectives !== undefined && { objectives: dto.objectives?.trim() }),
-        ...(dto.prerequisites !== undefined && { prerequisites: dto.prerequisites?.trim() }),
+        ...(dto.description !== undefined && {
+          description: dto.description?.trim(),
+        }),
+        ...(dto.objectives !== undefined && {
+          objectives: dto.objectives?.trim(),
+        }),
+        ...(dto.prerequisites !== undefined && {
+          prerequisites: dto.prerequisites?.trim(),
+        }),
         ...(dto.deliveryMethod && { deliveryMethod: dto.deliveryMethod }),
-        ...(dto.plannedHours !== undefined && { plannedHours: dto.plannedHours }),
-        ...(dto.passingScore !== undefined && { passingScore: dto.passingScore }),
-        ...(dto.requiresAssessment !== undefined && { requiresAssessment: dto.requiresAssessment }),
-        ...(dto.requiresCertificate !== undefined && { requiresCertificate: dto.requiresCertificate }),
-        ...(dto.validityMonths !== undefined && { validityMonths: dto.validityMonths }),
-        ...(dto.targetAudience !== undefined && { targetAudience: dto.targetAudience?.trim() }),
-        ...(dto.materialsUrl !== undefined && { materialsUrl: dto.materialsUrl }),
+        ...(dto.plannedHours !== undefined && {
+          plannedHours: dto.plannedHours,
+        }),
+        ...(dto.passingScore !== undefined && {
+          passingScore: dto.passingScore,
+        }),
+        ...(dto.requiresAssessment !== undefined && {
+          requiresAssessment: dto.requiresAssessment,
+        }),
+        ...(dto.requiresCertificate !== undefined && {
+          requiresCertificate: dto.requiresCertificate,
+        }),
+        ...(dto.validityMonths !== undefined && {
+          validityMonths: dto.validityMonths,
+        }),
+        ...(dto.targetAudience !== undefined && {
+          targetAudience: dto.targetAudience?.trim(),
+        }),
+        ...(dto.materialsUrl !== undefined && {
+          materialsUrl: dto.materialsUrl,
+        }),
         ...(dto.status && { status: dto.status }),
       },
     });

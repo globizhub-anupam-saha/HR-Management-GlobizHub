@@ -93,4 +93,3 @@ describe('PlatformUsersService', () => {
     expect(res.role).toBe('PLATFORM_ADMIN');
   });
 });
-

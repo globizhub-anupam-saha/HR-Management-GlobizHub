@@ -74,7 +74,9 @@ describe('AttendanceService - Cross-Midnight & Multi-Punch Spec', () => {
       await expect(
         service.clockIn('emp-1', 'comp-1', {} as any, '127.0.0.1'),
       ).rejects.toThrow(
-        new BadRequestException('You have already completed your attendance for today.'),
+        new BadRequestException(
+          'You have already completed your attendance for today.',
+        ),
       );
     });
   });
@@ -118,7 +120,12 @@ describe('AttendanceService - Cross-Midnight & Multi-Punch Spec', () => {
         checkOutTime: null,
       });
 
-      const result = await service.clockIn('doctor-1', 'hospital-1', {} as any, '127.0.0.1');
+      const result = await service.clockIn(
+        'doctor-1',
+        'hospital-1',
+        {} as any,
+        '127.0.0.1',
+      );
       expect(result.message).toContain('session #2');
       expect(prisma.attendanceSession.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -177,4 +184,3 @@ describe('AttendanceService - Cross-Midnight & Multi-Punch Spec', () => {
     });
   });
 });
-

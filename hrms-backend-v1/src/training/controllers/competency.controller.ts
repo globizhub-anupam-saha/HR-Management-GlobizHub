@@ -65,7 +65,10 @@ export class CompetencyController {
     @Request() req,
     @Param('designationId') designationId: string,
   ) {
-    return this.service.getDesignationCompetencies(req.user.companyId, designationId);
+    return this.service.getDesignationCompetencies(
+      req.user.companyId,
+      designationId,
+    );
   }
 
   @Post('designation')
@@ -73,7 +76,11 @@ export class CompetencyController {
     @Request() req,
     @Body() dto: SetJobPositionCompetencyDto,
   ) {
-    return this.service.setJobPositionCompetency(req.user.companyId, req.user, dto);
+    return this.service.setJobPositionCompetency(
+      req.user.companyId,
+      req.user,
+      dto,
+    );
   }
 
   @Delete('designation/:designationId/:competencyId')
@@ -103,7 +110,11 @@ export class CompetencyController {
     @Request() req,
     @Body() dto: AssessEmployeeCompetencyDto,
   ) {
-    return this.service.assessEmployeeCompetency(req.user.companyId, req.user, dto);
+    return this.service.assessEmployeeCompetency(
+      req.user.companyId,
+      req.user,
+      dto,
+    );
   }
 
   // Skill Gap Analysis

@@ -9,7 +9,11 @@ describe('CompetencyService', () => {
   let auditService: any;
 
   const mockCompanyId = 'comp-test-123';
-  const mockUser = { sub: 'admin-1', companyId: mockCompanyId, role: 'HR_HEAD' };
+  const mockUser = {
+    sub: 'admin-1',
+    companyId: mockCompanyId,
+    role: 'HR_HEAD',
+  };
 
   beforeEach(async () => {
     prisma = {
@@ -81,13 +85,23 @@ describe('CompetencyService', () => {
           competencyId: 'comp-A',
           requiredLevel: 'EXPERT', // rank 4
           isMandatory: true, // weight 2 -> weight*rank = 8
-          competency: { id: 'comp-A', name: 'Clinical Critical Care', code: 'COMP-A', category: 'Clinical' },
+          competency: {
+            id: 'comp-A',
+            name: 'Clinical Critical Care',
+            code: 'COMP-A',
+            category: 'Clinical',
+          },
         },
         {
           competencyId: 'comp-B',
           requiredLevel: 'ADVANCED', // rank 3
           isMandatory: false, // weight 1 -> weight*rank = 3
-          competency: { id: 'comp-B', name: 'Medication Administration', code: 'COMP-B', category: 'Clinical' },
+          competency: {
+            id: 'comp-B',
+            name: 'Medication Administration',
+            code: 'COMP-B',
+            category: 'Clinical',
+          },
         },
       ];
 
@@ -103,12 +117,19 @@ describe('CompetencyService', () => {
       prisma.employee.findFirst.mockResolvedValue(mockEmployee);
       prisma.designation.findUnique.mockResolvedValue(mockTargetDesignation);
       prisma.jobPositionCompetency.findMany.mockResolvedValue(mockRequirements);
-      prisma.employeeCompetency.findMany.mockResolvedValue(mockCurrentCompetencies);
+      prisma.employeeCompetency.findMany.mockResolvedValue(
+        mockCurrentCompetencies,
+      );
       prisma.trainingProgramCompetency.findMany.mockResolvedValue([
         {
           programId: 'prog-1',
           competencyId: 'comp-A',
-          program: { id: 'prog-1', title: 'Critical Care Mastery', companyId: mockCompanyId, status: 'PUBLISHED' },
+          program: {
+            id: 'prog-1',
+            title: 'Critical Care Mastery',
+            companyId: mockCompanyId,
+            status: 'PUBLISHED',
+          },
           competency: { name: 'Clinical Critical Care' },
         },
       ]);

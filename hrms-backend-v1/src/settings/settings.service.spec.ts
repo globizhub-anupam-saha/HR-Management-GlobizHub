@@ -86,7 +86,12 @@ describe('SettingsService', () => {
         halfDayMinHours: '4.25',
       };
 
-      const res = await service.updateSettings('comp-1', inputDto, 'SUPER_ADMIN', 'user-1');
+      const res = await service.updateSettings(
+        'comp-1',
+        inputDto,
+        'SUPER_ADMIN',
+        'user-1',
+      );
       expect(res.companyName).toBe('Acme Corp');
       expect((res as any).unknownRelationalField).toBeUndefined();
       expect(res.workingDays).toEqual(['MONDAY', 'TUESDAY', 'FRIDAY']);

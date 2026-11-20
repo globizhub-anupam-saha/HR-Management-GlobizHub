@@ -117,10 +117,7 @@ export class OrganizationController {
   }
 
   @Post('designations')
-  async createDesignation(
-    @Request() req,
-    @Body() body: CreateDesignationDto,
-  ) {
+  async createDesignation(@Request() req, @Body() body: CreateDesignationDto) {
     this.checkAdminAccess(req.user.role);
     return this.organizationService.createDesignation(req.user.companyId, body);
   }
@@ -172,6 +169,9 @@ export class OrganizationController {
 
   @Get('billing/invoices/:id')
   async getBillingInvoiceById(@Request() req, @Param('id') id: string) {
-    return this.organizationService.getCompanyInvoiceById(req.user.companyId, id);
+    return this.organizationService.getCompanyInvoiceById(
+      req.user.companyId,
+      id,
+    );
   }
 }

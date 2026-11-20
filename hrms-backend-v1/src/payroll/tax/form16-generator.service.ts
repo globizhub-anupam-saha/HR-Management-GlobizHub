@@ -152,9 +152,13 @@ export class Form16GeneratorService {
       const qRecords = payrollRecords.filter(
         (r) => r.year === q.year && q.months.includes(r.month),
       );
-      const amountPaid = qRecords.reduce((sum, r) => sum + r.basicPay + r.allowances, 0);
+      const amountPaid = qRecords.reduce(
+        (sum, r) => sum + r.basicPay + r.allowances,
+        0,
+      );
       const taxDeducted = qRecords.reduce(
-        (sum, r) => sum + (r.tdsDeduction || (r.breakdown as any)?.deductions?.tax || 0),
+        (sum, r) =>
+          sum + (r.tdsDeduction || (r.breakdown as any)?.deductions?.tax || 0),
         0,
       );
 
@@ -167,7 +171,10 @@ export class Form16GeneratorService {
       };
     });
 
-    const totalTaxDeposited = quarterlySummary.reduce((acc, q) => acc + q.taxDeposited, 0);
+    const totalTaxDeposited = quarterlySummary.reduce(
+      (acc, q) => acc + q.taxDeposited,
+      0,
+    );
 
     const empPan = employee.panNumber
       ? decrypt(employee.panNumber) || 'PANNOTPROV'
@@ -204,7 +211,10 @@ export class Form16GeneratorService {
         totalDeductionsUs16: taxCalc.standardDeduction + totalProfTax,
         incomeChargeableUnderHeadSalaries: Math.max(
           0,
-          totalGrossSalary - (taxCalc.exemptions.totalExemptions + taxCalc.standardDeduction + totalProfTax),
+          totalGrossSalary -
+            (taxCalc.exemptions.totalExemptions +
+              taxCalc.standardDeduction +
+              totalProfTax),
         ),
         chapterVIA: {
           section80C: taxCalc.deductions.section80C,
@@ -232,7 +242,12 @@ export class Form16GeneratorService {
     companyId: string,
     quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4',
     financialYear: string,
-  ): Promise<{ fileName: string; content: string; recordCount: number; totalTax: number }> {
+  ): Promise<{
+    fileName: string;
+    content: string;
+    recordCount: number;
+    totalTax: number;
+  }> {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
     });
@@ -266,19 +281,26 @@ export class Form16GeneratorService {
     const lines: string[] = [];
 
     // File Header (FH Record)
-    lines.push(`FH^SL1^24Q^${financialYear}^${quarter}^${new Date().toISOString().slice(0, 10)}^1`);
+    lines.push(
+      `FH^SL1^24Q^${financialYear}^${quarter}^${new Date().toISOString().slice(0, 10)}^1`,
+    );
 
     // Batch Header (BH Record)
     const totalTax = records.reduce(
-      (sum, r) => sum + (r.tdsDeduction || (r.breakdown as any)?.deductions?.tax || 0),
+      (sum, r) =>
+        sum + (r.tdsDeduction || (r.breakdown as any)?.deductions?.tax || 0),
       0,
     );
-    lines.push(`BH^1^${records.length}^24Q^${company.name}^BLRA12345B^ABCDE1234F^${totalTax.toFixed(2)}`);
+    lines.push(
+      `BH^1^${records.length}^24Q^${company.name}^BLRA12345B^ABCDE1234F^${totalTax.toFixed(2)}`,
+    );
 
     // Deductee Detail (DD Records)
     let lineNo = 1;
     for (const r of records) {
-      const pan = r.employee.panNumber ? decrypt(r.employee.panNumber) : 'PANNOTPROV';
+      const pan = r.employee.panNumber
+        ? decrypt(r.employee.panNumber)
+        : 'PANNOTPROV';
       const name = `${r.employee.firstName} ${r.employee.lastName}`.trim();
       const gross = r.basicPay + r.allowances;
       const tds = r.tdsDeduction || (r.breakdown as any)?.deductions?.tax || 0;

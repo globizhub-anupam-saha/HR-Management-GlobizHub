@@ -12,16 +12,56 @@ import { UpdateEntitlementsDto } from './dto/update-entitlements.dto';
 import { AssignSubscriptionDto } from './dto/assign-subscription.dto';
 
 export const ALL_HRMS_MODULES = [
-  { key: 'employees', name: 'Employee Directory & Profiles', description: 'Core staff directory, records & custom fields' },
-  { key: 'attendance', name: 'Attendance & Clock-In', description: 'Web, mobile GPS, geo-fencing & shift rosters' },
-  { key: 'leave', name: 'Leave Management', description: 'Leave requests, quota balance & approval workflows' },
-  { key: 'documents', name: 'Document Management', description: 'E-signatures, contracts, letters & certificates' },
-  { key: 'tasks', name: 'Tasks & Checklists', description: 'Departmental assignments & due dates' },
-  { key: 'announcements', name: 'Company Announcements', description: 'Broadcast notices, bulletin boards & alerts' },
-  { key: 'payroll', name: 'Payroll & Compensation', description: 'Salary structures, monthly pay runs, deductions & payslips' },
-  { key: 'recruitment', name: 'Recruitment & ATS', description: 'Requisitions, candidate pipelines, scorecards & offers' },
-  { key: 'training', name: 'Training & Development', description: 'Universal training plans, competencies & assessments' },
-  { key: 'analytics', name: 'Advanced Reporting & Analytics', description: 'Executive dashboards, churn, turnover & heatmaps' },
+  {
+    key: 'employees',
+    name: 'Employee Directory & Profiles',
+    description: 'Core staff directory, records & custom fields',
+  },
+  {
+    key: 'attendance',
+    name: 'Attendance & Clock-In',
+    description: 'Web, mobile GPS, geo-fencing & shift rosters',
+  },
+  {
+    key: 'leave',
+    name: 'Leave Management',
+    description: 'Leave requests, quota balance & approval workflows',
+  },
+  {
+    key: 'documents',
+    name: 'Document Management',
+    description: 'E-signatures, contracts, letters & certificates',
+  },
+  {
+    key: 'tasks',
+    name: 'Tasks & Checklists',
+    description: 'Departmental assignments & due dates',
+  },
+  {
+    key: 'announcements',
+    name: 'Company Announcements',
+    description: 'Broadcast notices, bulletin boards & alerts',
+  },
+  {
+    key: 'payroll',
+    name: 'Payroll & Compensation',
+    description: 'Salary structures, monthly pay runs, deductions & payslips',
+  },
+  {
+    key: 'recruitment',
+    name: 'Recruitment & ATS',
+    description: 'Requisitions, candidate pipelines, scorecards & offers',
+  },
+  {
+    key: 'training',
+    name: 'Training & Development',
+    description: 'Universal training plans, competencies & assessments',
+  },
+  {
+    key: 'analytics',
+    name: 'Advanced Reporting & Analytics',
+    description: 'Executive dashboards, churn, turnover & heatmaps',
+  },
 ];
 
 @Injectable()
@@ -43,37 +83,57 @@ export class PlatformSubscriptionService implements OnModuleInit {
       const planCount = await this.prisma.platformPlan.count();
       if (planCount > 0) return;
 
-      this.logger.log('Seeding default Platform Subscription Plans & Entitlements...');
+      this.logger.log(
+        'Seeding default Platform Subscription Plans & Entitlements...',
+      );
 
       const defaultTiers = [
         {
           name: 'Free Trial',
           code: 'PLAN_FREE',
-          description: '14-day free preview with basic attendance and employee directory for small teams.',
+          description:
+            '14-day free preview with basic attendance and employee directory for small teams.',
           monthlyPrice: 0,
           annualPrice: 0,
           maxEmployees: 25,
           maxStorageGb: 2,
           trialDays: 14,
           isPublic: true,
-          enabledModules: ['employees', 'attendance', 'leave', 'documents', 'tasks', 'announcements'],
+          enabledModules: [
+            'employees',
+            'attendance',
+            'leave',
+            'documents',
+            'tasks',
+            'announcements',
+          ],
         },
         {
           name: 'Starter Tier',
           code: 'PLAN_STARTER',
-          description: 'Essential HR foundation for growing teams up to 50 employees.',
+          description:
+            'Essential HR foundation for growing teams up to 50 employees.',
           monthlyPrice: 1499,
           annualPrice: 14990,
           maxEmployees: 50,
           maxStorageGb: 10,
           trialDays: 14,
           isPublic: true,
-          enabledModules: ['employees', 'attendance', 'leave', 'documents', 'tasks', 'announcements', 'payroll'],
+          enabledModules: [
+            'employees',
+            'attendance',
+            'leave',
+            'documents',
+            'tasks',
+            'announcements',
+            'payroll',
+          ],
         },
         {
           name: 'Professional Tier',
           code: 'PLAN_PRO',
-          description: 'Complete HR automation with payroll, recruitment ATS, and training.',
+          description:
+            'Complete HR automation with payroll, recruitment ATS, and training.',
           monthlyPrice: 4999,
           annualPrice: 49990,
           maxEmployees: 200,
@@ -96,7 +156,8 @@ export class PlatformSubscriptionService implements OnModuleInit {
         {
           name: 'Enterprise Tier',
           code: 'PLAN_ENTERPRISE',
-          description: 'High-scale multi-branch organization tier with dedicated limits and custom overrides.',
+          description:
+            'High-scale multi-branch organization tier with dedicated limits and custom overrides.',
           monthlyPrice: 14999,
           annualPrice: 149990,
           maxEmployees: 1000,
@@ -147,7 +208,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
 
       this.logger.log('Default subscription tiers seeded successfully.');
     } catch (err: any) {
-      this.logger.warn(`Could not seed default subscription tiers: ${err.message}`);
+      this.logger.warn(
+        `Could not seed default subscription tiers: ${err.message}`,
+      );
     }
   }
 
@@ -167,7 +230,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
 
       if (companiesWithoutSub.length === 0) return;
 
-      this.logger.log(`Found ${companiesWithoutSub.length} companies without active Subscription records. Auto-provisioning...`);
+      this.logger.log(
+        `Found ${companiesWithoutSub.length} companies without active Subscription records. Auto-provisioning...`,
+      );
 
       const trialPlan = await this.prisma.platformPlan.findFirst({
         where: { OR: [{ code: 'PLAN_FREE' }, { name: 'Free Trial' }] },
@@ -178,7 +243,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
       for (const comp of companiesWithoutSub) {
         const trialDays = trialPlan.trialDays || 14;
         const start = comp.createdAt || new Date();
-        const trialEndsAt = new Date(start.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        const trialEndsAt = new Date(
+          start.getTime() + trialDays * 24 * 60 * 60 * 1000,
+        );
         const isPast = trialEndsAt.getTime() < Date.now();
 
         await this.prisma.subscription.create({
@@ -194,9 +261,13 @@ export class PlatformSubscriptionService implements OnModuleInit {
         });
       }
 
-      this.logger.log(`Successfully provisioned subscriptions for ${companiesWithoutSub.length} companies.`);
+      this.logger.log(
+        `Successfully provisioned subscriptions for ${companiesWithoutSub.length} companies.`,
+      );
     } catch (err: any) {
-      this.logger.warn(`Could not backfill missing subscriptions: ${err.message}`);
+      this.logger.warn(
+        `Could not backfill missing subscriptions: ${err.message}`,
+      );
     }
   }
 
@@ -219,7 +290,10 @@ export class PlatformSubscriptionService implements OnModuleInit {
   async getPlanById(id: string) {
     const plan = await this.prisma.platformPlan.findUnique({
       where: { id },
-      include: { entitlements: true, _count: { select: { subscriptions: true } } },
+      include: {
+        entitlements: true,
+        _count: { select: { subscriptions: true } },
+      },
     });
     if (!plan) throw new NotFoundException('Subscription plan not found');
     return plan;
@@ -230,10 +304,17 @@ export class PlatformSubscriptionService implements OnModuleInit {
    */
   async createPlan(dto: CreatePlanDto, actorId?: string, actorEmail?: string) {
     const existing = await this.prisma.platformPlan.findFirst({
-      where: { OR: [{ code: dto.code.trim().toUpperCase() }, { name: dto.name.trim() }] },
+      where: {
+        OR: [
+          { code: dto.code.trim().toUpperCase() },
+          { name: dto.name.trim() },
+        ],
+      },
     });
     if (existing) {
-      throw new ConflictException('A subscription plan with this code or name already exists');
+      throw new ConflictException(
+        'A subscription plan with this code or name already exists',
+      );
     }
 
     const plan = await this.prisma.platformPlan.create({
@@ -275,7 +356,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
             afterState: plan as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log plan creation audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log plan creation audit', err),
+        );
     }
 
     return this.getPlanById(plan.id);
@@ -284,7 +367,12 @@ export class PlatformSubscriptionService implements OnModuleInit {
   /**
    * Update plan pricing, employee quotas, or trial duration
    */
-  async updatePlan(id: string, dto: UpdatePlanDto, actorId?: string, actorEmail?: string) {
+  async updatePlan(
+    id: string,
+    dto: UpdatePlanDto,
+    actorId?: string,
+    actorEmail?: string,
+  ) {
     const plan = await this.prisma.platformPlan.findUnique({ where: { id } });
     if (!plan) throw new NotFoundException('Subscription plan not found');
 
@@ -292,11 +380,16 @@ export class PlatformSubscriptionService implements OnModuleInit {
       where: { id },
       data: {
         name: dto.name ? dto.name.trim() : undefined,
-        description: dto.description !== undefined ? dto.description : undefined,
-        monthlyPrice: dto.monthlyPrice !== undefined ? dto.monthlyPrice : undefined,
-        annualPrice: dto.annualPrice !== undefined ? dto.annualPrice : undefined,
-        maxEmployees: dto.maxEmployees !== undefined ? dto.maxEmployees : undefined,
-        maxStorageGb: dto.maxStorageGb !== undefined ? dto.maxStorageGb : undefined,
+        description:
+          dto.description !== undefined ? dto.description : undefined,
+        monthlyPrice:
+          dto.monthlyPrice !== undefined ? dto.monthlyPrice : undefined,
+        annualPrice:
+          dto.annualPrice !== undefined ? dto.annualPrice : undefined,
+        maxEmployees:
+          dto.maxEmployees !== undefined ? dto.maxEmployees : undefined,
+        maxStorageGb:
+          dto.maxStorageGb !== undefined ? dto.maxStorageGb : undefined,
         trialDays: dto.trialDays !== undefined ? dto.trialDays : undefined,
         isPublic: dto.isPublic !== undefined ? dto.isPublic : undefined,
         isActive: dto.isActive !== undefined ? dto.isActive : undefined,
@@ -318,7 +411,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
             afterState: updated as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log plan update audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log plan update audit', err),
+        );
     }
 
     return updated;
@@ -333,7 +428,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
     actorId?: string,
     actorEmail?: string,
   ) {
-    const plan = await this.prisma.platformPlan.findUnique({ where: { id: planId } });
+    const plan = await this.prisma.platformPlan.findUnique({
+      where: { id: planId },
+    });
     if (!plan) throw new NotFoundException('Subscription plan not found');
 
     for (const ent of dto.entitlements) {
@@ -366,7 +463,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
             afterState: dto.entitlements as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log entitlement update audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log entitlement update audit', err),
+        );
     }
 
     return this.getPlanById(planId);
@@ -375,7 +474,12 @@ export class PlatformSubscriptionService implements OnModuleInit {
   /**
    * List all tenant subscriptions
    */
-  async getAllSubscriptions(query: { search?: string; status?: string; page?: number; limit?: number }) {
+  async getAllSubscriptions(query: {
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.max(1, Math.min(100, Number(query.limit) || 20));
     const skip = (page - 1) * limit;
@@ -455,7 +559,8 @@ export class PlatformSubscriptionService implements OnModuleInit {
     if (!company) throw new NotFoundException('Company organization not found');
     if (!plan) throw new NotFoundException('Subscription plan not found');
 
-    const extensionDays = dto.extensionDays || (dto.status === 'TRIAL' ? plan.trialDays || 14 : 30);
+    const extensionDays =
+      dto.extensionDays || (dto.status === 'TRIAL' ? plan.trialDays || 14 : 30);
     const periodEnd = new Date();
     periodEnd.setDate(periodEnd.getDate() + extensionDays);
 
@@ -489,10 +594,16 @@ export class PlatformSubscriptionService implements OnModuleInit {
             targetEntity: 'Subscription',
             targetId: subscription.id,
             companyId: dto.companyId,
-            afterState: { planName: plan.name, status: subscription.status, periodEnd } as any,
+            afterState: {
+              planName: plan.name,
+              status: subscription.status,
+              periodEnd,
+            } as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log subscription change audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log subscription change audit', err),
+        );
     }
 
     return subscription;
@@ -540,7 +651,9 @@ export class PlatformSubscriptionService implements OnModuleInit {
             reason: reason || null,
           },
         })
-        .catch((err) => this.logger.error('Failed to log feature override audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log feature override audit', err),
+        );
     }
 
     return override;
@@ -559,15 +672,33 @@ export class PlatformSubscriptionService implements OnModuleInit {
   /**
    * Subscription lifecycle history from audit log
    */
-  async getSubscriptionHistory(query: { companyId?: string; page?: number; limit?: number }) {
+  async getSubscriptionHistory(query: {
+    companyId?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.max(1, Math.min(100, Number(query.limit) || 20));
     const skip = (page - 1) * limit;
 
     const where: any = {
       OR: [
-        { targetEntity: { in: ['Subscription', 'PlatformPlan', 'OrganizationFeatureOverride'] } },
-        { action: { in: ['SUBSCRIPTION_CHANGE', 'PLAN_CREATE', 'PLAN_UPDATE', 'PLAN_ENTITLEMENT_UPDATE', 'FEATURE_OVERRIDE_SET'] } },
+        {
+          targetEntity: {
+            in: ['Subscription', 'PlatformPlan', 'OrganizationFeatureOverride'],
+          },
+        },
+        {
+          action: {
+            in: [
+              'SUBSCRIPTION_CHANGE',
+              'PLAN_CREATE',
+              'PLAN_UPDATE',
+              'PLAN_ENTITLEMENT_UPDATE',
+              'FEATURE_OVERRIDE_SET',
+            ],
+          },
+        },
       ],
     };
 
@@ -601,4 +732,3 @@ export class PlatformSubscriptionService implements OnModuleInit {
     };
   }
 }
-

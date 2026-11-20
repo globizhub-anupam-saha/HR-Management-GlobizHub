@@ -23,13 +23,15 @@ export class EpfoCalculatorService {
     const epsRate = input.rates['EPS'] ?? 0.0833;
 
     const wageCeiling = 15000;
-    const epfWage = input.voluntaryHigherPf 
-      ? input.basicSalary 
+    const epfWage = input.voluntaryHigherPf
+      ? input.basicSalary
       : Math.min(input.basicSalary, wageCeiling);
 
     // If member is 58 years or older, no pension contribution (EPS wage = 0)
     const isPensionEligible = input.age === undefined || input.age < 58;
-    const epsWage = isPensionEligible ? Math.min(input.basicSalary, wageCeiling) : 0;
+    const epsWage = isPensionEligible
+      ? Math.min(input.basicSalary, wageCeiling)
+      : 0;
     const edliWage = Math.min(input.basicSalary, wageCeiling);
 
     // 1. Employee share (12% of EPF wages)
@@ -60,4 +62,3 @@ export class EpfoCalculatorService {
     };
   }
 }
-

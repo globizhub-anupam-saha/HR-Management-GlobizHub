@@ -41,6 +41,10 @@ export class TrainingEnrollmentController {
     @Request() req,
     @Body() dto: BatchSessionAttendanceDto,
   ) {
-    return this.service.recordSessionAttendance(req.user.companyId, req.user, dto);
+    return this.service.recordSessionAttendance(
+      req.user.companyId,
+      req.user,
+      dto,
+    );
   }
 }

@@ -65,7 +65,7 @@ const step10Schema = z.object({
 });
 
 export default function Step10InviteEmployees() {
-  const { formData, updateFormData } = useSetupWizardStore();
+  const { formData, updateFormData, prevStep } = useSetupWizardStore();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
@@ -438,6 +438,16 @@ export default function Step10InviteEmployees() {
             </div>
 
             <div className="flex items-center space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                disabled={isSubmitting}
+                onClick={prevStep}
+                className="border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-6 cursor-pointer"
+              >
+                Prev
+              </Button>
               <Button
                 type="button"
                 variant="outline"

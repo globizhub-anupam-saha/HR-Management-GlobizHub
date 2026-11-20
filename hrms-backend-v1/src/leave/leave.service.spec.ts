@@ -11,8 +11,18 @@ describe('LeaveService', () => {
   beforeEach(async () => {
     prisma = {
       holiday: { findMany: jest.fn().mockResolvedValue([]) },
-      companySettings: { findUnique: jest.fn().mockResolvedValue({ workingDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] }) },
-      leavePolicy: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn(), update: jest.fn(), delete: jest.fn(), create: jest.fn() },
+      companySettings: {
+        findUnique: jest.fn().mockResolvedValue({
+          workingDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+        }),
+      },
+      leavePolicy: {
+        findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        create: jest.fn(),
+      },
       leaveAllocation: {
         findFirst: jest.fn(),
         create: jest.fn(),
@@ -30,7 +40,10 @@ describe('LeaveService', () => {
       leaveTransaction: {
         create: jest.fn(),
       },
-      employee: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      employee: {
+        findUnique: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       $transaction: jest.fn((callback) => callback(prisma)),
     };
 
@@ -85,7 +98,12 @@ describe('LeaveService', () => {
         status: LeaveStatus.WITHDRAWN,
       });
 
-      const res = await service.withdrawLeaveRequest('comp-1', 'leave-1', 'emp-1', 'EMPLOYEE');
+      const res = await service.withdrawLeaveRequest(
+        'comp-1',
+        'leave-1',
+        'emp-1',
+        'EMPLOYEE',
+      );
 
       expect(prisma.leaveRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -118,7 +136,12 @@ describe('LeaveService', () => {
         status: LeaveStatus.WITHDRAWN,
       });
 
-      await service.withdrawLeaveRequest('comp-1', 'leave-2', 'emp-1', 'EMPLOYEE');
+      await service.withdrawLeaveRequest(
+        'comp-1',
+        'leave-2',
+        'emp-1',
+        'EMPLOYEE',
+      );
 
       // Check allocation refund
       expect(prisma.leaveAllocation.update).toHaveBeenCalledWith(
@@ -182,7 +205,10 @@ describe('LeaveService', () => {
         { id: 'leave-4', status: LeaveStatus.PENDING },
       ]);
 
-      const res = await service.getApprovals('comp-1', { sub: 'admin-1', role: 'SUPER_ADMIN' });
+      const res = await service.getApprovals('comp-1', {
+        sub: 'admin-1',
+        role: 'SUPER_ADMIN',
+      });
       expect(prisma.leaveRequest.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({

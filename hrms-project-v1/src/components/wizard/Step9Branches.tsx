@@ -33,6 +33,11 @@ const OFFICE_TYPES = [
   { value: "REMOTE", label: "Remote / Virtual Hub" },
 ] as const;
 
+function generateBranchId(suffix?: string | number): string {
+  const salt = typeof suffix !== "undefined" ? String(suffix) : Math.random().toString(36).substring(2, 7);
+  return `branch-${Date.now()}-${salt}`;
+}
+
 export default function Step9Branches() {
   const { formData, updateFormData, nextStep, prevStep } = useSetupWizardStore();
 
@@ -44,7 +49,7 @@ export default function Step9Branches() {
 
     if (formData.branches && formData.branches.length > 0) {
       return formData.branches.map((bName, idx) => ({
-        id: `branch-${Date.now()}-${idx}`,
+        id: generateBranchId(idx),
         name: bName,
         type: idx === 0 ? "HEADQUARTERS" : "BRANCH",
         country: "India",
@@ -95,7 +100,7 @@ export default function Step9Branches() {
   const handleAddBranch = (preset?: Partial<WizardBranch>) => {
     setValidationError(null);
     const newBranch: WizardBranch = {
-      id: `branch-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: preset?.id || generateBranchId(),
       name: preset?.name || `Office Branch ${branches.length + 1}`,
       type: preset?.type || "BRANCH",
       country: preset?.country || "India",
@@ -550,33 +555,30 @@ export default function Step9Branches() {
       </div>
 
       {/* Step Navigation Bar */}
-      <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
+      <div className="pt-6 border-t border-slate-200 flex items-center justify-end space-x-3">
         <Button
           type="button"
           variant="outline"
           onClick={prevStep}
           className="border-slate-200 text-slate-600 hover:bg-slate-50"
         >
-          Back
+          Prev
         </Button>
-
-        <div className="flex items-center space-x-3">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={nextStep}
-            className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-          >
-            Skip for Now
-          </Button>
-          <Button
-            type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 flex items-center space-x-2 shadow-sm"
-          >
-            <span>Save & Continue</span>
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={nextStep}
+          className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+        >
+          Skip for Now
+        </Button>
+        <Button
+          type="submit"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 flex items-center space-x-2 shadow-sm"
+        >
+          <span>Save & Continue</span>
+          <ArrowRight className="w-4 h-4" />
+        </Button>
       </div>
     </form>
   );

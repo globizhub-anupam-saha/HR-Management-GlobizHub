@@ -255,4 +255,3 @@ export class UpdateCompanySettingsDto {
   @IsOptional()
   nightShiftAllowanceRate?: number;
 }
-

@@ -7,7 +7,7 @@ import Providers from "@/components/providers";
 const poppins = Poppins({ 
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -33,10 +33,21 @@ export const metadata: Metadata = {
     title: "GlobizHR",
     description: "Enterprise human resource management system.",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png", sizes: "256x256" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FDCD56", // Matches your warm golden brand color
+  themeColor: "#0066B2", // Matches GlobizHR vivid brand blue
   width: "device-width",
   initialScale: 1,
 };
@@ -49,10 +60,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${poppins.variable} h-full antialiased`}
+      className={`${poppins.variable} ${poppins.className} h-full antialiased font-sans`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans bg-background text-foreground selection:bg-primary/30 selection:text-foreground">
+      <body className={`${poppins.className} min-h-full flex flex-col font-sans bg-background text-foreground selection:bg-primary/30 selection:text-foreground`}>
         <Providers>
           {children}
         </Providers>

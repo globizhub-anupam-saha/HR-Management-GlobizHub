@@ -122,8 +122,14 @@ export class PlatformBillingService implements OnModuleInit {
     }
     if (query.search) {
       where.OR = [
-        { invoiceNumber: { contains: query.search.trim(), mode: 'insensitive' } },
-        { company: { name: { contains: query.search.trim(), mode: 'insensitive' } } },
+        {
+          invoiceNumber: { contains: query.search.trim(), mode: 'insensitive' },
+        },
+        {
+          company: {
+            name: { contains: query.search.trim(), mode: 'insensitive' },
+          },
+        },
       ];
     }
 
@@ -142,7 +148,13 @@ export class PlatformBillingService implements OnModuleInit {
             select: { id: true, plan: { select: { name: true, code: true } } },
           },
           payments: {
-            select: { id: true, amount: true, status: true, gateway: true, createdAt: true },
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              gateway: true,
+              createdAt: true,
+            },
           },
         },
       }),
@@ -241,7 +253,11 @@ export class PlatformBillingService implements OnModuleInit {
   /**
    * Generate a manual or subscription-triggered invoice
    */
-  async createInvoice(dto: CreateInvoiceDto, actorId?: string, actorEmail?: string) {
+  async createInvoice(
+    dto: CreateInvoiceDto,
+    actorId?: string,
+    actorEmail?: string,
+  ) {
     const company = await this.prisma.company.findUnique({
       where: { id: dto.companyId },
     });
@@ -278,7 +294,9 @@ export class PlatformBillingService implements OnModuleInit {
             afterState: { invoiceNumber, amountDue: dto.amountDue } as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log invoice creation audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log invoice creation audit', err),
+        );
     }
 
     return invoice;
@@ -321,7 +339,9 @@ export class PlatformBillingService implements OnModuleInit {
             afterState: { status: updated.status } as any,
           },
         })
-        .catch((err) => this.logger.error('Failed to log invoice status update audit', err));
+        .catch((err) =>
+          this.logger.error('Failed to log invoice status update audit', err),
+        );
     }
 
     return updated;
@@ -330,7 +350,11 @@ export class PlatformBillingService implements OnModuleInit {
   /**
    * Record a payment transaction with idempotency protection
    */
-  async recordPayment(dto: RecordPaymentDto, actorId?: string, actorEmail?: string) {
+  async recordPayment(
+    dto: RecordPaymentDto,
+    actorId?: string,
+    actorEmail?: string,
+  ) {
     // Check idempotency key to prevent duplicate payment processing
     const existingPayment = await this.prisma.payment.findUnique({
       where: { idempotencyKey: dto.idempotencyKey },
@@ -495,7 +519,9 @@ export class PlatformBillingService implements OnModuleInit {
         include: {
           invoice: {
             include: {
-              company: { select: { id: true, name: true, email: true, phone: true } },
+              company: {
+                select: { id: true, name: true, email: true, phone: true },
+              },
               subscription: { include: { plan: true } },
             },
           },
@@ -515,7 +541,8 @@ export class PlatformBillingService implements OnModuleInit {
         currency: p.currency,
         gateway: p.gateway,
         status: p.status,
-        failureReason: p.failureReason || 'Invoice overdue without confirmed payment',
+        failureReason:
+          p.failureReason || 'Invoice overdue without confirmed payment',
         dueDate: p.invoice.dueDate,
         createdAt: p.createdAt,
       })),
@@ -531,14 +558,21 @@ export class PlatformBillingService implements OnModuleInit {
   /**
    * Cryptographically verify webhook signature against configured secret
    */
-  verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  verifyWebhookSignature(
+    payload: string,
+    signature: string,
+    secret: string,
+  ): boolean {
     try {
       if (signature.includes('t=') && signature.includes('v1=')) {
-        const parts = signature.split(',').reduce((acc, curr) => {
-          const [k, v] = curr.split('=');
-          if (k && v) acc[k.trim()] = v.trim();
-          return acc;
-        }, {} as Record<string, string>);
+        const parts = signature.split(',').reduce(
+          (acc, curr) => {
+            const [k, v] = curr.split('=');
+            if (k && v) acc[k.trim()] = v.trim();
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
 
         const timestamp = parts['t'];
         const v1 = parts['v1'];
@@ -552,7 +586,10 @@ export class PlatformBillingService implements OnModuleInit {
 
         const v1Buf = Buffer.from(v1, 'utf8');
         const expBuf = Buffer.from(expectedSignature, 'utf8');
-        return v1Buf.length === expBuf.length && crypto.timingSafeEqual(v1Buf, expBuf);
+        return (
+          v1Buf.length === expBuf.length &&
+          crypto.timingSafeEqual(v1Buf, expBuf)
+        );
       }
 
       const expectedSignature = crypto
@@ -562,7 +599,10 @@ export class PlatformBillingService implements OnModuleInit {
 
       const sigBuf = Buffer.from(signature, 'utf8');
       const expBuf = Buffer.from(expectedSignature, 'utf8');
-      return sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
+      return (
+        sigBuf.length === expBuf.length &&
+        crypto.timingSafeEqual(sigBuf, expBuf)
+      );
     } catch {
       return false;
     }
@@ -572,7 +612,9 @@ export class PlatformBillingService implements OnModuleInit {
    * Idempotent payment webhook receiver (Stripe / Razorpay)
    */
   async handleWebhook(payload: any, eventType: string, idempotencyKey: string) {
-    this.logger.log(`Received webhook event: ${eventType} with key: ${idempotencyKey}`);
+    this.logger.log(
+      `Received webhook event: ${eventType} with key: ${idempotencyKey}`,
+    );
 
     const existing = await this.prisma.payment.findUnique({
       where: { idempotencyKey },
@@ -582,13 +624,16 @@ export class PlatformBillingService implements OnModuleInit {
     }
 
     // In a live integration, event payload contains invoice_id / metadata
-    const invoiceId = payload?.data?.object?.metadata?.invoiceId || payload?.invoiceId;
+    const invoiceId =
+      payload?.data?.object?.metadata?.invoiceId || payload?.invoiceId;
     if (!invoiceId) {
       return { status: 'ignored', reason: 'No invoiceId in metadata' };
     }
 
-    const amount = Number(payload?.data?.object?.amount || payload?.amount || 0) / 100;
-    const isSuccess = eventType.includes('succeeded') || eventType.includes('captured');
+    const amount =
+      Number(payload?.data?.object?.amount || payload?.amount || 0) / 100;
+    const isSuccess =
+      eventType.includes('succeeded') || eventType.includes('captured');
 
     const payment = await this.recordPayment({
       invoiceId,
@@ -598,7 +643,9 @@ export class PlatformBillingService implements OnModuleInit {
       gatewayPaymentId: payload?.data?.object?.id || payload?.paymentId,
       idempotencyKey,
       status: isSuccess ? 'SUCCEEDED' : 'FAILED',
-      failureReason: isSuccess ? undefined : 'Webhook indicated transaction failure',
+      failureReason: isSuccess
+        ? undefined
+        : 'Webhook indicated transaction failure',
     });
 
     return { status: 'processed', paymentId: payment.id };
@@ -627,7 +674,8 @@ export class PlatformBillingService implements OnModuleInit {
         name: r.name,
         discountType: meta.discountType || 'PERCENTAGE',
         discountValue: Number(meta.discountValue || 0),
-        validUntil: meta.validUntil || new Date(Date.now() + 30 * 86400000).toISOString(),
+        validUntil:
+          meta.validUntil || new Date(Date.now() + 30 * 86400000).toISOString(),
         usageCount: Number(meta.usageCount || 0),
         maxUsage: Number(meta.maxUsage || 100),
         isActive: r.isEnabled,
@@ -655,7 +703,9 @@ export class PlatformBillingService implements OnModuleInit {
       where: { key },
     });
     if (existing) {
-      throw new ConflictException(`Coupon code "${normalizedCode}" already exists.`);
+      throw new ConflictException(
+        `Coupon code "${normalizedCode}" already exists.`,
+      );
     }
 
     const record = await this.prisma.platformFeatureFlag.create({
@@ -706,7 +756,10 @@ export class PlatformBillingService implements OnModuleInit {
       where: { key },
     });
 
-    return { success: true, message: `Coupon "${normalizedCode}" deleted successfully.` };
+    return {
+      success: true,
+      message: `Coupon "${normalizedCode}" deleted successfully.`,
+    };
   }
 
   /**
@@ -735,7 +788,9 @@ export class PlatformBillingService implements OnModuleInit {
     }
 
     if (meta.maxUsage && (meta.usageCount || 0) >= meta.maxUsage) {
-      throw new BadRequestException('This coupon has reached its maximum usage limit.');
+      throw new BadRequestException(
+        'This coupon has reached its maximum usage limit.',
+      );
     }
 
     let discountAmount = 0;
@@ -759,4 +814,3 @@ export class PlatformBillingService implements OnModuleInit {
     };
   }
 }
-

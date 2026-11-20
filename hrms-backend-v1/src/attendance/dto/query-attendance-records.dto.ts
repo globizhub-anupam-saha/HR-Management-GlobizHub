@@ -17,4 +17,3 @@ export class QueryAttendanceRecordsDto {
   @IsString()
   search?: string;
 }
-

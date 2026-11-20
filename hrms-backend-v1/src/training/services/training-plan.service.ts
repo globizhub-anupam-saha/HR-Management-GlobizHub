@@ -76,7 +76,12 @@ export class TrainingPlanService {
         category: true,
         program: true,
         requestingEmployee: {
-          select: { id: true, firstName: true, lastName: true, employeeCode: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            employeeCode: true,
+          },
         },
         requestingDepartment: true,
         targetDesignation: true,
@@ -173,7 +178,12 @@ export class TrainingPlanService {
         evaluations: {
           include: {
             employee: {
-              select: { id: true, firstName: true, lastName: true, employeeCode: true },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                employeeCode: true,
+              },
             },
             evaluator: {
               select: { id: true, firstName: true, lastName: true },
@@ -198,7 +208,8 @@ export class TrainingPlanService {
       'TRN',
     );
 
-    const requestingEmployeeId = dto.requestingEmployeeId || user.sub || user.id;
+    const requestingEmployeeId =
+      dto.requestingEmployeeId || user.sub || user.id;
 
     // Calculate total budget if breakdown provided
     const totalBudget =
@@ -273,7 +284,12 @@ export class TrainingPlanService {
     return this.findOne(companyId, created.id);
   }
 
-  async update(companyId: string, id: string, user: any, dto: UpdateTrainingPlanDto) {
+  async update(
+    companyId: string,
+    id: string,
+    user: any,
+    dto: UpdateTrainingPlanDto,
+  ) {
     const existing = await this.findOne(companyId, id);
 
     // Only allow editing in DRAFT or CHANGES_REQUESTED status
@@ -288,9 +304,13 @@ export class TrainingPlanService {
     const totalBudget =
       dto.totalBudget !== undefined
         ? dto.totalBudget
-        : (dto.estimatedRegistrationCost || existing.estimatedRegistrationCost || 0) +
+        : (dto.estimatedRegistrationCost ||
+            existing.estimatedRegistrationCost ||
+            0) +
           (dto.estimatedTravelCost || existing.estimatedTravelCost || 0) +
-          (dto.estimatedAccommodationCost || existing.estimatedAccommodationCost || 0) +
+          (dto.estimatedAccommodationCost ||
+            existing.estimatedAccommodationCost ||
+            0) +
           (dto.estimatedMaterialCost || existing.estimatedMaterialCost || 0);
 
     const updated = await this.prisma.trainingPlan.update({
@@ -310,19 +330,27 @@ export class TrainingPlanService {
         }),
         ...(dto.deliveryMethod && { deliveryMethod: dto.deliveryMethod }),
         ...(dto.providerType && { providerType: dto.providerType }),
-        ...(dto.providerName !== undefined && { providerName: dto.providerName?.trim() }),
-        ...(dto.trainerName !== undefined && { trainerName: dto.trainerName?.trim() }),
+        ...(dto.providerName !== undefined && {
+          providerName: dto.providerName?.trim(),
+        }),
+        ...(dto.trainerName !== undefined && {
+          trainerName: dto.trainerName?.trim(),
+        }),
         ...(dto.trainerEmployeeId !== undefined && {
           trainerEmployeeId: dto.trainerEmployeeId,
         }),
-        ...(dto.venueOrLink !== undefined && { venueOrLink: dto.venueOrLink?.trim() }),
+        ...(dto.venueOrLink !== undefined && {
+          venueOrLink: dto.venueOrLink?.trim(),
+        }),
         ...(dto.startDate !== undefined && {
           startDate: dto.startDate ? new Date(dto.startDate) : null,
         }),
         ...(dto.endDate !== undefined && {
           endDate: dto.endDate ? new Date(dto.endDate) : null,
         }),
-        ...(dto.plannedHours !== undefined && { plannedHours: dto.plannedHours }),
+        ...(dto.plannedHours !== undefined && {
+          plannedHours: dto.plannedHours,
+        }),
         totalBudget,
         ...(dto.estimatedTravelCost !== undefined && {
           estimatedTravelCost: dto.estimatedTravelCost,
@@ -356,9 +384,10 @@ export class TrainingPlanService {
       const uniqueEmployeeIds = Array.from(new Set(dto.employeeIds));
       // Add missing ones
       for (const empId of uniqueEmployeeIds) {
-        const existingEnrollment = await this.prisma.trainingEnrollment.findFirst({
-          where: { planId: id, employeeId: empId },
-        });
+        const existingEnrollment =
+          await this.prisma.trainingEnrollment.findFirst({
+            where: { planId: id, employeeId: empId },
+          });
         if (!existingEnrollment) {
           await this.prisma.trainingEnrollment.create({
             data: {
@@ -389,7 +418,9 @@ export class TrainingPlanService {
   async submitForApproval(companyId: string, id: string, user: any) {
     const plan = await this.findOne(companyId, id);
     if (plan.status !== 'DRAFT') {
-      throw new BadRequestException('Only DRAFT training plans can be submitted');
+      throw new BadRequestException(
+        'Only DRAFT training plans can be submitted',
+      );
     }
 
     const updated = await this.prisma.trainingPlan.update({
@@ -441,8 +472,19 @@ export class TrainingPlanService {
   }
 
   // Workflow: Review (Approve / Reject / Request changes)
-  async review(companyId: string, id: string, user: any, dto: ReviewTrainingPlanDto) {
-    const authorizedReviewers = ['SUPER_ADMIN', 'OWNER', 'HR_HEAD', 'ADMIN', 'MANAGER'];
+  async review(
+    companyId: string,
+    id: string,
+    user: any,
+    dto: ReviewTrainingPlanDto,
+  ) {
+    const authorizedReviewers = [
+      'SUPER_ADMIN',
+      'OWNER',
+      'HR_HEAD',
+      'ADMIN',
+      'MANAGER',
+    ];
     if (!authorizedReviewers.includes(user?.role)) {
       throw new ForbiddenException(
         'Only managers and HR administrators are authorized to approve or reject training initiatives',
@@ -511,7 +553,13 @@ export class TrainingPlanService {
     user: any,
     status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
   ) {
-    const authorizedManagers = ['SUPER_ADMIN', 'OWNER', 'HR_HEAD', 'ADMIN', 'MANAGER'];
+    const authorizedManagers = [
+      'SUPER_ADMIN',
+      'OWNER',
+      'HR_HEAD',
+      'ADMIN',
+      'MANAGER',
+    ];
     if (!authorizedManagers.includes(user?.role)) {
       throw new ForbiddenException(
         'Only managers and HR administrators can update training execution status',

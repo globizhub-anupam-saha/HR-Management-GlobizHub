@@ -22,10 +22,14 @@ describe('EmployeeService - Directory Search, Filter & Resend Invite', () => {
         update: jest.fn(),
       },
       department: {
-        findMany: jest.fn().mockResolvedValue([{ id: 'dept-eng', name: 'Engineering' }]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 'dept-eng', name: 'Engineering' }]),
       },
       designation: {
-        findMany: jest.fn().mockResolvedValue([{ id: 'desig-dev', name: 'Developer' }]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 'desig-dev', name: 'Developer' }]),
       },
       onboardingCase: {
         create: jest.fn().mockResolvedValue({ id: 'case-1' }),
@@ -84,7 +88,9 @@ describe('EmployeeService - Directory Search, Filter & Resend Invite', () => {
     });
 
     it('filters by departmentId when provided', async () => {
-      await service.findAllByCompany(mockCompanyId, { departmentId: 'dept-eng' });
+      await service.findAllByCompany(mockCompanyId, {
+        departmentId: 'dept-eng',
+      });
 
       expect(prisma.employee.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -195,7 +201,11 @@ describe('EmployeeService - Directory Search, Filter & Resend Invite', () => {
         },
       ];
 
-      const res = await service.bulkImportEmployees(mockCompanyId, rows, 'admin-1');
+      const res = await service.bulkImportEmployees(
+        mockCompanyId,
+        rows,
+        'admin-1',
+      );
 
       expect(res.totalProcessed).toBe(1);
       expect(res.importedCount).toBe(1);
@@ -228,14 +238,20 @@ describe('EmployeeService - Directory Search, Filter & Resend Invite', () => {
     });
 
     it('skips existing emails and invalid rows', async () => {
-      prisma.employee.findMany.mockResolvedValue([{ email: 'existing@company.com' }]);
+      prisma.employee.findMany.mockResolvedValue([
+        { email: 'existing@company.com' },
+      ]);
 
       const rows = [
         { email: 'invalid-email', firstName: 'Bad' },
         { email: 'existing@company.com', firstName: 'Exists' },
       ];
 
-      const res = await service.bulkImportEmployees(mockCompanyId, rows, 'admin-1');
+      const res = await service.bulkImportEmployees(
+        mockCompanyId,
+        rows,
+        'admin-1',
+      );
 
       expect(res.totalProcessed).toBe(2);
       expect(res.importedCount).toBe(0);
@@ -245,4 +261,3 @@ describe('EmployeeService - Directory Search, Filter & Resend Invite', () => {
     });
   });
 });
-

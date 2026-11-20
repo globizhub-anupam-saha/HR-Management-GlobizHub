@@ -4,12 +4,12 @@ import { UpsertStatutoryRuleDto } from '../dto/statutory-rule.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export const DEFAULT_STATUTORY_RATES: Record<string, number> = {
-  EPF: 0.12,        // 12% employee share
-  EPS: 0.0833,      // 8.33% employer pension
-  EDLI: 0.005,      // 0.50% employer insurance
+  EPF: 0.12, // 12% employee share
+  EPS: 0.0833, // 8.33% employer pension
+  EDLI: 0.005, // 0.50% employer insurance
   EPF_ADMIN: 0.005, // 0.50% employer admin charges
-  ESI_EE: 0.0075,   // 0.75% employee ESI
-  ESI_ER: 0.0325,   // 3.25% employer ESI
+  ESI_EE: 0.0075, // 0.75% employee ESI
+  ESI_ER: 0.0325, // 3.25% employer ESI
 };
 
 @Injectable()
@@ -21,10 +21,7 @@ export class StatutoryRulesService {
       where: {
         establishmentId,
         effectiveFrom: { lte: asOfDate },
-        OR: [
-          { effectiveTo: null },
-          { effectiveTo: { gte: asOfDate } },
-        ],
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: asOfDate } }],
       },
     });
 
@@ -83,4 +80,3 @@ export class StatutoryRulesService {
     });
   }
 }
-

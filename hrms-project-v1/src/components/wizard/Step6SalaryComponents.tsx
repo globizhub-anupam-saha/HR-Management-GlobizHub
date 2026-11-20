@@ -34,7 +34,7 @@ const DEFAULT_COMPONENTS = [
 ];
 
 export default function Step6SalaryComponents() {
-  const { formData, updateFormData, nextStep } = useSetupWizardStore();
+  const { formData, updateFormData, nextStep, prevStep } = useSetupWizardStore();
 
   const form = useForm<z.infer<typeof step6Schema>>({
     resolver: zodResolver(step6Schema),
@@ -109,6 +109,9 @@ export default function Step6SalaryComponents() {
 
         {/* SUBMIT BUTTON */}
         <div className="pt-6 flex justify-end space-x-3">
+          <Button type="button" variant="outline" onClick={prevStep} className="border-slate-200 text-slate-600 hover:bg-slate-50">
+            Prev
+          </Button>
           <Button type="button" variant="outline" onClick={nextStep} className="border-slate-200 text-slate-500 hover:bg-slate-50">
             Skip Step
           </Button>

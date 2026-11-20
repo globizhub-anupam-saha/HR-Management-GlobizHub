@@ -70,4 +70,3 @@ describe('PlatformSupportService', () => {
     expect(res.message).toBe('We are investigating this right away.');
   });
 });
-

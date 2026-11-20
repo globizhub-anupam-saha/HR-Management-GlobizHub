@@ -37,7 +37,13 @@ export class PlatformBillingController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.billingService.getInvoices({ search, status, companyId, page, limit });
+    return this.billingService.getInvoices({
+      search,
+      status,
+      companyId,
+      page,
+      limit,
+    });
   }
 
   @Get('invoices/:id')
@@ -64,7 +70,12 @@ export class PlatformBillingController {
     @Body('status') status: InvoiceStatus,
     @CurrentPlatformUser() user: any,
   ) {
-    return this.billingService.updateInvoiceStatus(id, status, user.id, user.email);
+    return this.billingService.updateInvoiceStatus(
+      id,
+      status,
+      user.id,
+      user.email,
+    );
   }
 
   // Payments Ledger
@@ -133,9 +144,7 @@ export class PlatformBillingController {
 
   @Post('coupons/validate')
   @UseGuards(PlatformAuthGuard, PlatformRolesGuard)
-  async validateCoupon(
-    @Body() body: { code: string; amount: number },
-  ) {
+  async validateCoupon(@Body() body: { code: string; amount: number }) {
     return this.billingService.validateCoupon(body.code, body.amount);
   }
 
@@ -148,7 +157,8 @@ export class PlatformBillingController {
     @Headers('x-webhook-signature') webhookSignature?: string,
     @Headers('x-idempotency-key') idempotencyHeader?: string,
   ) {
-    const secret = process.env.STRIPE_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
+    const secret =
+      process.env.STRIPE_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
     const isProduction = process.env.NODE_ENV === 'production';
     const signature = stripeSignature || webhookSignature;
 
@@ -156,22 +166,30 @@ export class PlatformBillingController {
       if (!signature) {
         throw new UnauthorizedException('Missing webhook signature header');
       }
-      const rawPayload = typeof payload === 'string' ? payload : JSON.stringify(payload);
-      const isValid = this.billingService.verifyWebhookSignature(rawPayload, signature, secret);
+      const rawPayload =
+        typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const isValid = this.billingService.verifyWebhookSignature(
+        rawPayload,
+        signature,
+        secret,
+      );
       if (!isValid) {
         throw new UnauthorizedException('Invalid webhook signature');
       }
     } else if (isProduction) {
-      throw new UnauthorizedException('Webhook secret not configured on server');
+      throw new UnauthorizedException(
+        'Webhook secret not configured on server',
+      );
     }
 
     const key = idempotencyHeader || payload?.id;
     if (!key) {
-      throw new BadRequestException('Webhook requires a unique event ID or x-idempotency-key');
+      throw new BadRequestException(
+        'Webhook requires a unique event ID or x-idempotency-key',
+      );
     }
 
     const eventType = payload?.type || payload?.event || 'payment.succeeded';
     return this.billingService.handleWebhook(payload, eventType, key);
   }
 }
-

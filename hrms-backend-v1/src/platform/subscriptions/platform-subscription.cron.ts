@@ -32,26 +32,30 @@ export class PlatformSubscriptionCron {
           data: { status: 'EXPIRED' },
         });
 
-        await this.prisma.platformAuditLog.create({
-          data: {
-            actorId: null,
-            actorEmail: 'system@antigravity.saas',
-            actorRole: 'SUPER_ADMIN',
-            action: 'SUBSCRIPTION_EXPIRED',
-            targetEntity: 'Subscription',
-            targetId: sub.id,
-            companyId: sub.companyId,
-            reason: 'Free Trial period expired without upgrade',
-            afterState: {
-              companyName: sub.company.name,
-              expiredAt: now.toISOString(),
+        await this.prisma.platformAuditLog
+          .create({
+            data: {
+              actorId: null,
+              actorEmail: 'system@antigravity.saas',
+              actorRole: 'SUPER_ADMIN',
+              action: 'SUBSCRIPTION_EXPIRED',
+              targetEntity: 'Subscription',
+              targetId: sub.id,
+              companyId: sub.companyId,
+              reason: 'Free Trial period expired without upgrade',
+              afterState: {
+                companyName: sub.company.name,
+                expiredAt: now.toISOString(),
+              },
             },
-          },
-        }).catch(() => {});
+          })
+          .catch(() => {});
       }
 
       if (expiredTrials.length > 0) {
-        this.logger.log(`Marked ${expiredTrials.length} trial subscription(s) as EXPIRED.`);
+        this.logger.log(
+          `Marked ${expiredTrials.length} trial subscription(s) as EXPIRED.`,
+        );
       }
 
       // 2. Mark active subscriptions past currentPeriodEnd as PAST_DUE
@@ -69,31 +73,40 @@ export class PlatformSubscriptionCron {
           data: { status: 'PAST_DUE' },
         });
 
-        await this.prisma.platformAuditLog.create({
-          data: {
-            actorId: null,
-            actorEmail: 'system@antigravity.saas',
-            actorRole: 'SUPER_ADMIN',
-            action: 'SUBSCRIPTION_OVERDUE',
-            targetEntity: 'Subscription',
-            targetId: sub.id,
-            companyId: sub.companyId,
-            reason: 'Subscription period ended without renewal payment',
-            afterState: {
-              companyName: sub.company.name,
-              flaggedAt: now.toISOString(),
+        await this.prisma.platformAuditLog
+          .create({
+            data: {
+              actorId: null,
+              actorEmail: 'system@antigravity.saas',
+              actorRole: 'SUPER_ADMIN',
+              action: 'SUBSCRIPTION_OVERDUE',
+              targetEntity: 'Subscription',
+              targetId: sub.id,
+              companyId: sub.companyId,
+              reason: 'Subscription period ended without renewal payment',
+              afterState: {
+                companyName: sub.company.name,
+                flaggedAt: now.toISOString(),
+              },
             },
-          },
-        }).catch(() => {});
+          })
+          .catch(() => {});
       }
 
       if (overdueSubs.length > 0) {
-        this.logger.log(`Marked ${overdueSubs.length} active subscription(s) as PAST_DUE.`);
+        this.logger.log(
+          `Marked ${overdueSubs.length} active subscription(s) as PAST_DUE.`,
+        );
       }
 
-      this.logger.log('Daily subscription lifecycle job completed successfully.');
+      this.logger.log(
+        'Daily subscription lifecycle job completed successfully.',
+      );
     } catch (err: any) {
-      this.logger.error(`Error during subscription lifecycle cron: ${err?.message}`, err?.stack);
+      this.logger.error(
+        `Error during subscription lifecycle cron: ${err?.message}`,
+        err?.stack,
+      );
     }
   }
 }

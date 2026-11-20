@@ -98,7 +98,11 @@ export class PermissionsGuard implements CanActivate {
         if (moduleKey === 'leaves') moduleKey = 'leave';
 
         // Managers can view and edit attendance, leave, tasks, schedules, employees
-        if (['employees', 'attendance', 'leave', 'tasks', 'schedules'].includes(moduleKey)) {
+        if (
+          ['employees', 'attendance', 'leave', 'tasks', 'schedules'].includes(
+            moduleKey,
+          )
+        ) {
           return action === 'view' || action === 'edit' || action === 'manage';
         }
       }

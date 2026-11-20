@@ -1,4 +1,11 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { PlatformRoleType } from '../../../../generated/prisma/enums';
 
 export class PlatformRegisterDto {
@@ -23,4 +30,3 @@ export class PlatformRegisterDto {
   @IsOptional()
   role?: PlatformRoleType;
 }
-

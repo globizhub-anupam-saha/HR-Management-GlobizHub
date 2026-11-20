@@ -66,4 +66,3 @@ export class SupportController {
     return this.supportService.getTicketStats(req.user.companyId);
   }
 }
-

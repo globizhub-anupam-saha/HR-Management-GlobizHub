@@ -86,11 +86,7 @@ export class CredentialController {
     @Param('id') id: string,
     @Body() dto: UpdateCredentialDto,
   ) {
-    return this.credentialService.updateCredential(
-      req.user.companyId,
-      id,
-      dto,
-    );
+    return this.credentialService.updateCredential(req.user.companyId, id, dto);
   }
 
   @Patch(':id/verify')
@@ -114,4 +110,3 @@ export class CredentialController {
     return this.credentialService.deleteCredential(req.user.companyId, id);
   }
 }
-

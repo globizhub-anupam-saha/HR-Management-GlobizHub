@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { CreateEstablishmentDto, UpdateEstablishmentDto } from '../dto/establishment.dto';
+import {
+  CreateEstablishmentDto,
+  UpdateEstablishmentDto,
+} from '../dto/establishment.dto';
 import { UpsertEmployeeStatutoryProfileDto } from '../dto/employee-statutory-profile.dto';
 
 @Injectable()
@@ -47,12 +50,18 @@ export class StatutoryEstablishmentService {
         epfoEstablishmentCode: dto.epfoEstablishmentCode,
         epfoExtension: dto.epfoExtension,
         esicEmployerCode: dto.esicEmployerCode,
-        registrationDate: dto.registrationDate ? new Date(dto.registrationDate) : null,
+        registrationDate: dto.registrationDate
+          ? new Date(dto.registrationDate)
+          : null,
       },
     });
   }
 
-  async updateEstablishment(companyId: string, id: string, dto: UpdateEstablishmentDto) {
+  async updateEstablishment(
+    companyId: string,
+    id: string,
+    dto: UpdateEstablishmentDto,
+  ) {
     const exists = await this.prisma.statutoryEstablishment.findFirst({
       where: { id, companyId },
     });
@@ -67,12 +76,17 @@ export class StatutoryEstablishmentService {
         epfoEstablishmentCode: dto.epfoEstablishmentCode,
         epfoExtension: dto.epfoExtension,
         esicEmployerCode: dto.esicEmployerCode,
-        registrationDate: dto.registrationDate ? new Date(dto.registrationDate) : undefined,
+        registrationDate: dto.registrationDate
+          ? new Date(dto.registrationDate)
+          : undefined,
       },
     });
   }
 
-  async upsertEmployeeProfile(companyId: string, dto: UpsertEmployeeStatutoryProfileDto) {
+  async upsertEmployeeProfile(
+    companyId: string,
+    dto: UpsertEmployeeStatutoryProfileDto,
+  ) {
     // Validate establishment belongs to company
     const establishment = await this.prisma.statutoryEstablishment.findFirst({
       where: { id: dto.establishmentId, companyId },
@@ -89,7 +103,9 @@ export class StatutoryEstablishmentService {
       throw new NotFoundException('Employee not found');
     }
 
-    const effectiveFrom = dto.effectiveFrom ? new Date(dto.effectiveFrom) : new Date();
+    const effectiveFrom = dto.effectiveFrom
+      ? new Date(dto.effectiveFrom)
+      : new Date();
     const effectiveTo = dto.effectiveTo ? new Date(dto.effectiveTo) : null;
 
     return this.prisma.employeeStatutoryProfile.upsert({
@@ -142,4 +158,3 @@ export class StatutoryEstablishmentService {
     });
   }
 }
-

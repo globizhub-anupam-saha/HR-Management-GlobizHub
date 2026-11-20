@@ -44,4 +44,3 @@ export class BulkImportEmployeesDto {
   @Type(() => BulkImportEmployeeRowDto)
   employees: BulkImportEmployeeRowDto[];
 }
-

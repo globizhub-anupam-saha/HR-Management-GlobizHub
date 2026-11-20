@@ -7,7 +7,8 @@ export class TrainingSequenceService {
 
   async getNextCode(
     companyId: string,
-    entityType: 'TRAINING_PLAN' | 'TRAINING_PROGRAM' | 'POSITION_CHANGE' | 'COMPETENCY',
+    entityType:
+      'TRAINING_PLAN' | 'TRAINING_PROGRAM' | 'POSITION_CHANGE' | 'COMPETENCY',
     prefix: string,
   ): Promise<string> {
     const year = new Date().getFullYear();

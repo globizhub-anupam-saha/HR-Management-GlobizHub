@@ -80,7 +80,8 @@ export class TrainingPlanController {
   async updateStatus(
     @Request() req,
     @Param('id') id: string,
-    @Body('status') status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+    @Body('status')
+    status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
   ) {
     return this.service.updateStatus(req.user.companyId, id, req.user, status);
   }

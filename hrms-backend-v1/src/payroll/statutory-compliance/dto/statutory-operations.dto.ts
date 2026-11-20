@@ -104,4 +104,3 @@ export class RecordStatutoryPaymentDto {
   @IsNotEmpty()
   receiptPath: string; // Uploaded receipt PDF
 }
-

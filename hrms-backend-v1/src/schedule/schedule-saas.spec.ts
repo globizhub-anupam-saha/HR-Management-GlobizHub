@@ -75,8 +75,18 @@ describe('ScheduleService - Enterprise SaaS Features', () => {
         directReports: [],
       });
       prisma.employee.findMany.mockResolvedValue([
-        { id: 'emp-1', departmentId: mockDeptId, firstName: 'John', lastName: 'Doe' },
-        { id: 'emp-2', departmentId: 'dept-sales', firstName: 'Jane', lastName: 'Smith' },
+        {
+          id: 'emp-1',
+          departmentId: mockDeptId,
+          firstName: 'John',
+          lastName: 'Doe',
+        },
+        {
+          id: 'emp-2',
+          departmentId: 'dept-sales',
+          firstName: 'Jane',
+          lastName: 'Smith',
+        },
       ]);
 
       await expect(
@@ -96,8 +106,18 @@ describe('ScheduleService - Enterprise SaaS Features', () => {
         directReports: [{ id: 'emp-2' }],
       });
       prisma.employee.findMany.mockResolvedValue([
-        { id: 'emp-1', departmentId: mockDeptId, firstName: 'John', lastName: 'Doe' },
-        { id: 'emp-2', departmentId: 'dept-sales', firstName: 'Jane', lastName: 'Smith' },
+        {
+          id: 'emp-1',
+          departmentId: mockDeptId,
+          firstName: 'John',
+          lastName: 'Doe',
+        },
+        {
+          id: 'emp-2',
+          departmentId: 'dept-sales',
+          firstName: 'Jane',
+          lastName: 'Smith',
+        },
       ]);
 
       await expect(

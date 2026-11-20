@@ -53,7 +53,12 @@ export class PlatformUsersController {
     @Body('role') role: PlatformRoleType,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.usersService.updateRole(id, role, currentUser.id, currentUser.email);
+    return this.usersService.updateRole(
+      id,
+      role,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Put(':id/status')
@@ -63,7 +68,12 @@ export class PlatformUsersController {
     @Body('isActive') isActive: boolean,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.usersService.toggleActive(id, isActive, currentUser.id, currentUser.email);
+    return this.usersService.toggleActive(
+      id,
+      isActive,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Put(':id/password')
@@ -73,7 +83,12 @@ export class PlatformUsersController {
     @Body('password') password: string,
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.usersService.updatePassword(id, password, currentUser.id, currentUser.email);
+    return this.usersService.updatePassword(
+      id,
+      password,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 
   @Put(':id/profile')
@@ -83,7 +98,11 @@ export class PlatformUsersController {
     @Body() dto: { email?: string; firstName?: string; lastName?: string },
     @CurrentPlatformUser() currentUser: any,
   ) {
-    return this.usersService.updateProfile(id, dto, currentUser.id, currentUser.email);
+    return this.usersService.updateProfile(
+      id,
+      dto,
+      currentUser.id,
+      currentUser.email,
+    );
   }
 }
-

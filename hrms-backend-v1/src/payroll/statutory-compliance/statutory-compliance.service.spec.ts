@@ -35,7 +35,7 @@ describe('StatutoryCompliance Services', () => {
       expect(result.edliWages).toBe(15000);
       expect(result.eeEpfShare).toBe(1800); // 12% of 15,000
       expect(result.erEpsShare).toBe(1250); // 8.33% capped at 1,250
-      expect(result.erEpfDiff).toBe(550);   // 1800 - 1250
+      expect(result.erEpfDiff).toBe(550); // 1800 - 1250
       expect(result.ncpDays).toBe(2);
     });
 
@@ -78,7 +78,9 @@ describe('StatutoryCompliance Services', () => {
 
       const ecr = epfoGenerator.generateEcrText(records);
 
-      expect(ecr.content).toContain('100123456789#~#Rahul Sharma#~#45000#~#15000#~#15000#~#15000#~#1800#~#1250#~#550#~#2#~#0');
+      expect(ecr.content).toContain(
+        '100123456789#~#Rahul Sharma#~#45000#~#15000#~#15000#~#15000#~#1800#~#1250#~#550#~#2#~#0',
+      );
       expect(ecr.memberCount).toBe(1);
       expect(ecr.totalAdminCharges).toBe(500); // Minimum 500
       expect(ecr.totalEdliContribution).toBe(75); // 0.5% of 15,000
@@ -135,11 +137,12 @@ describe('StatutoryCompliance Services', () => {
 
       const esicFile = esicGenerator.generateEsicContributionFile(records);
 
-      expect(esicFile.content).toContain('IP Number,IP Name,No of Days for which wages paid');
+      expect(esicFile.content).toContain(
+        'IP Number,IP Name,No of Days for which wages paid',
+      );
       expect(esicFile.content).toContain('1122334455,Pooja Verma,28,18000,0,');
       expect(esicFile.totalWages).toBe(18000);
       expect(esicFile.grandTotal).toBe(720);
     });
   });
 });
-

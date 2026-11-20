@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import {
@@ -60,7 +64,11 @@ export class CompetencyService {
     return competency;
   }
 
-  async createCompetency(companyId: string, user: any, dto: CreateCompetencyDto) {
+  async createCompetency(
+    companyId: string,
+    user: any,
+    dto: CreateCompetencyDto,
+  ) {
     const existing = await this.prisma.competency.findFirst({
       where: { companyId, code: dto.code.trim().toUpperCase() },
     });
@@ -94,7 +102,12 @@ export class CompetencyService {
     return created;
   }
 
-  async updateCompetency(companyId: string, id: string, user: any, dto: UpdateCompetencyDto) {
+  async updateCompetency(
+    companyId: string,
+    id: string,
+    user: any,
+    dto: UpdateCompetencyDto,
+  ) {
     const existing = await this.findOneCompetency(companyId, id);
 
     if (dto.code && dto.code.trim().toUpperCase() !== existing.code) {
@@ -106,7 +119,9 @@ export class CompetencyService {
         },
       });
       if (codeCheck) {
-        throw new ConflictException(`Competency code ${dto.code} already exists`);
+        throw new ConflictException(
+          `Competency code ${dto.code} already exists`,
+        );
       }
     }
 
@@ -116,7 +131,9 @@ export class CompetencyService {
         ...(dto.name && { name: dto.name.trim() }),
         ...(dto.code && { code: dto.code.trim().toUpperCase() }),
         ...(dto.category && { category: dto.category.trim() }),
-        ...(dto.description !== undefined && { description: dto.description?.trim() }),
+        ...(dto.description !== undefined && {
+          description: dto.description?.trim(),
+        }),
         ...(dto.proficiencyScale && { proficiencyScale: dto.proficiencyScale }),
         ...(dto.assessmentMethod && { assessmentMethod: dto.assessmentMethod }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -148,7 +165,11 @@ export class CompetencyService {
     });
   }
 
-  async setJobPositionCompetency(companyId: string, user: any, dto: SetJobPositionCompetencyDto) {
+  async setJobPositionCompetency(
+    companyId: string,
+    user: any,
+    dto: SetJobPositionCompetencyDto,
+  ) {
     // Validate designation exists
     const designation = await this.prisma.designation.findFirst({
       where: { id: dto.designationId, companyId },
@@ -202,7 +223,11 @@ export class CompetencyService {
     return record;
   }
 
-  async removeJobPositionCompetency(companyId: string, designationId: string, competencyId: string) {
+  async removeJobPositionCompetency(
+    companyId: string,
+    designationId: string,
+    competencyId: string,
+  ) {
     return this.prisma.jobPositionCompetency.deleteMany({
       where: { companyId, designationId, competencyId },
     });
@@ -222,7 +247,11 @@ export class CompetencyService {
     });
   }
 
-  async assessEmployeeCompetency(companyId: string, user: any, dto: AssessEmployeeCompetencyDto) {
+  async assessEmployeeCompetency(
+    companyId: string,
+    user: any,
+    dto: AssessEmployeeCompetencyDto,
+  ) {
     const employee = await this.prisma.employee.findFirst({
       where: { id: dto.employeeId, companyId },
     });
@@ -253,7 +282,9 @@ export class CompetencyService {
         currentLevel: dto.currentLevel,
         assessedById,
         assessmentDate: new Date(),
-        nextReviewDate: dto.nextReviewDate ? new Date(dto.nextReviewDate) : null,
+        nextReviewDate: dto.nextReviewDate
+          ? new Date(dto.nextReviewDate)
+          : null,
         evidenceUrl: dto.evidenceUrl,
         verificationStatus: dto.verificationStatus || 'VERIFIED',
         notes: dto.notes,
@@ -262,8 +293,11 @@ export class CompetencyService {
         currentLevel: dto.currentLevel,
         assessedById,
         assessmentDate: new Date(),
-        nextReviewDate: dto.nextReviewDate ? new Date(dto.nextReviewDate) : null,
-        evidenceUrl: dto.evidenceUrl !== undefined ? dto.evidenceUrl : undefined,
+        nextReviewDate: dto.nextReviewDate
+          ? new Date(dto.nextReviewDate)
+          : null,
+        evidenceUrl:
+          dto.evidenceUrl !== undefined ? dto.evidenceUrl : undefined,
         verificationStatus: dto.verificationStatus || 'VERIFIED',
         notes: dto.notes !== undefined ? dto.notes : undefined,
       },
@@ -341,7 +375,8 @@ export class CompetencyService {
         },
         targetDesignation: designation?.name || 'Unassigned',
         targetDesignationId: designation?.id,
-        isTargetRole: targetDesignationId && targetDesignationId !== employee.designationId,
+        isTargetRole:
+          targetDesignationId && targetDesignationId !== employee.designationId,
         readinessPercentage: null,
         hasRequirements: false,
         totalRequirements: 0,
@@ -373,7 +408,9 @@ export class CompetencyService {
     for (const req of requirements) {
       const requiredRank = PROFICIENCY_RANK[req.requiredLevel] || 2;
       const currentLevel = currentMap.get(req.competencyId);
-      const currentRank = currentLevel ? PROFICIENCY_RANK[currentLevel] || 0 : 0;
+      const currentRank = currentLevel
+        ? PROFICIENCY_RANK[currentLevel] || 0
+        : 0;
       const weight = req.isMandatory ? 2 : 1;
 
       totalRequiredWeight += weight * requiredRank;
@@ -412,18 +449,19 @@ export class CompetencyService {
     const gapCompetencyIds = gaps.map((g) => g.competencyId);
     let recommendedPrograms: any[] = [];
     if (gapCompetencyIds.length > 0) {
-      const programCompetencies = await this.prisma.trainingProgramCompetency.findMany({
-        where: {
-          competencyId: { in: gapCompetencyIds },
-          program: { companyId, status: 'PUBLISHED' },
-        },
-        include: {
-          program: {
-            include: { category: true },
+      const programCompetencies =
+        await this.prisma.trainingProgramCompetency.findMany({
+          where: {
+            competencyId: { in: gapCompetencyIds },
+            program: { companyId, status: 'PUBLISHED' },
           },
-          competency: true,
-        },
-      });
+          include: {
+            program: {
+              include: { category: true },
+            },
+            competency: true,
+          },
+        });
 
       const progMap = new Map<string, any>();
       for (const pc of programCompetencies) {
@@ -433,7 +471,9 @@ export class CompetencyService {
             addressesCompetencies: [pc.competency.name],
           });
         } else {
-          progMap.get(pc.programId).addressesCompetencies.push(pc.competency.name);
+          progMap
+            .get(pc.programId)
+            .addressesCompetencies.push(pc.competency.name);
         }
       }
       recommendedPrograms = Array.from(progMap.values());
@@ -448,7 +488,8 @@ export class CompetencyService {
       },
       targetDesignation: designation?.name || 'Unassigned',
       targetDesignationId: designation?.id,
-      isTargetRole: targetDesignationId && targetDesignationId !== employee.designationId,
+      isTargetRole:
+        targetDesignationId && targetDesignationId !== employee.designationId,
       readinessPercentage,
       hasRequirements: true,
       totalRequirements: requirements.length,
@@ -462,12 +503,48 @@ export class CompetencyService {
 
   async seedDefaultCompetencies(companyId: string, user: any) {
     const defaults = [
-      { name: 'Data Security & Privacy (GDPR/HIPAA)', code: 'COMP-SEC-01', category: 'Compliance', proficiencyScale: 'STANDARD', assessmentMethod: 'WRITTEN_EXAM' },
-      { name: 'Standard Operating Procedures & Quality Audit', code: 'COMP-QA-01', category: 'Quality', proficiencyScale: 'STANDARD', assessmentMethod: 'SUPERVISOR_EVAL' },
-      { name: 'Workplace Safety & Hazard Protocol', code: 'COMP-SAFE-01', category: 'Safety', proficiencyScale: 'STANDARD', assessmentMethod: 'PRACTICAL_DEMO' },
-      { name: 'Problem Solving & Critical Thinking', code: 'COMP-LEAD-01', category: 'Leadership', proficiencyScale: 'STANDARD', assessmentMethod: 'SUPERVISOR_EVAL' },
-      { name: 'System Architecture & Engineering Standards', code: 'COMP-ENG-01', category: 'Technical', proficiencyScale: 'STANDARD', assessmentMethod: 'PRACTICAL_DEMO' },
-      { name: 'Customer Communication & Incident Management', code: 'COMP-OPS-01', category: 'Operational', proficiencyScale: 'STANDARD', assessmentMethod: 'SUPERVISOR_EVAL' },
+      {
+        name: 'Data Security & Privacy (GDPR/HIPAA)',
+        code: 'COMP-SEC-01',
+        category: 'Compliance',
+        proficiencyScale: 'STANDARD',
+        assessmentMethod: 'WRITTEN_EXAM',
+      },
+      {
+        name: 'Standard Operating Procedures & Quality Audit',
+        code: 'COMP-QA-01',
+        category: 'Quality',
+        proficiencyScale: 'STANDARD',
+        assessmentMethod: 'SUPERVISOR_EVAL',
+      },
+      {
+        name: 'Workplace Safety & Hazard Protocol',
+        code: 'COMP-SAFE-01',
+        category: 'Safety',
+        proficiencyScale: 'STANDARD',
+        assessmentMethod: 'PRACTICAL_DEMO',
+      },
+      {
+        name: 'Problem Solving & Critical Thinking',
+        code: 'COMP-LEAD-01',
+        category: 'Leadership',
+        proficiencyScale: 'STANDARD',
+        assessmentMethod: 'SUPERVISOR_EVAL',
+      },
+      {
+        name: 'System Architecture & Engineering Standards',
+        code: 'COMP-ENG-01',
+        category: 'Technical',
+        proficiencyScale: 'STANDARD',
+        assessmentMethod: 'PRACTICAL_DEMO',
+      },
+      {
+        name: 'Customer Communication & Incident Management',
+        code: 'COMP-OPS-01',
+        category: 'Operational',
+        proficiencyScale: 'STANDARD',
+        assessmentMethod: 'SUPERVISOR_EVAL',
+      },
     ];
 
     const results: any[] = [];
@@ -496,12 +573,14 @@ export class CompetencyService {
     const designations = await this.prisma.designation.findMany({
       where: { companyId },
     });
-    if (designations.length === 0) return { message: 'No designations found to map' };
+    if (designations.length === 0)
+      return { message: 'No designations found to map' };
 
     const competencies = await this.prisma.competency.findMany({
       where: { companyId },
     });
-    if (competencies.length === 0) return { message: 'No competencies found to map' };
+    if (competencies.length === 0)
+      return { message: 'No competencies found to map' };
 
     const compMap = new Map<string, string>();
     for (const c of competencies) {
@@ -518,7 +597,8 @@ export class CompetencyService {
 
     for (const desig of designations) {
       const dName = desig.name.toLowerCase();
-      const toAdd: { compId?: string; level: string; mandatory: boolean }[] = [];
+      const toAdd: { compId?: string; level: string; mandatory: boolean }[] =
+        [];
 
       if (dName.includes('intern') || dName.includes('trainee')) {
         toAdd.push({ compId: secId, level: 'BEGINNER', mandatory: true });
@@ -532,7 +612,11 @@ export class CompetencyService {
         toAdd.push({ compId: secId, level: 'ADVANCED', mandatory: true });
         toAdd.push({ compId: leadId, level: 'INTERMEDIATE', mandatory: true });
         toAdd.push({ compId: qaId, level: 'INTERMEDIATE', mandatory: false });
-      } else if (dName.includes('lead') || dName.includes('principal') || dName.includes('staff')) {
+      } else if (
+        dName.includes('lead') ||
+        dName.includes('principal') ||
+        dName.includes('staff')
+      ) {
         toAdd.push({ compId: engId, level: 'EXPERT', mandatory: true });
         toAdd.push({ compId: leadId, level: 'ADVANCED', mandatory: true });
         toAdd.push({ compId: qaId, level: 'ADVANCED', mandatory: true });
