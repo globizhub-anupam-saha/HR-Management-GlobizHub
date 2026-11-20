@@ -86,8 +86,17 @@ class SplashViewController: UIViewController {
         guard !hasNavigated else { return }
         hasNavigated = true
 
-        let nextVC: UIViewController
-        if AuthService.shared.isLoggedIn {
+        if let idx = ProcessInfo.processInfo.arguments.firstIndex(of: "-testRole"), idx + 1 < ProcessInfo.processInfo.arguments.count {
+            let roleArg = ProcessInfo.processInfo.arguments[idx + 1]
+            AuthService.shared.saveRole(roleArg)
+        }
+
+        var nextVC: UIViewController
+        if ProcessInfo.processInfo.arguments.contains("-testRouteMore") {
+            nextVC = MoreViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteSettings") {
+            nextVC = SettingsViewController()
+        } else if AuthService.shared.isLoggedIn {
             nextVC = HomeViewController()
         } else if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
             nextVC = SignInViewController()
