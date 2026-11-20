@@ -24,6 +24,12 @@ class SignInViewController: UIViewController {
         return cv
     }()
 
+    private let formWrapperView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     private let logoImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
@@ -344,44 +350,41 @@ class SignInViewController: UIViewController {
     private func setupLayout() {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
+        contentView.addSubview(formWrapperView)
 
-        contentView.addSubview(logoImageView)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(subtitleLabel)
+        formWrapperView.addSubview(logoImageView)
+        formWrapperView.addSubview(titleLabel)
+        formWrapperView.addSubview(subtitleLabel)
 
         // Work Email
-        contentView.addSubview(workEmailLabel)
-        contentView.addSubview(emailContainerView)
+        formWrapperView.addSubview(workEmailLabel)
+        formWrapperView.addSubview(emailContainerView)
         emailContainerView.addSubview(emailIconImageView)
         emailContainerView.addSubview(emailTextField)
 
         // Password
-        contentView.addSubview(passwordLabel)
-        contentView.addSubview(passwordContainerView)
+        formWrapperView.addSubview(passwordLabel)
+        formWrapperView.addSubview(passwordContainerView)
         passwordContainerView.addSubview(lockIconImageView)
         passwordContainerView.addSubview(passwordTextField)
         passwordContainerView.addSubview(passwordToggleBtn)
 
         // Utility Row
-        contentView.addSubview(rememberContainer)
+        formWrapperView.addSubview(rememberContainer)
         rememberContainer.addSubview(rememberCheckboxBtn)
         rememberContainer.addSubview(rememberDeviceLabel)
-        contentView.addSubview(forgotPasswordButton)
+        formWrapperView.addSubview(forgotPasswordButton)
 
         // Sign In Button
-        contentView.addSubview(signInButton)
+        formWrapperView.addSubview(signInButton)
         signInButton.addSubview(signInButtonStack)
         signInButtonStack.addArrangedSubview(signInButtonLabel)
         signInButtonStack.addArrangedSubview(signInButtonArrow)
         signInButton.addSubview(signInSpinner)
 
-        contentView.addSubview(footerLabel)
+        formWrapperView.addSubview(footerLabel)
 
         let safeArea = view.safeAreaLayoutGuide
-
-        let contentWidth = contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
-        contentWidth.priority = UILayoutPriority(999)
-        contentWidth.isActive = true
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
@@ -394,33 +397,41 @@ class SignInViewController: UIViewController {
             contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             contentView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            contentView.widthAnchor.constraint(lessThanOrEqualToConstant: 500),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            // Form Wrapper - Centered Vertically & Horizontally
+            formWrapperView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            formWrapperView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 24),
+            formWrapperView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -24),
+            formWrapperView.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
+            formWrapperView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 24),
+            formWrapperView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -24),
 
             // Logo
-            logoImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 40),
-            logoImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            logoImageView.topAnchor.constraint(equalTo: formWrapperView.topAnchor),
+            logoImageView.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
             logoImageView.widthAnchor.constraint(equalToConstant: 72),
             logoImageView.heightAnchor.constraint(equalToConstant: 56),
 
             // Title: Sign in
             titleLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 28),
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            titleLabel.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
 
             // Subtitle: to access GlobizHR
             subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
-            subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            subtitleLabel.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            subtitleLabel.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
 
             // Label: Work Email
             workEmailLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 28),
-            workEmailLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            workEmailLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            workEmailLabel.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            workEmailLabel.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
 
             // Container: Work Email
             emailContainerView.topAnchor.constraint(equalTo: workEmailLabel.bottomAnchor, constant: 8),
-            emailContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            emailContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            emailContainerView.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            emailContainerView.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
             emailContainerView.heightAnchor.constraint(equalToConstant: 52),
 
             emailIconImageView.leadingAnchor.constraint(equalTo: emailContainerView.leadingAnchor, constant: 16),
@@ -435,13 +446,13 @@ class SignInViewController: UIViewController {
 
             // Label: Password
             passwordLabel.topAnchor.constraint(equalTo: emailContainerView.bottomAnchor, constant: 18),
-            passwordLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            passwordLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            passwordLabel.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            passwordLabel.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
 
             // Container: Password
             passwordContainerView.topAnchor.constraint(equalTo: passwordLabel.bottomAnchor, constant: 8),
-            passwordContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            passwordContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            passwordContainerView.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            passwordContainerView.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
             passwordContainerView.heightAnchor.constraint(equalToConstant: 52),
 
             lockIconImageView.leadingAnchor.constraint(equalTo: passwordContainerView.leadingAnchor, constant: 16),
@@ -461,7 +472,7 @@ class SignInViewController: UIViewController {
 
             // Utility Row: Remember device & Forgot password
             rememberContainer.topAnchor.constraint(equalTo: passwordContainerView.bottomAnchor, constant: 16),
-            rememberContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            rememberContainer.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
             rememberContainer.heightAnchor.constraint(equalToConstant: 28),
 
             rememberCheckboxBtn.leadingAnchor.constraint(equalTo: rememberContainer.leadingAnchor),
@@ -474,12 +485,12 @@ class SignInViewController: UIViewController {
             rememberDeviceLabel.trailingAnchor.constraint(equalTo: rememberContainer.trailingAnchor),
 
             forgotPasswordButton.centerYAnchor.constraint(equalTo: rememberContainer.centerYAnchor),
-            forgotPasswordButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            forgotPasswordButton.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
 
             // Sign In Button
             signInButton.topAnchor.constraint(equalTo: rememberContainer.bottomAnchor, constant: 24),
-            signInButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            signInButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            signInButton.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            signInButton.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
             signInButton.heightAnchor.constraint(equalToConstant: 52),
 
             signInButtonStack.centerXAnchor.constraint(equalTo: signInButton.centerXAnchor),
@@ -490,9 +501,29 @@ class SignInViewController: UIViewController {
 
             // Footer
             footerLabel.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 28),
-            footerLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            footerLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -24)
+            footerLabel.centerXAnchor.constraint(equalTo: formWrapperView.centerXAnchor),
+            footerLabel.bottomAnchor.constraint(equalTo: formWrapperView.bottomAnchor)
         ])
+
+        let centerY = formWrapperView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        centerY.priority = UILayoutPriority(750)
+        centerY.isActive = true
+
+        let minHeight = contentView.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.frameLayoutGuide.heightAnchor)
+        minHeight.priority = UILayoutPriority(999)
+        minHeight.isActive = true
+
+        let topChain = formWrapperView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24)
+        topChain.priority = UILayoutPriority(250)
+        topChain.isActive = true
+
+        let bottomChain = formWrapperView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
+        bottomChain.priority = UILayoutPriority(250)
+        bottomChain.isActive = true
+
+        let formWidthFill = formWrapperView.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -48)
+        formWidthFill.priority = UILayoutPriority(900)
+        formWidthFill.isActive = true
     }
 
     @objc private func didTapSignIn() {

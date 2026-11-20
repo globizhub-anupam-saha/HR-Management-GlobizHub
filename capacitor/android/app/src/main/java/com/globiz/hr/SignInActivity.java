@@ -44,6 +44,10 @@ public class SignInActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        }
         setContentView(R.layout.activity_signin);
         TabletHelper.applyTabletConstraint(findViewById(R.id.signInContentContainer), TabletHelper.AUTH_MAX_WIDTH_DP);
 

@@ -627,13 +627,14 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
             scrollView.topAnchor.constraint(equalTo: fixedHeaderView.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            contentView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            contentView.widthAnchor.constraint(lessThanOrEqualToConstant: 540),
 
             // Title & Top Back Button
             titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
@@ -649,6 +650,10 @@ class SignUpViewController: UIViewController, UITextFieldDelegate {
             stepContainersStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
             stepContainersStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32)
         ])
+
+        let contentFillWidth = contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        contentFillWidth.priority = UILayoutPriority(900)
+        contentFillWidth.isActive = true
     }
 
     private func setupStep1A() {

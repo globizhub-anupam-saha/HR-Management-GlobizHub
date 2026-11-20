@@ -33,6 +33,10 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        }
         setContentView(R.layout.activity_forgot_password);
         TabletHelper.applyTabletConstraint(findViewById(R.id.forgotContentContainer), TabletHelper.AUTH_MAX_WIDTH_DP);
 

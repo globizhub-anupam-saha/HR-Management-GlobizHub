@@ -19,6 +19,12 @@ class ForgotPasswordViewController: UIViewController {
         return cv
     }()
 
+    private let formWrapperView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     private let logoImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
@@ -253,10 +259,11 @@ class ForgotPasswordViewController: UIViewController {
     private func setupLayout() {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
+        contentView.addSubview(formWrapperView)
 
-        contentView.addSubview(logoImageView)
-        contentView.addSubview(formContainer)
-        contentView.addSubview(successContainer)
+        formWrapperView.addSubview(logoImageView)
+        formWrapperView.addSubview(formContainer)
+        formWrapperView.addSubview(successContainer)
 
         // Subviews of formContainer
         formContainer.addSubview(titleLabel)
@@ -275,10 +282,6 @@ class ForgotPasswordViewController: UIViewController {
 
         let safeArea = view.safeAreaLayoutGuide
 
-        let contentWidth = contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
-        contentWidth.priority = UILayoutPriority(999)
-        contentWidth.isActive = true
-
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -290,19 +293,27 @@ class ForgotPasswordViewController: UIViewController {
             contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             contentView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            contentView.widthAnchor.constraint(lessThanOrEqualToConstant: 500),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            // Form Wrapper - Centered Vertically & Horizontally
+            formWrapperView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            formWrapperView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 24),
+            formWrapperView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -24),
+            formWrapperView.widthAnchor.constraint(lessThanOrEqualToConstant: 440),
+            formWrapperView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 24),
+            formWrapperView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -24),
 
             // Logo
-            logoImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 40),
-            logoImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            logoImageView.topAnchor.constraint(equalTo: formWrapperView.topAnchor),
+            logoImageView.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
             logoImageView.widthAnchor.constraint(equalToConstant: 56),
             logoImageView.heightAnchor.constraint(equalToConstant: 56),
 
             // Form Container
             formContainer.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 28),
-            formContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            formContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            formContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32),
+            formContainer.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            formContainer.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
+            formContainer.bottomAnchor.constraint(equalTo: formWrapperView.bottomAnchor),
 
             titleLabel.topAnchor.constraint(equalTo: formContainer.topAnchor),
             titleLabel.leadingAnchor.constraint(equalTo: formContainer.leadingAnchor),
@@ -339,9 +350,9 @@ class ForgotPasswordViewController: UIViewController {
 
             // Success Container
             successContainer.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 28),
-            successContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            successContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            successContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32),
+            successContainer.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
+            successContainer.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
+            successContainer.bottomAnchor.constraint(equalTo: formWrapperView.bottomAnchor),
 
             successTitleLabel.topAnchor.constraint(equalTo: successContainer.topAnchor),
             successTitleLabel.leadingAnchor.constraint(equalTo: successContainer.leadingAnchor),
@@ -357,5 +368,25 @@ class ForgotPasswordViewController: UIViewController {
             returnToLoginButton.heightAnchor.constraint(equalToConstant: 52),
             returnToLoginButton.bottomAnchor.constraint(lessThanOrEqualTo: successContainer.bottomAnchor, constant: -16)
         ])
+
+        let centerY = formWrapperView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        centerY.priority = UILayoutPriority(750)
+        centerY.isActive = true
+
+        let minHeight = contentView.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.frameLayoutGuide.heightAnchor)
+        minHeight.priority = UILayoutPriority(999)
+        minHeight.isActive = true
+
+        let topChain = formWrapperView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24)
+        topChain.priority = UILayoutPriority(250)
+        topChain.isActive = true
+
+        let bottomChain = formWrapperView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
+        bottomChain.priority = UILayoutPriority(250)
+        bottomChain.isActive = true
+
+        let formWidthFill = formWrapperView.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -48)
+        formWidthFill.priority = UILayoutPriority(900)
+        formWidthFill.isActive = true
     }
 }

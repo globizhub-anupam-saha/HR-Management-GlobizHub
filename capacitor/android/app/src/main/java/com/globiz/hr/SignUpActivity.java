@@ -152,7 +152,13 @@ public class SignUpActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        }
         setContentView(R.layout.activity_signup);
+        TabletHelper.applyTabletConstraint(findViewById(R.id.signUpContentContainer), TabletHelper.DEFAULT_MAX_WIDTH_DP);
+        TabletHelper.applyTabletConstraint(findViewById(R.id.layoutFixedHeader), TabletHelper.DEFAULT_MAX_WIDTH_DP);
 
         initViews();
         setupCountryCodePickers();
