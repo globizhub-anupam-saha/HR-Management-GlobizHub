@@ -47,7 +47,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     private let actionButtonsRow = UIStackView()
     private let takeBreakButton = UIButton(type: .custom)
-    private let clockOutButton = UIButton(type: .custom)
 
     // 3. Two-Column Stats Row (Leaves & Holiday)
     private let twoColumnRow = UIStackView()
@@ -492,7 +491,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         shiftClockIcon.translatesAutoresizingMaskIntoConstraints = false
         shiftStrip.addSubview(shiftClockIcon)
 
-        shiftTimeLabel.text = "Shift: 09:00 AM – 06:00 PM"
+        shiftTimeLabel.text = "Shift: \(AuthService.shared.getShiftTiming())"
         shiftTimeLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         shiftTimeLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
         shiftTimeLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -631,9 +630,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         punchCircleButton.addTarget(self, action: #selector(punchTouchDown), for: .touchDown)
         punchCircleButton.addTarget(self, action: #selector(punchTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
 
-        // Action Buttons Row: [Take Break] [Clock Out]
+        // Action Buttons Row: [Take Break] (Clock Out button completely removed)
         actionButtonsRow.axis = .horizontal
-        actionButtonsRow.distribution = .fillEqually
+        actionButtonsRow.distribution = .fill
+        actionButtonsRow.alignment = .center
         actionButtonsRow.spacing = 12
         actionButtonsRow.translatesAutoresizingMaskIntoConstraints = false
         timerCard.addSubview(actionButtonsRow)
@@ -650,20 +650,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         takeBreakButton.tintColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
         takeBreakButton.addTarget(self, action: #selector(handleTakeBreak), for: .touchUpInside)
         actionButtonsRow.addArrangedSubview(takeBreakButton)
-
-        // Clock Out Button (Press & Hold for 2s drives white loading ring on thumb button)
-        clockOutButton.backgroundColor = UIColor(red: 254/255, green: 226/255, blue: 226/255, alpha: 1.0)
-        clockOutButton.layer.cornerRadius = 23
-        clockOutButton.setTitle(" Clock Out", for: .normal)
-        clockOutButton.setTitleColor(UIColor(red: 185/255, green: 28/255, blue: 28/255, alpha: 1.0), for: .normal)
-        clockOutButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        let outConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
-        let outImg = UIImage(systemName: "rectangle.portrait.and.arrow.right", withConfiguration: outConfig) ?? UIImage(systemName: "arrow.right.to.line", withConfiguration: outConfig)
-        clockOutButton.setImage(outImg, for: .normal)
-        clockOutButton.tintColor = UIColor(red: 185/255, green: 28/255, blue: 28/255, alpha: 1.0)
-        clockOutButton.addTarget(self, action: #selector(clockOutTouchDown), for: .touchDown)
-        clockOutButton.addTarget(self, action: #selector(clockOutTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
-        actionButtonsRow.addArrangedSubview(clockOutButton)
 
         timerCard.addSubview(punchInstructionLabel)
 
@@ -703,10 +689,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             punchInstructionLabel.trailingAnchor.constraint(lessThanOrEqualTo: timerCard.trailingAnchor, constant: -16),
 
             actionButtonsRow.topAnchor.constraint(equalTo: punchInstructionLabel.bottomAnchor, constant: 14),
-            actionButtonsRow.leadingAnchor.constraint(equalTo: timerCard.leadingAnchor, constant: 18),
-            actionButtonsRow.trailingAnchor.constraint(equalTo: timerCard.trailingAnchor, constant: -18),
+            actionButtonsRow.centerXAnchor.constraint(equalTo: timerCard.centerXAnchor),
             actionButtonsRow.heightAnchor.constraint(equalToConstant: 46),
-            actionButtonsRow.bottomAnchor.constraint(equalTo: timerCard.bottomAnchor, constant: -20)
+            actionButtonsRow.bottomAnchor.constraint(equalTo: timerCard.bottomAnchor, constant: -20),
+
+            takeBreakButton.heightAnchor.constraint(equalToConstant: 46),
+            takeBreakButton.widthAnchor.constraint(equalToConstant: 180)
         ])
     }
 
@@ -1398,23 +1386,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     outTime = "05:47 PM"
                 }
 
-                if hours >= 10 || (hours == 9 && minutes >= 30) {
-                    statusType = 5 // Heavy Overtime (Deep Forest Green)
-                    overtimeCount += 1
-                } else if hours > 8 || (hours == 8 && minutes > 0) {
-                    statusType = 4 // Overtime (Dark Green)
-                    overtimeCount += 1
-                } else if hours == 8 && minutes == 0 {
-                    statusType = 3 // Exact 8h (Mid Green)
+                if hours >= 8 {
+                    statusType = 3 // Standard Shift Completed (Mid Green)
                 } else {
-                    statusType = 2 // Short Day (Light Green)
+                    statusType = 2 // Short / Partial Day (Light Green)
                 }
 
                 if !isWeekend {
                     daysWorkedCount += 1
                     totalMinutesLogged += (hours * 60 + minutes)
                 }
-                shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
+                shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
             } else if isWeekend {
                 statusType = 1
                 inTime = "Weekly Off"
@@ -1428,30 +1410,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     minutes = 20 + ((d * 5) % 35)
                     inTime = "09:25 AM"
                     outTime = String(format: "04:%02d PM", minutes)
-                    shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
-                } else if pattern >= 8 {
-                    statusType = 5 // Heavy Overtime (Deep Forest Green)
-                    hours = 9
-                    minutes = 45 + ((d * 3) % 15)
-                    overtimeCount += 1
-                    inTime = "08:50 AM"
-                    outTime = "06:45 PM"
-                    shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
-                } else if pattern >= 6 {
-                    statusType = 4 // Overtime (Dark Green)
-                    hours = 8
-                    minutes = 25 + ((d * 5) % 30)
-                    overtimeCount += 1
-                    inTime = "09:05 AM"
-                    outTime = "05:40 PM"
-                    shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
+                    shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
                 } else {
-                    statusType = 3 // Standard 8h Completed (Mid Green)
+                    statusType = 3 // Standard Shift Completed (Mid Green)
                     hours = 8
                     minutes = 0
                     inTime = "09:00 AM"
-                    outTime = "05:00 PM"
-                    shiftDesc = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM"
+                    outTime = "06:00 PM"
+                    shiftDesc = "Clock In: 09:00 AM  •  Shift End: 06:00 PM"
                 }
                 daysWorkedCount += 1
                 totalMinutesLogged += (hours * 60 + minutes)
@@ -1620,14 +1586,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
             if isToday {
                 hours = 8
-                minutes = 35
-                statusType = 4 // Overtime
+                minutes = 0
+                statusType = 3 // Shift Completed
                 totalDaysWorked += 1
-                totalOvertimeDays += 1
                 totalMinutesYear += (hours * 60 + minutes)
-                inTime = "09:12 AM"
-                outTime = isCheckedIn ? "In Progress" : "05:47 PM"
-                shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
+                inTime = "09:00 AM"
+                outTime = isCheckedIn ? "In Progress" : "06:00 PM"
+                shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
             } else if isWeekend {
                 statusType = 1
                 inTime = "Weekly Off"
@@ -1639,7 +1604,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     // Approved Leave
                     statusType = 0
                     inTime = "09:00 AM"
-                    outTime = "05:00 PM"
+                    outTime = "06:00 PM"
                     shiftDesc = "Approved Annual Leave"
                 } else if pseudo < 20 {
                     // Short day (<8h)
@@ -1650,29 +1615,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     totalMinutesYear += (hours * 60 + minutes)
                     inTime = "09:30 AM"
                     outTime = "04:30 PM"
-                    shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
-                } else if pseudo > 78 {
-                    // Heavy Overtime (>9.5h)
-                    statusType = 5
-                    hours = 9
-                    minutes = 40 + (i % 20)
-                    totalDaysWorked += 1
-                    totalOvertimeDays += 1
-                    totalMinutesYear += (hours * 60 + minutes)
-                    inTime = "08:45 AM"
-                    outTime = "06:45 PM"
-                    shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
-                } else if pseudo > 55 {
-                    // Overtime (8h to 9.5h)
-                    statusType = 4
-                    hours = 8
-                    minutes = 20 + ((i * 5) % 35)
-                    totalDaysWorked += 1
-                    totalOvertimeDays += 1
-                    totalMinutesYear += (hours * 60 + minutes)
-                    inTime = "09:05 AM"
-                    outTime = "05:45 PM"
-                    shiftDesc = String(format: "Clock In: %@  •  Clock Out: %@", inTime, outTime)
+                    shiftDesc = String(format: "Clock In: %@  •  Shift End: %@", inTime, outTime)
                 } else {
                     // Standard completed day
                     statusType = 3
@@ -1681,8 +1624,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     totalDaysWorked += 1
                     totalMinutesYear += (hours * 60 + minutes)
                     inTime = "09:00 AM"
-                    outTime = "05:00 PM"
-                    shiftDesc = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM"
+                    outTime = "06:00 PM"
+                    shiftDesc = "Clock In: 09:00 AM  •  Shift End: 06:00 PM"
                 }
             }
 
@@ -1831,21 +1774,21 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         heatmapDetailDateLabel.text = data.formattedDate
 
         if data.statusType == 1 {
-            heatmapDetailHoursLabel.text = "Clock In: Weekly Off  •  Clock Out: Weekly Off"
+            heatmapDetailHoursLabel.text = "Clock In: Weekly Off  •  Shift End: Weekly Off"
         } else if data.isToday {
             if isCheckedIn, let startDate = checkInDate {
                 let timeFormatter = DateFormatter()
                 timeFormatter.locale = Locale(identifier: "en_US_POSIX")
                 timeFormatter.dateFormat = "hh:mm a"
                 let punchTimeStr = timeFormatter.string(from: startDate)
-                heatmapDetailHoursLabel.text = "Clock In: \(punchTimeStr)  •  Clock Out: In Progress"
+                heatmapDetailHoursLabel.text = "Clock In: \(punchTimeStr)  •  Shift: In Progress"
             } else {
-                heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Clock Out: \(data.clockOutTime)"
+                heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Shift End: \(data.clockOutTime)"
             }
         } else if data.statusType == 0 {
-            heatmapDetailHoursLabel.text = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM"
+            heatmapDetailHoursLabel.text = "Clock In: 09:00 AM  •  Shift End: 06:00 PM"
         } else {
-            heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Clock Out: \(data.clockOutTime)"
+            heatmapDetailHoursLabel.text = "Clock In: \(data.clockInTime)  •  Shift End: \(data.clockOutTime)"
         }
     }
 
@@ -1888,7 +1831,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             tf.locale = Locale(identifier: "en_US_POSIX")
             tf.dateFormat = "hh:mm a"
             let inStr = (checkInDate != nil) ? tf.string(from: checkInDate!) : "09:12 AM"
-            heatmapDetailHoursLabel.text = "Clock In: \(inStr)  •  Clock Out: In Progress"
+            heatmapDetailHoursLabel.text = "Clock In: \(inStr)  •  Shift: In Progress"
         }
     }
 
@@ -2109,18 +2052,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     // MARK: - 2-Second Hold Gesture Handlers
     @objc private func punchTouchDown() {
         if isCheckedIn {
-            // User does not need to click on thumb to clock out; guide to Clock Out button
-            hintTitleLabel.text = "Hold Clock Out Button"
-            hintSubtitleLabel.text = "Press and hold the Clock Out button below for 2 seconds to finish your shift."
-            hintIconView.tintColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
+            hintTitleLabel.text = "Shift in Progress"
+            hintSubtitleLabel.text = "Your shift is currently active and being recorded in real-time."
+            hintIconView.tintColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
             showHintPopup()
-            UIView.animate(withDuration: 0.18, animations: {
-                self.clockOutButton.transform = CGAffineTransform(scaleX: 1.08, y: 1.08)
-            }) { _ in
-                UIView.animate(withDuration: 0.18) {
-                    self.clockOutButton.transform = .identity
-                }
-            }
             return
         }
 
@@ -2141,62 +2076,15 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
-    @objc private func clockOutTouchDown() {
-        if !isCheckedIn {
-            hintTitleLabel.text = "Already Clocked Out"
-            hintSubtitleLabel.text = "You are currently clocked out. Hold the blue thumb button to punch in."
-            hintIconView.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-            showHintPopup()
-            return
-        }
-
-        if isShiftInThreeMinLock {
-            hintTitleLabel.text = "Shift Locked (3 Min Minimum)"
-            hintSubtitleLabel.text = "You can clock out after 3 minutes. Time remaining: \(remainingLockTimeFormatted)."
-            hintIconView.tintColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
-            showHintPopup()
-            return
-        }
-
-        if isOnBreak {
-            hintTitleLabel.text = "On Break"
-            hintSubtitleLabel.text = "Please tap 'Resume Shift' before clocking out."
-            hintIconView.tintColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
-            showHintPopup()
-            return
-        }
-
-        isHoldingClockOut = true
-        UIView.animate(withDuration: 0.12) {
-            self.clockOutButton.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
-        }
-
-        // Circular white loading ring animates inside thumb button syncing with 2s hold!
-        startHoldAnimation()
-    }
-
-    @objc private func clockOutTouchUp() {
-        guard isHoldingClockOut else { return }
-        isHoldingClockOut = false
-        UIView.animate(withDuration: 0.12) {
-            self.clockOutButton.transform = .identity
-        }
-        resetHoldAnimation()
-    }
-
     private func showContextualShortTapHint() {
         if !isCheckedIn {
             hintTitleLabel.text = "Hold for 2 seconds to punch in"
             hintSubtitleLabel.text = "Keep your finger pressed on the button to start your shift."
             hintIconView.tintColor = UIColor(red: 0/255, green: 87/255, blue: 255/255, alpha: 1.0)
-        } else if isShiftInThreeMinLock {
-            hintTitleLabel.text = "Shift Locked (3 Min Minimum)"
-            hintSubtitleLabel.text = "You can clock out after 3 minutes. Time remaining: \(remainingLockTimeFormatted)."
-            hintIconView.tintColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
         } else {
-            hintTitleLabel.text = "Hold Clock Out for 2 seconds"
-            hintSubtitleLabel.text = "Press and hold the Clock Out button below to finish your shift."
-            hintIconView.tintColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
+            hintTitleLabel.text = "Shift in Progress"
+            hintSubtitleLabel.text = "Your shift is currently active and being recorded in real-time."
+            hintIconView.tintColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
         }
         showHintPopup()
     }
@@ -2222,9 +2110,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
         holdTimer?.invalidate()
         holdTimer = Timer.scheduledTimer(withTimeInterval: requiredHoldDuration, repeats: false) { [weak self] _ in
-            guard let self = self, (self.isHoldingPunch || self.isHoldingClockOut) else { return }
+            guard let self = self, self.isHoldingPunch else { return }
             self.isHoldingPunch = false
-            self.isHoldingClockOut = false
             self.onHoldCompletedSuccess()
         }
     }
@@ -2239,18 +2126,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private func onHoldCompletedSuccess() {
         resetHoldAnimation()
         isHoldingPunch = false
-        isHoldingClockOut = false
-        UIView.animate(withDuration: 0.12) {
-            self.clockOutButton.transform = .identity
-        }
 
         // 1. Success Haptics
         let notify = UINotificationFeedbackGenerator()
         notify.notificationOccurred(.success)
 
-        // 2. Execute Punch In / Out API Call & Sync System Data
+        // 2. Execute Clock In API Call & Sync System Data
         punchCircleButton.isEnabled = false
-        clockOutButton.isEnabled = false
         if !isCheckedIn {
             accumulatedBreakDuration = 0
             currentBreakStartDate = nil
@@ -2268,7 +2150,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             AuthService.shared.clockIn { [weak self] result in
                 guard let self = self else { return }
                 self.punchCircleButton.isEnabled = true
-                self.clockOutButton.isEnabled = true
                 switch result {
                 case .success:
                     self.loadAttendanceStats()
@@ -2283,28 +2164,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     } else {
                         self.loadAttendanceStats()
                     }
-                }
-            }
-        } else {
-            // Instant Seamless Clock Out (0ms delay)
-            self.isCheckedIn = false
-            self.stopTimer()
-            self.updateUIForAttendance(clockedIn: false)
-            self.postShiftNotification(isClockIn: false)
-
-            isOnBreak = false
-            currentBreakStartDate = nil
-            breakTimerLabel.isHidden = true
-            AuthService.shared.clockOut { [weak self] result in
-                guard let self = self else { return }
-                self.punchCircleButton.isEnabled = true
-                self.clockOutButton.isEnabled = true
-                switch result {
-                case .success:
-                    self.loadAttendanceStats()
-                case .failure(let err):
-                    self.loadAttendanceStats()
-                    self.showError(err.localizedDescription)
                 }
             }
         }
@@ -2483,10 +2342,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         UNUserNotificationCenter.current().add(req, withCompletionHandler: nil)
         AuthService.shared.recordLocalNotification(title: title, body: body)
         notifBadgeDot.isHidden = false
-    }
-
-    @objc private func handleClockOutAction() {
-        clockOutTouchDown()
     }
 
     // MARK: - Real-time Team Presence & Tasks Dynamic Methods
@@ -3032,11 +2887,61 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - Attendance API & Live Clock
+    private func formatShiftTime(start: String, end: String) -> String {
+        let inFormatter = DateFormatter()
+        inFormatter.dateFormat = "HH:mm"
+        let inFormatterSec = DateFormatter()
+        inFormatterSec.dateFormat = "HH:mm:ss"
+
+        let outFormatter = DateFormatter()
+        outFormatter.dateFormat = "hh:mm a"
+
+        let startDate = inFormatter.date(from: start) ?? inFormatterSec.date(from: start)
+        let endDate = inFormatter.date(from: end) ?? inFormatterSec.date(from: end)
+
+        let startFormatted = startDate != nil ? outFormatter.string(from: startDate!) : start
+        let endFormatted = endDate != nil ? outFormatter.string(from: endDate!) : end
+
+        return "\(startFormatted) – \(endFormatted)"
+    }
+
     private func loadAttendanceStats() {
+        // Fetch real-time schedule and shift assigned by admin
+        AuthService.shared.getMySchedule { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let schedules) = result, let first = schedules.first, let shift = first["shift"] as? [String: Any] {
+                let start = shift["startTime"] as? String ?? "09:00"
+                let end = shift["endTime"] as? String ?? "18:00"
+                let formatted = self.formatShiftTime(start: start, end: end)
+                AuthService.shared.saveShiftTiming(formatted)
+
+                let endFmt = DateFormatter()
+                endFmt.dateFormat = "h:mma"
+                let inFmt = DateFormatter()
+                inFmt.dateFormat = "HH:mm"
+                if let eDate = inFmt.date(from: end) {
+                    AuthService.shared.saveShiftEndTime(endFmt.string(from: eDate).lowercased())
+                }
+                DispatchQueue.main.async {
+                    self.shiftTimeLabel.text = "Shift: \(formatted)"
+                }
+            }
+        }
+
         AuthService.shared.getAttendanceStats { [weak self] result in
             guard let self = self else { return }
             switch result {
             case .success(let stats):
+                if let shiftDict = stats["shift"] as? [String: Any] {
+                    let start = shiftDict["startTime"] as? String ?? "09:00"
+                    let end = shiftDict["endTime"] as? String ?? "18:00"
+                    let formatted = self.formatShiftTime(start: start, end: end)
+                    AuthService.shared.saveShiftTiming(formatted)
+                    DispatchQueue.main.async {
+                        self.shiftTimeLabel.text = "Shift: \(formatted)"
+                    }
+                }
+
                 let checkInStr = stats["checkInTime"] as? String
                 let checkOutStr = stats["checkOutTime"] as? String
 
@@ -3063,16 +2968,15 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private func updateUIForAttendance(clockedIn: Bool) {
         if clockedIn {
             updatePunchInStatusText()
-            // Vibrant red button for clock out state
-            punchCircleButton.backgroundColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
-            punchCircleButton.layer.shadowColor = UIColor(red: 220/255, green: 38/255, blue: 38/255, alpha: 0.35).cgColor
+            // Active shift state: confident royal blue/green
+            punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
             punchIconView.tintColor = .white
-            punchGlowRing.backgroundColor = UIColor(red: 254/255, green: 226/255, blue: 226/255, alpha: 0.85)
+            punchGlowRing.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 0.85)
         } else {
-            punchStatusLabel.text = "• Clocked Out"
+            punchStatusLabel.text = "• Not Clocked In"
             punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
             liveTimerLabel.text = "00h 00m 00s"
-            // Royal blue button for punch in state
             punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
             punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
             punchIconView.tintColor = .white
@@ -3085,16 +2989,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         if !isCheckedIn {
             punchInstructionLabel.text = "Hold 2s to Punch In"
             punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        } else if isShiftInThreeMinLock {
-            let lockStr = remainingLockTimeFormatted
-            punchInstructionLabel.text = "Shift locked (\(lockStr))"
-            punchInstructionLabel.textColor = UIColor(red: 220/255, green: 38/255, blue: 38/255, alpha: 1.0)
         } else if isOnBreak {
             punchInstructionLabel.text = "Shift on break • Resume to continue"
             punchInstructionLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
         } else {
-            punchInstructionLabel.text = "Hold Clock Out button for 2s to exit"
-            punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            punchInstructionLabel.text = "Shift in Progress"
+            punchInstructionLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
         }
     }
 
@@ -3102,20 +3002,15 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let timeFormatter = DateFormatter()
         timeFormatter.locale = Locale(identifier: "en_US_POSIX")
         timeFormatter.dateFormat = "hh:mm:ss a"
-        let punchTimeStr = (checkInDate != nil) ? timeFormatter.string(from: checkInDate!) : "08:58:00 AM"
-        punchStatusLabel.text = "• Punched In at \(punchTimeStr)"
-        punchStatusLabel.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        let punchTimeStr = (checkInDate != nil) ? timeFormatter.string(from: checkInDate!) : "09:00:00 AM"
+        punchStatusLabel.text = "• Clocked In at \(punchTimeStr)"
+        punchStatusLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
     }
 
     private func startTimer() {
         stopTimer()
         liveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self, let startDate = self.checkInDate else { return }
-
-            // Dynamic live countdown update in hint popup if visible during 3-min shift lock
-            if self.isShiftInThreeMinLock && self.hintPopupCard.alpha > 0.05 {
-                self.hintSubtitleLabel.text = "You can clock out after 3 minutes. Time remaining: \(self.remainingLockTimeFormatted)."
-            }
 
             if self.isOnBreak {
                 // Main timer pauses/freezes while on break!

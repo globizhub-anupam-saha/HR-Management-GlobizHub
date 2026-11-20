@@ -100,7 +100,6 @@ public class HomeActivity extends AppCompatActivity {
     private View btnTakeBreak;
     private ImageView ivTakeBreak;
     private TextView tvTakeBreak;
-    private View btnClockOut;
 
     // Leaves Card Views
     private View cvLeavesCard;
@@ -343,6 +342,9 @@ public class HomeActivity extends AppCompatActivity {
             tvUserRoleLocation.setText(initialDesig + " • " + initialOrg);
         }
         tvShiftTiming = findViewById(R.id.tvShiftTiming);
+        if (tvShiftTiming != null) {
+            tvShiftTiming.setText("Shift: " + apiClient.getShiftTiming());
+        }
         tvShiftStatusBadge = findViewById(R.id.tvShiftStatusBadge);
 
         // Timer Card
@@ -355,7 +357,6 @@ public class HomeActivity extends AppCompatActivity {
         btnTakeBreak = findViewById(R.id.btnTakeBreak);
         ivTakeBreak = findViewById(R.id.ivTakeBreak);
         tvTakeBreak = findViewById(R.id.tvTakeBreak);
-        btnClockOut = findViewById(R.id.btnClockOut);
 
         // Leaves Card
         cvLeavesCard = findViewById(R.id.cvLeavesCard);
@@ -488,16 +489,13 @@ public class HomeActivity extends AppCompatActivity {
 
     private void updatePunchButtonUI(boolean clockedIn) {
         if (viewPunchGlowRing != null) {
-            viewPunchGlowRing.setBackgroundResource(clockedIn ? R.drawable.bg_red_glow_ring : R.drawable.bg_blue_glow_ring);
+            viewPunchGlowRing.setBackgroundResource(clockedIn ? R.drawable.bg_blue_glow_ring : R.drawable.bg_blue_glow_ring);
         }
         if (flPunchButton != null) {
-            flPunchButton.setBackgroundResource(clockedIn ? R.drawable.bg_red_circle : R.drawable.bg_blue_circle);
+            flPunchButton.setBackgroundResource(clockedIn ? R.drawable.bg_blue_circle : R.drawable.bg_blue_circle);
         }
         if (ivPunchIcon != null) {
             ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
-        }
-        if (btnClockOut != null) {
-            btnClockOut.setAlpha(clockedIn ? 1.0f : 0.6f);
         }
         if (btnTakeBreak != null) {
             btnTakeBreak.setAlpha(clockedIn ? 1.0f : 0.6f);
@@ -528,7 +526,7 @@ public class HomeActivity extends AppCompatActivity {
         } else if (isCheckedIn && checkInDateTime != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a", Locale.US);
             if (tvPunchedInAt != null) {
-                tvPunchedInAt.setText("• Punched In at " + sdf.format(checkInDateTime));
+                tvPunchedInAt.setText("• Clocked In at " + sdf.format(checkInDateTime));
                 tvPunchedInAt.setTextColor(Color.parseColor("#059669"));
             }
         }
@@ -539,15 +537,12 @@ public class HomeActivity extends AppCompatActivity {
         if (!isCheckedIn) {
             tvPunchInstruction.setText("Hold 2s to Punch In");
             tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
-        } else if (isShiftInThreeMinLock()) {
-            tvPunchInstruction.setText("Shift locked (" + formatRemainingLockTime() + ")");
-            tvPunchInstruction.setTextColor(Color.parseColor("#DC2626"));
         } else if (isOnBreak) {
             tvPunchInstruction.setText("Shift on break • Resume to continue");
             tvPunchInstruction.setTextColor(Color.parseColor("#D97706"));
         } else {
-            tvPunchInstruction.setText("Hold Clock Out button for 2s to exit");
-            tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
+            tvPunchInstruction.setText("Shift in Progress");
+            tvPunchInstruction.setTextColor(Color.parseColor("#059669"));
         }
     }
 
@@ -558,9 +553,6 @@ public class HomeActivity extends AppCompatActivity {
         completeHoldRunnable = () -> {
             if (isHolding) {
                 isHolding = false;
-                if (btnClockOut != null) {
-                    btnClockOut.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
-                }
                 if (holdProgressBar != null) {
                     holdProgressBar.setVisibility(View.GONE);
                     holdProgressBar.setProgress(0);
@@ -576,13 +568,7 @@ public class HomeActivity extends AppCompatActivity {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     if (isCheckedIn) {
-                        // User does not need to click thumb to clock out; guide to Clock Out button
-                        showHintPopup("Hold the Clock Out button below for 2 seconds to finish shift");
-                        if (btnClockOut != null) {
-                            btnClockOut.animate().scaleX(1.08f).scaleY(1.08f).setDuration(160)
-                                    .withEndAction(() -> btnClockOut.animate().scaleX(1f).scaleY(1f).setDuration(160).start())
-                                    .start();
-                        }
+                        showHintPopup("Shift is already in progress");
                         v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                         return true;
                     }
@@ -630,71 +616,6 @@ public class HomeActivity extends AppCompatActivity {
             }
             return false;
         });
-
-        // Clock Out Button: User holds for 2 seconds -> syncs white loading animation on thumb button!
-        if (btnClockOut != null) {
-            btnClockOut.setOnTouchListener((v, event) -> {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if (!isCheckedIn) {
-                            showHintPopup("You are already clocked out");
-                            return true;
-                        }
-                        if (isShiftInThreeMinLock()) {
-                            showHintPopup("Shift locked for 3 min. Please wait " + formatRemainingLockTime() + " before clocking out.");
-                            return true;
-                        }
-                        if (isOnBreak) {
-                            showHintPopup("Please tap 'Resume Shift' before clocking out.");
-                            return true;
-                        }
-
-                        isHolding = true;
-                        pressStartTime = System.currentTimeMillis();
-                        btnClockOut.animate().scaleX(0.95f).scaleY(0.95f).setDuration(120).start();
-                        v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-
-                        // Animate white circular loading ring on thumb button syncing with 2s hold!
-                        if (holdProgressBar != null) {
-                            holdProgressBar.setProgressDrawable(ContextCompat.getDrawable(this, R.drawable.circle_progress_bar_white));
-                            holdProgressBar.setVisibility(View.VISIBLE);
-                            holdProgressBar.setProgress(0);
-                            if (holdAnimator != null) holdAnimator.cancel();
-                            holdAnimator = ValueAnimator.ofInt(0, 100);
-                            holdAnimator.setDuration(REQUIRED_HOLD_MS);
-                            holdAnimator.addUpdateListener(animation -> {
-                                if (holdProgressBar != null) {
-                                    holdProgressBar.setProgress((int) animation.getAnimatedValue());
-                                }
-                            });
-                            holdAnimator.start();
-                        }
-
-                        holdHandler.postDelayed(completeHoldRunnable, REQUIRED_HOLD_MS);
-                        return true;
-
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        if (isHolding) {
-                            holdHandler.removeCallbacks(completeHoldRunnable);
-                            if (holdAnimator != null) holdAnimator.cancel();
-                            if (holdProgressBar != null) {
-                                holdProgressBar.setVisibility(View.GONE);
-                                holdProgressBar.setProgress(0);
-                            }
-                            btnClockOut.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
-
-                            long duration = System.currentTimeMillis() - pressStartTime;
-                            if (duration < REQUIRED_HOLD_MS) {
-                                showHintPopup("Hold Clock Out button for 2 seconds to exit");
-                            }
-                            isHolding = false;
-                        }
-                        return true;
-                }
-                return false;
-            });
-        }
     }
 
     // --- Professional Slide-up Hint Popup ---
@@ -1387,21 +1308,30 @@ public class HomeActivity extends AppCompatActivity {
             public void onSuccess(JSONArray items) {
                 if (isFinishing() || isDestroyed() || items == null || items.length() == 0) return;
 
-                SimpleDateFormat isoDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-                String todayStr = isoDate.format(new Date());
-
                 for (int i = 0; i < items.length(); i++) {
                     JSONObject item = items.optJSONObject(i);
                     if (item == null) continue;
-                    String date = item.optString("date", "");
-                    if (date.startsWith(todayStr)) {
-                        String start = item.optString("startTime", "09:00 AM");
-                        String end = item.optString("endTime", "06:00 PM");
-                        if (tvShiftTiming != null) {
-                            tvShiftTiming.setText("Shift: " + start + " – " + end);
+                    JSONObject shift = item.optJSONObject("shift");
+                    String start = shift != null ? shift.optString("startTime", "09:00") : item.optString("startTime", "09:00");
+                    String end = shift != null ? shift.optString("endTime", "18:00") : item.optString("endTime", "18:00");
+                    String formatted = formatShiftTime(start, end);
+                    apiClient.saveShiftTiming(formatted);
+
+                    try {
+                        SimpleDateFormat inFmt = new SimpleDateFormat("HH:mm", Locale.US);
+                        SimpleDateFormat endFmt = new SimpleDateFormat("hh:mma", Locale.US);
+                        Date eDate = inFmt.parse(end);
+                        if (eDate != null) {
+                            apiClient.saveShiftEndTime(endFmt.format(eDate).toLowerCase());
                         }
-                        break;
-                    }
+                    } catch (Exception ignored) {}
+
+                    runOnUiThread(() -> {
+                        if (tvShiftTiming != null) {
+                            tvShiftTiming.setText("Shift: " + formatted);
+                        }
+                    });
+                    break;
                 }
             }
 
@@ -1410,6 +1340,18 @@ public class HomeActivity extends AppCompatActivity {
                 // Keep default shift strip
             }
         });
+    }
+
+    private String formatShiftTime(String start, String end) {
+        try {
+            SimpleDateFormat inFmt = new SimpleDateFormat("HH:mm", Locale.US);
+            SimpleDateFormat outFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+            Date sDate = inFmt.parse(start);
+            Date eDate = inFmt.parse(end);
+            return (sDate != null ? outFmt.format(sDate) : start) + " – " + (eDate != null ? outFmt.format(eDate) : end);
+        } catch (Exception e) {
+            return start + " – " + end;
+        }
     }
 
     // --- Attendance & Live Timer ---
@@ -1512,91 +1454,34 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void handleCheckInOutToggle() {
-        String token = apiClient.getToken();
-
-        if (!isCheckedIn) {
-            // Punch In
-            accumulatedBreakTimeMs = 0;
-            currentBreakStartDate = null;
-            lastBreakSessionText = null;
-            if (tvBreakTimer != null) tvBreakTimer.setVisibility(View.GONE);
-
-            // Instant Seamless Watch Start (0ms delay)
-            isCheckedIn = true;
-            checkInDateTime = new Date();
-            startTimer();
-            updatePunchButtonUI(true);
-
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-            SimpleDateFormat dateSdf = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-            String timeStr = sdf.format(checkInDateTime);
-            String dateStr = dateSdf.format(checkInDateTime);
-
-            triggerSystemNotification("Attendance • Punched In", "Clocked in at " + timeStr + " on " + dateStr);
-            Toast.makeText(HomeActivity.this, "Punched In at " + timeStr, Toast.LENGTH_SHORT).show();
-
-            apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
-                @Override
-                public void onSuccess(JSONObject result) {
-                    loadAttendanceStats();
-                }
-
-                @Override
-                public void onError(String errorMessage, int statusCode) {
-                    if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
-                        loadAttendanceStats();
-                    } else {
-                        // Revert on actual network/authorization error
-                        isCheckedIn = false;
-                        checkInDateTime = null;
-                        stopTimer();
-                        updateTimerDisplay(0, 0, 0);
-                        updatePunchButtonUI(false);
-                        Toast.makeText(HomeActivity.this, errorMessage != null ? errorMessage : "Punch In failed", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-        } else {
-            if (isShiftInThreeMinLock()) {
-                showHintPopup("Shift locked for 3 min. Please wait " + formatRemainingLockTime() + " before clocking out.");
-                return;
-            }
-            performClockOut();
-        }
-    }
-
-    private void performClockOut() {
-        if (isShiftInThreeMinLock()) {
-            showHintPopup("Shift locked for 3 min. Please wait " + formatRemainingLockTime() + " before clocking out.");
+        if (isCheckedIn) {
+            showHintPopup("Shift is already in progress");
             return;
         }
 
-        // Instant Seamless Clock Out (0ms delay)
-        isCheckedIn = false;
-        Date clockOutDate = new Date();
-        checkInDateTime = null;
-        stopTimer();
-        updateTimerDisplay(0, 0, 0);
-        updatePunchButtonUI(false);
-        isOnBreak = false;
+        String token = apiClient.getToken();
+
+        // Punch In
+        accumulatedBreakTimeMs = 0;
         currentBreakStartDate = null;
+        lastBreakSessionText = null;
         if (tvBreakTimer != null) tvBreakTimer.setVisibility(View.GONE);
+
+        // Instant Seamless Watch Start (0ms delay)
+        isCheckedIn = true;
+        checkInDateTime = new Date();
+        startTimer();
+        updatePunchButtonUI(true);
 
         SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
         SimpleDateFormat dateSdf = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-        String timeStr = sdf.format(clockOutDate);
-        String dateStr = dateSdf.format(clockOutDate);
+        String timeStr = sdf.format(checkInDateTime);
+        String dateStr = dateSdf.format(checkInDateTime);
 
-        if (tvPunchedInAt != null) {
-            tvPunchedInAt.setText("• Clocked Out at " + timeStr);
-            tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
-        }
+        triggerSystemNotification("Attendance • Punched In", "Clocked in at " + timeStr + " on " + dateStr);
+        Toast.makeText(HomeActivity.this, "Punched In at " + timeStr, Toast.LENGTH_SHORT).show();
 
-        triggerSystemNotification("Attendance • Clocked Out", "Clocked out at " + timeStr + " on " + dateStr);
-        Toast.makeText(HomeActivity.this, "Clocked Out at " + timeStr, Toast.LENGTH_SHORT).show();
-
-        String token = apiClient.getToken();
-        apiClient.clockOut(token, new ApiClient.ApiCallback<JSONObject>() {
+        apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject result) {
                 loadAttendanceStats();
@@ -1604,7 +1489,17 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onError(String errorMessage, int statusCode) {
-                loadAttendanceStats();
+                if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+                    loadAttendanceStats();
+                } else {
+                    // Revert on actual network/authorization error
+                    isCheckedIn = false;
+                    checkInDateTime = null;
+                    stopTimer();
+                    updateTimerDisplay(0, 0, 0);
+                    updatePunchButtonUI(false);
+                    Toast.makeText(HomeActivity.this, errorMessage != null ? errorMessage : "Punch In failed", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -1615,12 +1510,6 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (checkInDateTime != null) {
-                    // Real-time update in hint popup if visible during 3-min shift lock
-                    if (isShiftInThreeMinLock() && hintPopupCard != null && hintPopupCard.getVisibility() == View.VISIBLE) {
-                        if (tvHintText != null) {
-                            tvHintText.setText("Shift locked for 3 min. Please wait " + formatRemainingLockTime() + " before clocking out.");
-                        }
-                    }
 
                     if (isOnBreak) {
                         // Shift timer pauses/freezes while on break!
@@ -1780,7 +1669,7 @@ public class HomeActivity extends AppCompatActivity {
                 data.minutes = 0;
                 data.clockInTime = "09:00 AM";
                 data.clockOutTime = "05:00 PM";
-                data.shiftSummary = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM";
+                data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
             } else if (data.isToday) {
                 // Today: Check if currently checked in or completed
                 if (isCheckedIn && checkInDateTime != null) {
@@ -1793,14 +1682,8 @@ public class HomeActivity extends AppCompatActivity {
                     data.minutes = 35;
                 }
 
-                if (data.hours >= 10 || (data.hours == 9 && data.minutes >= 30)) {
-                    data.statusType = 5; // Heavy Overtime (Deep Forest Green)
-                    overtimeCount++;
-                } else if (data.hours > 8 || (data.hours == 8 && data.minutes > 0)) {
-                    data.statusType = 4; // Overtime (Dark Green)
-                    overtimeCount++;
-                } else if (data.hours == 8 && data.minutes == 0) {
-                    data.statusType = 3; // Exact 8h (Mid Green)
+                if (data.hours >= 8) {
+                    data.statusType = 3; // Standard Shift Completed (Mid Green)
                 } else {
                     data.statusType = 2; // Short Day (<8h, Light Green)
                 }
@@ -1812,7 +1695,7 @@ public class HomeActivity extends AppCompatActivity {
                 SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
                 data.clockInTime = (checkInDateTime != null) ? timeFmt.format(checkInDateTime) : "09:12 AM";
                 data.clockOutTime = isCheckedIn ? "In Progress" : "05:47 PM";
-                data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
+                data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
                 todayDayData = data;
             } else if (isWeekend) {
                 data.statusType = 1; // Off Day
@@ -1820,7 +1703,7 @@ public class HomeActivity extends AppCompatActivity {
                 data.minutes = 0;
                 data.clockInTime = "Weekly Off";
                 data.clockOutTime = "Weekly Off";
-                data.shiftSummary = "Clock In: Weekly Off  •  Clock Out: Weekly Off";
+                data.shiftSummary = "Clock In: Weekly Off  •  Shift End: Weekly Off";
             } else {
                 // Past Weekday: Realistically patterned attendance
                 int pattern = (d * 7 + 11) % 10;
@@ -1831,33 +1714,15 @@ public class HomeActivity extends AppCompatActivity {
                     data.minutes = 20 + ((d * 5) % 35);
                     data.clockInTime = "09:25 AM";
                     data.clockOutTime = String.format(Locale.getDefault(), "04:%02d PM", data.minutes);
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
-                } else if (pattern >= 8) {
-                    // Heavy Overtime (>9.5h) -> Deep Forest Green
-                    data.statusType = 5;
-                    data.hours = 9;
-                    data.minutes = 45 + ((d * 3) % 15);
-                    overtimeCount++;
-                    data.clockInTime = "08:50 AM";
-                    data.clockOutTime = "06:45 PM";
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
-                } else if (pattern >= 6) {
-                    // Overtime (8h to 9.5h) -> Dark Green
-                    data.statusType = 4;
-                    data.hours = 8;
-                    data.minutes = 25 + ((d * 5) % 30);
-                    overtimeCount++;
-                    data.clockInTime = "09:05 AM";
-                    data.clockOutTime = "05:40 PM";
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
+                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
                 } else {
-                    // Exact 8 Hours Completed -> Mid Green
+                    // Standard 8 Hours Completed -> Mid Green
                     data.statusType = 3;
                     data.hours = 8;
                     data.minutes = 0;
                     data.clockInTime = "09:00 AM";
                     data.clockOutTime = "05:00 PM";
-                    data.shiftSummary = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM";
+                    data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
                 }
                 daysWorkedCount++;
                 totalMinutesLogged += (data.hours * 60 + data.minutes);
@@ -2003,20 +1868,19 @@ public class HomeActivity extends AppCompatActivity {
             if (isToday) {
                 data.hours = 8;
                 data.minutes = 35;
-                data.statusType = 4; // Overtime (Dark Green)
+                data.statusType = 3; // Standard Shift Completed (Mid Green)
                 totalDaysWorked++;
-                totalOvertimeDays++;
                 totalMinutesYear += (data.hours * 60 + data.minutes);
                 data.clockInTime = "09:12 AM";
                 data.clockOutTime = isCheckedIn ? "In Progress" : "05:47 PM";
-                data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
+                data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
             } else if (isWeekend) {
                 data.statusType = 1; // Off Day
                 data.hours = 0;
                 data.minutes = 0;
                 data.clockInTime = "Weekly Off";
                 data.clockOutTime = "Weekly Off";
-                data.shiftSummary = "Clock In: Weekly Off  •  Clock Out: Weekly Off";
+                data.shiftSummary = "Clock In: Weekly Off  •  Shift End: Weekly Off";
             } else {
                 int pseudo = (i * 13 + 7) % 100;
                 if (pseudo < 8) {
@@ -2026,7 +1890,7 @@ public class HomeActivity extends AppCompatActivity {
                     data.minutes = 0;
                     data.clockInTime = "09:00 AM";
                     data.clockOutTime = "05:00 PM";
-                    data.shiftSummary = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM";
+                    data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
                 } else if (pseudo < 20) {
                     // Short day (<8h) -> Light Green
                     data.statusType = 2;
@@ -2036,29 +1900,7 @@ public class HomeActivity extends AppCompatActivity {
                     totalMinutesYear += (data.hours * 60 + data.minutes);
                     data.clockInTime = "09:30 AM";
                     data.clockOutTime = "04:30 PM";
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
-                } else if (pseudo > 78) {
-                    // Heavy Overtime (>9.5h) -> Deep Forest Green
-                    data.statusType = 5;
-                    data.hours = 9;
-                    data.minutes = 40 + (i % 20);
-                    totalDaysWorked++;
-                    totalOvertimeDays++;
-                    totalMinutesYear += (data.hours * 60 + data.minutes);
-                    data.clockInTime = "08:45 AM";
-                    data.clockOutTime = "06:45 PM";
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
-                } else if (pseudo > 55) {
-                    // Overtime (8h to 9.5h) -> Dark Green
-                    data.statusType = 4;
-                    data.hours = 8;
-                    data.minutes = 20 + ((i * 5) % 35);
-                    totalDaysWorked++;
-                    totalOvertimeDays++;
-                    totalMinutesYear += (data.hours * 60 + data.minutes);
-                    data.clockInTime = "09:05 AM";
-                    data.clockOutTime = "05:45 PM";
-                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime;
+                    data.shiftSummary = "Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime;
                 } else {
                     // Standard completed day -> Mid Green
                     data.statusType = 3;
@@ -2068,7 +1910,7 @@ public class HomeActivity extends AppCompatActivity {
                     totalMinutesYear += (data.hours * 60 + data.minutes);
                     data.clockInTime = "09:00 AM";
                     data.clockOutTime = "05:00 PM";
-                    data.shiftSummary = "Clock In: 09:00 AM  •  Clock Out: 05:00 PM";
+                    data.shiftSummary = "Clock In: 09:00 AM  •  Shift End: 05:00 PM";
                 }
             }
 
@@ -2210,19 +2052,19 @@ public class HomeActivity extends AppCompatActivity {
 
         if (tvHeatmapDetailHours != null) {
             if (data.statusType == 1) {
-                tvHeatmapDetailHours.setText("Clock In: Weekly Off  •  Clock Out: Weekly Off");
+                tvHeatmapDetailHours.setText("Clock In: Weekly Off  •  Shift End: Weekly Off");
             } else if (data.isToday) {
                 if (isCheckedIn && checkInDateTime != null) {
                     SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm a", Locale.US);
                     String punchTimeStr = timeFormatter.format(checkInDateTime);
-                    tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Clock Out: In Progress");
+                    tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Shift End: In Progress");
                 } else {
-                    tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime);
+                    tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime);
                 }
             } else if (data.statusType == 0) {
-                tvHeatmapDetailHours.setText("Clock In: 09:00 AM  •  Clock Out: 05:00 PM");
+                tvHeatmapDetailHours.setText("Clock In: 09:00 AM  •  Shift End: 05:00 PM");
             } else {
-                tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Clock Out: " + data.clockOutTime);
+                tvHeatmapDetailHours.setText("Clock In: " + data.clockInTime + "  •  Shift End: " + data.clockOutTime);
             }
         }
     }
@@ -2236,11 +2078,7 @@ public class HomeActivity extends AppCompatActivity {
 
         int bgRes;
 
-        if (h >= 10 || (h == 9 && m >= 30)) {
-            bgRes = R.drawable.bg_box_github_level4;
-        } else if (h > 8 || (h == 8 && (m > 0 || s > 0))) {
-            bgRes = R.drawable.bg_box_github_level3;
-        } else if (h == 8 && m == 0) {
+        if (h >= 8) {
             bgRes = R.drawable.bg_box_github_level2;
         } else {
             bgRes = R.drawable.bg_box_github_level1;
@@ -2248,7 +2086,7 @@ public class HomeActivity extends AppCompatActivity {
 
         todayHeatmapBoxView.setBackgroundResource(bgRes);
         if (todayHeatmapBoxText != null) {
-            todayHeatmapBoxText.setTextColor(h < 8 && !(h == 8 && m == 0) ? Color.parseColor("#14532D") : Color.WHITE);
+            todayHeatmapBoxText.setTextColor(h < 8 ? Color.parseColor("#14532D") : Color.WHITE);
         }
 
         if (selectedHeatmapDay == today.get(Calendar.DAY_OF_MONTH)) {
@@ -2256,7 +2094,7 @@ public class HomeActivity extends AppCompatActivity {
                 SimpleDateFormat timeFormatter = new SimpleDateFormat("hh:mm a", Locale.US);
                 String punchTimeStr = (checkInDateTime != null) ? timeFormatter.format(checkInDateTime) : "09:12 AM";
                 String outStr = isCheckedIn ? "In Progress" : "05:47 PM";
-                tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Clock Out: " + outStr);
+                tvHeatmapDetailHours.setText("Clock In: " + punchTimeStr + "  •  Shift End: " + outStr);
             }
         }
     }

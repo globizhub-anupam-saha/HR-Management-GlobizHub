@@ -80,6 +80,25 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         updateNotificationBadge()
         updateAttendanceState()
 
+        // Fetch real-time schedule & shift assigned by company admin
+        AuthService.shared.getMySchedule { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let schedules) = result, let first = schedules.first, let shift = first["shift"] as? [String: Any] {
+                let end = shift["endTime"] as? String ?? "18:00"
+                let endFmt = DateFormatter()
+                endFmt.dateFormat = "h:mma"
+                let inFmt = DateFormatter()
+                inFmt.dateFormat = "HH:mm"
+                if let eDate = inFmt.date(from: end) {
+                    let endStr = endFmt.string(from: eDate).lowercased()
+                    AuthService.shared.saveShiftEndTime(endStr)
+                    DispatchQueue.main.async {
+                        self.summaryClockOutLabel.text = endStr
+                    }
+                }
+            }
+        }
+
         liveTimer?.invalidate()
         liveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateAttendanceState()
@@ -452,8 +471,8 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         let col1 = makeSummaryColumn(title: "Clock in Time", valueLabel: summaryClockInLabel, defaultValue: "09:00am")
         // Col 2: Break Time
         let col2 = makeSummaryColumn(title: "Break Time", valueLabel: summaryBreakLabel, defaultValue: "12:00pm")
-        // Col 3: Clock Out Time
-        let col3 = makeSummaryColumn(title: "Clock Out Time", valueLabel: summaryClockOutLabel, defaultValue: "05:00pm")
+        // Col 3: Shift End (Clock Out concept completely removed)
+        let col3 = makeSummaryColumn(title: "Shift End", valueLabel: summaryClockOutLabel, defaultValue: AuthService.shared.getShiftEndTime())
 
         let div1 = makeSummaryDivider()
         let div2 = makeSummaryDivider()
@@ -714,9 +733,10 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         let currentStatus = AuthService.shared.getLocalAttendanceStatus()
         let isClockedIn = currentStatus == "CLOCKED_IN" || currentStatus == "CHECKED_IN"
 
-        clockActionBtn.isEnabled = false
+        clockActionBtn.isEnabled = true
 
         if !isClockedIn {
+            clockActionBtn.isEnabled = false
             // User Clock In
             AuthService.shared.clockIn { [weak self] result in
                 DispatchQueue.main.async {
@@ -734,22 +754,10 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
                 }
             }
         } else {
-            // User Clock Out
-            AuthService.shared.clockOut { [weak self] result in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.clockActionBtn.isEnabled = true
-                    let alert = UIAlertController(title: "Clocked Out", message: "Your attendance check-out has been synchronized with the HR system.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "OK", style: .default))
-                    self.present(alert, animated: true)
-
-                    let timeFmt = DateFormatter()
-                    timeFmt.dateFormat = "h:mma"
-                    let nowStr = timeFmt.string(from: Date()).lowercased()
-                    self.finalizeLiveHistoryItem(clockOut: nowStr)
-                    self.updateAttendanceState()
-                }
-            }
+            // Shift is active; Clock Out concept removed per organization policy
+            let alert = UIAlertController(title: "Shift in Progress", message: "Your shift is currently active and recorded in the system. Shift completes automatically based on your assigned company schedule.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(alert, animated: true)
         }
     }
 
@@ -761,8 +769,9 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         displayFmt.dateFormat = "hh:mma"
 
         if isClockedIn {
-            clockActionLabel.text = "Clock Out"
-            clockActionBtn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            clockActionLabel.text = "✓ Clocked In"
+            clockActionBtn.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+            clockActionLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
 
             if let inIso = AuthService.shared.getLocalCheckInIso() {
                 let isoParser = ISO8601DateFormatter()
@@ -776,34 +785,24 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             }
 
             summaryBreakLabel.text = "12:00pm"
-            summaryClockOutLabel.text = "--:--"
+            summaryClockOutLabel.text = AuthService.shared.getShiftEndTime()
         } else {
             clockActionLabel.text = "Clock In"
             clockActionBtn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            clockActionLabel.textColor = .white
 
             if let inIso = AuthService.shared.getLocalCheckInIso() {
                 let isoParser = ISO8601DateFormatter()
                 if let inDate = isoParser.date(from: inIso) {
                     summaryClockInLabel.text = displayFmt.string(from: inDate).lowercased()
                 } else {
-                    summaryClockInLabel.text = "09:00am"
+                    summaryClockInLabel.text = "--:--"
                 }
             } else {
-                summaryClockInLabel.text = "09:00am"
+                summaryClockInLabel.text = "--:--"
             }
-
             summaryBreakLabel.text = "12:00pm"
-
-            if let outIso = AuthService.shared.getLocalCheckOutIso() {
-                let isoParser = ISO8601DateFormatter()
-                if let outDate = isoParser.date(from: outIso) {
-                    summaryClockOutLabel.text = displayFmt.string(from: outDate).lowercased()
-                } else {
-                    summaryClockOutLabel.text = "05:00pm"
-                }
-            } else {
-                summaryClockOutLabel.text = "05:00pm"
-            }
+            summaryClockOutLabel.text = AuthService.shared.getShiftEndTime()
         }
     }
 

@@ -118,6 +118,37 @@ public class AttendanceActivity extends AppCompatActivity {
         updateNotificationBadge();
         updateAttendanceState();
         tickerHandler.post(tickerRunnable);
+
+        ApiClient client = ApiClient.getInstance(this);
+        client.getMySchedule(client.getToken(), new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray schedules) {
+                if (schedules != null && schedules.length() > 0) {
+                    JSONObject first = schedules.optJSONObject(0);
+                    if (first != null) {
+                        JSONObject shift = first.optJSONObject("shift");
+                        String end = shift != null ? shift.optString("endTime", "18:00") : first.optString("endTime", "18:00");
+                        try {
+                            SimpleDateFormat inFmt = new SimpleDateFormat("HH:mm", Locale.US);
+                            SimpleDateFormat endFmt = new SimpleDateFormat("hh:mma", Locale.US);
+                            Date eDate = inFmt.parse(end);
+                            if (eDate != null) {
+                                String endStr = endFmt.format(eDate).toLowerCase();
+                                client.saveShiftEndTime(endStr);
+                                runOnUiThread(() -> {
+                                    if (tvSummaryClockOut != null) {
+                                        tvSummaryClockOut.setText(endStr);
+                                    }
+                                });
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {}
+        });
     }
 
     @Override
@@ -254,28 +285,13 @@ public class AttendanceActivity extends AppCompatActivity {
                 }
             });
         } else {
-            // User is Clocking Out
-            client.clockOut(token, new ApiClient.ApiCallback<JSONObject>() {
-                @Override
-                public void onSuccess(JSONObject result) {
-                    runOnUiThread(() -> {
-                        btnClockAction.setEnabled(true);
-                        Toast.makeText(AttendanceActivity.this, "Successfully Clocked Out", Toast.LENGTH_SHORT).show();
-                        finalizeLiveHistoryItem(formattedNow);
-                        updateAttendanceState();
-                    });
-                }
-
-                @Override
-                public void onError(String error, int statusCode) {
-                    runOnUiThread(() -> {
-                        btnClockAction.setEnabled(true);
-                        Toast.makeText(AttendanceActivity.this, "Clock Out Recorded", Toast.LENGTH_SHORT).show();
-                        finalizeLiveHistoryItem(formattedNow);
-                        updateAttendanceState();
-                    });
-                }
-            });
+            // Shift is active; Clock Out concept removed per company policy
+            btnClockAction.setEnabled(true);
+            new AlertDialog.Builder(this)
+                    .setTitle("Shift in Progress")
+                    .setMessage("Your shift is currently active and recorded in the system. Shift completes automatically based on your assigned company schedule.")
+                    .setPositiveButton("OK", null)
+                    .show();
         }
     }
 
@@ -287,8 +303,9 @@ public class AttendanceActivity extends AppCompatActivity {
         SimpleDateFormat displayFmt = new SimpleDateFormat("hh:mma", Locale.US);
 
         if (isClockedIn) {
-            tvClockActionText.setText("Clock Out");
-            btnClockAction.setBackgroundResource(R.drawable.bg_pill_blue_button);
+            tvClockActionText.setText("✓ Clocked In");
+            tvClockActionText.setTextColor(Color.parseColor("#16A34A"));
+            btnClockAction.setBackgroundResource(R.drawable.bg_break_pill);
 
             // Clock in time from saved ISO
             String inIso = client.getLocalCheckInIso();
@@ -307,13 +324,13 @@ public class AttendanceActivity extends AppCompatActivity {
             }
 
             tvSummaryBreak.setText(client.isOnBreak() ? "In Break" : "12:00pm");
-            tvSummaryClockOut.setText("--:--");
+            tvSummaryClockOut.setText(client.getShiftEndTime());
         } else {
             tvClockActionText.setText("Clock In");
+            tvClockActionText.setTextColor(Color.WHITE);
             btnClockAction.setBackgroundResource(R.drawable.bg_pill_blue_button);
 
             String inIso = client.getLocalCheckInIso();
-            String outIso = client.getLocalCheckOutIso();
 
             if (inIso != null) {
                 try {
@@ -324,22 +341,11 @@ public class AttendanceActivity extends AppCompatActivity {
                     }
                 } catch (Exception ignored) {}
             } else {
-                tvSummaryClockIn.setText("09:00am");
+                tvSummaryClockIn.setText("--:--");
             }
 
             tvSummaryBreak.setText("12:00pm");
-
-            if (outIso != null) {
-                try {
-                    SimpleDateFormat isoParser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-                    Date outDate = isoParser.parse(outIso);
-                    if (outDate != null) {
-                        tvSummaryClockOut.setText(displayFmt.format(outDate).toLowerCase());
-                    }
-                } catch (Exception ignored) {}
-            } else {
-                tvSummaryClockOut.setText("05:00pm");
-            }
+            tvSummaryClockOut.setText(client.getShiftEndTime());
         }
     }
 

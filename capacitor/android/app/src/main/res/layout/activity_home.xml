@@ -401,23 +401,26 @@
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <!-- Dual Action Pill Buttons (Take Break & Clock Out) -->
+                <!-- Action Buttons: Take Break (Clock Out completely removed) -->
                 <LinearLayout
+                    android:id="@+id/actionButtonsRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
+                    android:gravity="center"
                     android:orientation="horizontal">
 
                     <LinearLayout
                         android:id="@+id/btnTakeBreak"
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="46dp"
-                        android:layout_weight="1"
                         android:background="@drawable/bg_break_pill"
                         android:clickable="true"
                         android:focusable="true"
                         android:gravity="center"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:paddingStart="32dp"
+                        android:paddingEnd="32dp">
 
                         <ImageView
                             android:id="@+id/ivTakeBreak"
@@ -432,33 +435,6 @@
                             android:layout_marginStart="8dp"
                             android:text="Take Break"
                             android:textColor="#1E293B"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnClockOut"
-                        android:layout_width="0dp"
-                        android:layout_height="46dp"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_clockout_pill"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_door_exit" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="Clock Out"
-                            android:textColor="#991B1B"
                             android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>

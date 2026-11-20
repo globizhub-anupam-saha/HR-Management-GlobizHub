@@ -288,6 +288,29 @@ public class ApiClient {
         }
     }
 
+    private static final String KEY_SHIFT_TIMING = "globiz_shift_timing";
+    private static final String KEY_SHIFT_END_TIME = "globiz_shift_end_time";
+
+    public void saveShiftTiming(String timing) {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putString(KEY_SHIFT_TIMING, timing).apply();
+    }
+
+    public String getShiftTiming() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(KEY_SHIFT_TIMING, "09:00 AM – 06:00 PM");
+    }
+
+    public void saveShiftEndTime(String end) {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putString(KEY_SHIFT_END_TIME, end).apply();
+    }
+
+    public String getShiftEndTime() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(KEY_SHIFT_END_TIME, "06:00pm");
+    }
+
     public void saveBreakState(boolean onBreak, String breakStartIso) {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         prefs.edit()

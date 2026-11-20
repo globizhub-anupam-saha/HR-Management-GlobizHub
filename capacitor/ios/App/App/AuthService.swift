@@ -722,6 +722,26 @@ class AuthService {
         }.resume()
     }
 
+    // MARK: - Shift Timing Storage & Real-Time Sync
+    private let shiftTimingKey = "globiz_shift_timing"
+    private let shiftEndKey = "globiz_shift_end_time"
+
+    func saveShiftTiming(_ timing: String) {
+        UserDefaults.standard.set(timing, forKey: shiftTimingKey)
+    }
+
+    func getShiftTiming() -> String {
+        return UserDefaults.standard.string(forKey: shiftTimingKey) ?? "09:00 AM – 06:00 PM"
+    }
+
+    func saveShiftEndTime(_ end: String) {
+        UserDefaults.standard.set(end, forKey: shiftEndKey)
+    }
+
+    func getShiftEndTime() -> String {
+        return UserDefaults.standard.string(forKey: shiftEndKey) ?? "06:00pm"
+    }
+
     // MARK: - My Schedule
     func getMySchedule(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
         guard let token = getToken() else {

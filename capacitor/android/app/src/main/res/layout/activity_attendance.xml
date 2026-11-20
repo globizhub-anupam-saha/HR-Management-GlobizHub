@@ -470,7 +470,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Clock Out Time"
+                        android:text="Shift End"
                         android:textColor="#64748B"
                         android:textSize="12sp" />
 
@@ -479,7 +479,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="05:00pm"
+                        android:text="06:00pm"
                         android:textColor="#0F172A"
                         android:textSize="17sp"
                         android:textStyle="bold" />
