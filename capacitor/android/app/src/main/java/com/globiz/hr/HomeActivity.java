@@ -1580,8 +1580,8 @@ public class HomeActivity extends AppCompatActivity {
                     cleanFirstName = cleanFirstName.substring(0, cleanFirstName.indexOf('@'));
                 }
                 cleanFirstName = cleanFirstName.trim().split("\\s+")[0].replaceAll("[^a-zA-Z]", "");
-                if (cleanFirstName.isEmpty()) {
-                    cleanFirstName = "Alex";
+                if (cleanFirstName.isEmpty() || "Alex".equalsIgnoreCase(cleanFirstName)) {
+                    cleanFirstName = apiClient.getFirstName();
                 } else {
                     cleanFirstName = cleanFirstName.substring(0, 1).toUpperCase(Locale.ROOT) +
                             (cleanFirstName.length() > 1 ? cleanFirstName.substring(1).toLowerCase(Locale.ROOT) : "");

@@ -311,6 +311,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         checkAndTriggerActiveShiftReminder()
 
         cachedFirstName = AuthService.shared.getFirstName()
+        avatarInitialsLabel.text = AuthService.shared.getUserInitials()
         updateGreeting()
 
         let currentRole = AuthService.shared.getRole()
@@ -430,7 +431,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         avatarContainer.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openSettings)))
         rightActionsStack.addArrangedSubview(avatarContainer)
 
-        avatarInitialsLabel.text = "A"
+        avatarInitialsLabel.text = AuthService.shared.getUserInitials()
         avatarInitialsLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         avatarInitialsLabel.font = .systemFont(ofSize: 14, weight: .bold)
         avatarInitialsLabel.textAlignment = .center
@@ -2753,7 +2754,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 if let firstWord = cleanName.components(separatedBy: .whitespaces).first, !firstWord.isEmpty {
                     cleanName = firstWord.prefix(1).uppercased() + firstWord.dropFirst()
                 }
-                if cleanName.isEmpty { cleanName = "User" }
+                if cleanName.isEmpty || cleanName == "User" {
+                    cleanName = AuthService.shared.getFirstName()
+                }
 
                 var designation = ""
                 if let desigDict = user["designation"] as? [String: Any], let dName = desigDict["name"] as? String {

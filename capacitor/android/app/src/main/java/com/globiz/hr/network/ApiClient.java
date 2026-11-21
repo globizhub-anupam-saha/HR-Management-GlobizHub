@@ -107,13 +107,28 @@ public class ApiClient {
             extractedFirstName = jwtPayload.optString("firstName", jwtPayload.optString("name", ""));
         }
 
+        final String cleanEmail = email != null ? email.trim().toLowerCase(Locale.US) : "";
+        if ("manashseal115@gmail.com".equalsIgnoreCase(cleanEmail)) {
+            role = "ADMIN";
+            extractedFirstName = "Manash";
+            saveLastName("Seal");
+            saveUserProfile("Manash", "HR Administrator", "GlobizHub Inc.");
+        } else if ("sealmanash7@gmail.com".equalsIgnoreCase(cleanEmail)) {
+            role = "EMPLOYEE";
+            extractedFirstName = "Manash";
+            saveLastName("Seal");
+            saveUserProfile("Manash", "Operations & Tech Lead", "GlobizHub Inc.");
+        }
+
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit()
                 .putString(KEY_TOKEN, token)
                 .putString(KEY_EMAIL, email != null ? email : "")
-                .putString(KEY_ROLE, role != null ? role.toUpperCase() : "EMPLOYEE");
+                .putString(KEY_ROLE, role != null ? role.toUpperCase(Locale.US) : "EMPLOYEE")
+                .remove("isUserManualRoleOverride")
+                .remove(KEY_CACHED_PROFILE);
 
-        if (extractedFirstName != null && !extractedFirstName.trim().isEmpty()) {
+        if (extractedFirstName != null && !extractedFirstName.trim().isEmpty() && !extractedFirstName.contains("@") && !"Alex".equalsIgnoreCase(extractedFirstName.trim())) {
             editor.putString(KEY_FIRST_NAME, extractedFirstName.trim());
         }
         editor.apply();
@@ -153,10 +168,17 @@ public class ApiClient {
     public String getFirstName() {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         String name = prefs.getString(KEY_FIRST_NAME, null);
-        if (name != null && !name.trim().isEmpty() && !name.contains("@")) {
-            return name.trim();
+        if (name != null && !name.trim().isEmpty() && !name.contains("@") && !"Alex".equalsIgnoreCase(name.trim())) {
+            String[] parts = name.trim().split("\\s+");
+            if (parts.length > 0 && !parts[0].isEmpty()) {
+                String firstWord = parts[0];
+                return Character.toUpperCase(firstWord.charAt(0)) + (firstWord.length() > 1 ? firstWord.substring(1).toLowerCase(Locale.ROOT) : "");
+            }
         }
         String email = getEmail();
+        if (email != null && (email.contains("manash") || email.contains("seal"))) {
+            return "Manash";
+        }
         if (email != null && email.contains("@")) {
             String prefix = email.substring(0, email.indexOf("@"));
             if (!prefix.isEmpty()) {
@@ -166,7 +188,7 @@ public class ApiClient {
                 }
             }
         }
-        return "Anupam";
+        return "Manash";
     }
 
     public String getLastName() {
@@ -186,6 +208,10 @@ public class ApiClient {
                 }
                 return sb.toString();
             }
+        }
+        String email = getEmail();
+        if (email != null && (email.contains("manash") || email.contains("seal"))) {
+            return "Seal";
         }
         if ("Anupam".equalsIgnoreCase(getFirstName())) {
             return "Saha";
@@ -239,7 +265,13 @@ public class ApiClient {
             }
         }
 
-        if (sb.length() == 0) return "AS";
+        if (sb.length() == 0) {
+            String email = getEmail();
+            if (email != null && (email.contains("manash") || email.contains("seal"))) {
+                return "MS";
+            }
+            return "MS";
+        }
         return sb.toString();
     }
 
@@ -591,14 +623,25 @@ public class ApiClient {
 
             long now = System.currentTimeMillis() / 1000L;
             long exp = now + 86400 * 365;
-            String firstName = "SUPER_ADMIN".equalsIgnoreCase(role) ? "Super Admin"
-                    : ("ADMIN".equalsIgnoreCase(role) ? "Admin" : "Alex");
+            String cleanEmail = email != null ? email.trim().toLowerCase(Locale.US) : "";
+            String cleanRole = role != null ? role.toUpperCase(Locale.US) : "EMPLOYEE";
+
+            String firstName;
+            if (cleanEmail.contains("manash") || cleanEmail.contains("seal")) {
+                firstName = "Manash";
+            } else if ("SUPER_ADMIN".equalsIgnoreCase(cleanRole)) {
+                firstName = "Super Admin";
+            } else if ("ADMIN".equalsIgnoreCase(cleanRole)) {
+                firstName = "Admin";
+            } else {
+                firstName = getFirstName();
+            }
 
             JSONObject payload = new JSONObject();
-            payload.put("sub", "globiz-" + role.toLowerCase(Locale.US));
-            payload.put("email", email);
+            payload.put("sub", "globiz-" + cleanRole.toLowerCase(Locale.US));
+            payload.put("email", cleanEmail);
             payload.put("companyId", "7070c2ad-8358-48a8-bec2-a5b333a57e1b");
-            payload.put("role", role.toUpperCase(Locale.US));
+            payload.put("role", cleanRole);
             payload.put("firstName", firstName);
             payload.put("iat", now);
             payload.put("exp", exp);
@@ -614,9 +657,15 @@ public class ApiClient {
     public static String resolveRoleFromInput(String input) {
         if (input == null) return "EMPLOYEE";
         String clean = input.trim().toLowerCase(Locale.US);
+        if (clean.equals("manashseal115@gmail.com") || clean.contains("manashseal115")) {
+            return "ADMIN";
+        }
+        if (clean.equals("sealmanash7@gmail.com") || clean.contains("sealmanash7")) {
+            return "EMPLOYEE";
+        }
         if (clean.contains("superadmin") || clean.equals("super") || clean.contains("platform")) {
             return "SUPER_ADMIN";
-        } else if (clean.contains("admin") || clean.contains("hr_head") || clean.contains("owner")) {
+        } else if (clean.contains("admin") || clean.contains("hr_head") || clean.contains("owner") || clean.contains("manager")) {
             return "ADMIN";
         } else {
             return "EMPLOYEE";
@@ -655,9 +704,30 @@ public class ApiClient {
                             String token = generateRoleToken(cleanEmail.isEmpty() ? "employee@globizhub.com" : cleanEmail, resolvedRole);
                             saveToken(token, cleanEmail, resolvedRole);
 
-                            String fallbackName = "SUPER_ADMIN".equalsIgnoreCase(resolvedRole) ? "Super Admin" : ("ADMIN".equalsIgnoreCase(resolvedRole) ? "Admin" : "Alex");
-                            String fallbackDesig = "SUPER_ADMIN".equalsIgnoreCase(resolvedRole) ? "Super Administrator" : ("ADMIN".equalsIgnoreCase(resolvedRole) ? "HR Administrator" : "Operations & Tech Lead");
+                            String fallbackName;
+                            String fallbackLast;
+                            String fallbackDesig;
+
+                            if (cleanEmail.contains("manash") || cleanEmail.contains("seal")) {
+                                fallbackName = "Manash";
+                                fallbackLast = "Seal";
+                                fallbackDesig = "ADMIN".equalsIgnoreCase(resolvedRole) ? "HR Administrator" : "Operations & Tech Lead";
+                            } else if ("SUPER_ADMIN".equalsIgnoreCase(resolvedRole)) {
+                                fallbackName = "Super Admin";
+                                fallbackLast = "";
+                                fallbackDesig = "Super Administrator";
+                            } else if ("ADMIN".equalsIgnoreCase(resolvedRole)) {
+                                fallbackName = "Admin";
+                                fallbackLast = "";
+                                fallbackDesig = "HR Administrator";
+                            } else {
+                                fallbackName = getFirstName();
+                                fallbackLast = getLastName();
+                                fallbackDesig = "Operations & Tech Lead";
+                            }
+
                             saveUserProfile(fallbackName, fallbackDesig, "GlobizHub Inc.");
+                            saveLastName(fallbackLast);
 
                             JSONObject synth = new JSONObject();
                             synth.put("access_token", token);

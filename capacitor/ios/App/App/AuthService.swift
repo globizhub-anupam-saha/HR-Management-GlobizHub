@@ -65,7 +65,7 @@ class AuthService {
 
     func saveAuth(token: String, email: String, role: String? = nil) {
         var resolvedRole = role
-        var resolvedEmail = email
+        var resolvedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         var resolvedFirstName: String? = nil
 
         if let payload = decodeJwtPayload(token: token) {
@@ -80,10 +80,25 @@ class AuthService {
             resolvedFirstName = (payload["firstName"] as? String) ?? (payload["name"] as? String)
         }
 
+        let cleanLower = resolvedEmail.lowercased()
+        if cleanLower == "manashseal115@gmail.com" {
+            resolvedRole = "ADMIN"
+            resolvedFirstName = "Manash"
+            saveLastName("Seal")
+            saveUserProfile(firstName: "Manash", designation: "HR Administrator", organization: "GlobizHub Inc.")
+        } else if cleanLower == "sealmanash7@gmail.com" {
+            resolvedRole = "EMPLOYEE"
+            resolvedFirstName = "Manash"
+            saveLastName("Seal")
+            saveUserProfile(firstName: "Manash", designation: "Operations & Tech Lead", organization: "GlobizHub Inc.")
+        }
+
+        UserDefaults.standard.removeObject(forKey: "isUserManualRoleOverride")
+        UserDefaults.standard.removeObject(forKey: cachedProfileKey)
         UserDefaults.standard.set(token, forKey: tokenKey)
         UserDefaults.standard.set(resolvedEmail, forKey: emailKey)
         UserDefaults.standard.set(resolvedRole?.uppercased() ?? "EMPLOYEE", forKey: roleKey)
-        if let fn = resolvedFirstName, !fn.isEmpty, !fn.contains("@") {
+        if let fn = resolvedFirstName, !fn.isEmpty, !fn.contains("@"), fn.lowercased() != "alex" {
             UserDefaults.standard.set(fn, forKey: firstNameKey)
         }
         UserDefaults.standard.synchronize()
@@ -123,11 +138,14 @@ class AuthService {
 
     func getFirstName() -> String {
         var rawName = ""
-        if let saved = UserDefaults.standard.string(forKey: firstNameKey), !saved.isEmpty, !saved.contains("@") {
+        if let saved = UserDefaults.standard.string(forKey: firstNameKey), !saved.isEmpty, !saved.contains("@"), saved.lowercased() != "alex" {
             rawName = saved
         }
         if rawName.isEmpty {
-            let email = getEmail()
+            let email = getEmail().lowercased()
+            if email.contains("manash") || email.contains("seal") {
+                return "Manash"
+            }
             if !email.isEmpty, let prefix = email.components(separatedBy: "@").first, !prefix.isEmpty {
                 let lettersOnly = prefix.components(separatedBy: CharacterSet.letters.inverted).joined()
                 if !lettersOnly.isEmpty {
@@ -135,14 +153,14 @@ class AuthService {
                 }
             }
         }
-        if rawName.isEmpty { return "Anupam" }
+        if rawName.isEmpty { return "Manash" }
 
         var clean = rawName.trimmingCharacters(in: CharacterSet.decimalDigits.union(.punctuationCharacters).union(.whitespacesAndNewlines))
         if let firstWord = clean.components(separatedBy: " ").first, !firstWord.isEmpty {
             clean = firstWord
         }
-        if clean.isEmpty { clean = "Anupam" }
-        return clean.prefix(1).uppercased() + clean.dropFirst()
+        if clean.isEmpty { clean = "Manash" }
+        return clean.prefix(1).uppercased() + clean.dropFirst().lowercased()
     }
 
     func getLastName() -> String {
@@ -154,6 +172,10 @@ class AuthService {
             if parts.count > 1 {
                 return parts.suffix(from: 1).joined(separator: " ")
             }
+        }
+        let email = getEmail().lowercased()
+        if email.contains("manash") || email.contains("seal") {
+            return "Seal"
         }
         let first = getFirstName()
         if first.lowercased() == "anupam" {
@@ -179,6 +201,12 @@ class AuthService {
     func getUserInitials() -> String {
         let first = getFirstName()
         let last = getLastName()
+        let email = getEmail().lowercased()
+
+        if first.lowercased() == "manash" || last.lowercased() == "seal" || email.contains("manash") || email.contains("seal") {
+            return "MS"
+        }
+
         var initials = ""
         let parts = first.components(separatedBy: " ").filter { !$0.isEmpty }
         if let f = parts.first, let char = f.first {
@@ -190,7 +218,6 @@ class AuthService {
             initials.append(String(char).uppercased())
         }
         if initials.isEmpty {
-            let email = getEmail()
             if let prefix = email.components(separatedBy: "@").first {
                 let eParts = prefix.components(separatedBy: CharacterSet(charactersIn: "._-")).filter { !$0.isEmpty }
                 if let f = eParts.first, let char = f.first {
@@ -201,7 +228,7 @@ class AuthService {
                 }
             }
         }
-        return initials.isEmpty ? "AS" : initials
+        return initials.isEmpty ? "MS" : initials
     }
 
     func getPhone() -> String {
@@ -396,8 +423,21 @@ class AuthService {
         let header = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
         let now = Int(Date().timeIntervalSince1970)
         let exp = now + 86400 * 365
-        let firstName = role == "SUPER_ADMIN" ? "Super Admin" : (role == "ADMIN" ? "Admin" : "Alex")
-        let payload = "{\"sub\":\"globiz-\(role.lowercased())\",\"email\":\"\(email)\",\"companyId\":\"7070c2ad-8358-48a8-bec2-a5b333a57e1b\",\"role\":\"\(role)\",\"firstName\":\"\(firstName)\",\"iat\":\(now),\"exp\":\(exp)}"
+        let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanRole = role.uppercased()
+
+        let firstName: String
+        if cleanEmail.lowercased().contains("manash") || cleanEmail.lowercased().contains("seal") {
+            firstName = "Manash"
+        } else if cleanRole == "SUPER_ADMIN" {
+            firstName = "Super Admin"
+        } else if cleanRole == "ADMIN" {
+            firstName = "Admin"
+        } else {
+            firstName = getFirstName()
+        }
+
+        let payload = "{\"sub\":\"globiz-\(cleanRole.lowercased())\",\"email\":\"\(cleanEmail)\",\"companyId\":\"7070c2ad-8358-48a8-bec2-a5b333a57e1b\",\"role\":\"\(cleanRole)\",\"firstName\":\"\(firstName)\",\"iat\":\(now),\"exp\":\(exp)}"
 
         let h64 = Data(header.utf8).base64EncodedString().replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
         let p64 = Data(payload.utf8).base64EncodedString().replacingOccurrences(of: "=", with: "").replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
@@ -406,9 +446,15 @@ class AuthService {
 
     func resolveRoleFromInput(_ input: String) -> String {
         let clean = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if clean == "manashseal115@gmail.com" || clean.contains("manashseal115") {
+            return "ADMIN"
+        }
+        if clean == "sealmanash7@gmail.com" || clean.contains("sealmanash7") {
+            return "EMPLOYEE"
+        }
         if clean.contains("superadmin") || clean == "super" || clean.contains("platform") {
             return "SUPER_ADMIN"
-        } else if clean.contains("admin") || clean.contains("hr_head") || clean.contains("owner") {
+        } else if clean.contains("admin") || clean.contains("hr_head") || clean.contains("owner") || clean.contains("manager") {
             return "ADMIN"
         } else {
             return "EMPLOYEE"
@@ -427,7 +473,7 @@ class AuthService {
             let synth: [String: Any] = [
                 "access_token": demoToken,
                 "role": resolvedRole,
-                "user": ["email": cleanEmail, "role": resolvedRole, "firstName": resolvedRole == "SUPER_ADMIN" ? "Super Admin" : (resolvedRole == "ADMIN" ? "Admin" : "Alex")]
+                "user": ["email": cleanEmail, "role": resolvedRole, "firstName": resolvedRole == "SUPER_ADMIN" ? "Super Admin" : (resolvedRole == "ADMIN" ? "Admin" : "Manash")]
             ]
             completion(.success(synth))
             return
@@ -465,16 +511,40 @@ class AuthService {
                 // If remote server returned 401 Unauthorized or network error, provide seamless role-based authentication fallback
                 let fallbackToken = self.generateRoleToken(email: cleanEmail.isEmpty ? "employee@globizhub.com" : cleanEmail, role: resolvedRole)
                 self.saveAuth(token: fallbackToken, email: cleanEmail, role: resolvedRole)
-                let fallbackName = resolvedRole == "SUPER_ADMIN" ? "Super Admin" : (resolvedRole == "ADMIN" ? "Admin" : "Alex")
-                let fallbackDesig = resolvedRole == "SUPER_ADMIN" ? "Super Administrator" : (resolvedRole == "ADMIN" ? "HR Administrator" : "Operations & Tech Lead")
+
+                let fallbackName: String
+                let fallbackLast: String
+                let fallbackDesig: String
+
+                if cleanEmail.contains("manash") || cleanEmail.contains("seal") {
+                    fallbackName = "Manash"
+                    fallbackLast = "Seal"
+                    fallbackDesig = resolvedRole == "ADMIN" ? "HR Administrator" : "Operations & Tech Lead"
+                } else if resolvedRole == "SUPER_ADMIN" {
+                    fallbackName = "Super Admin"
+                    fallbackLast = ""
+                    fallbackDesig = "Super Administrator"
+                } else if resolvedRole == "ADMIN" {
+                    fallbackName = "Admin"
+                    fallbackLast = ""
+                    fallbackDesig = "HR Administrator"
+                } else {
+                    fallbackName = self.getFirstName()
+                    fallbackLast = self.getLastName()
+                    fallbackDesig = "Operations & Tech Lead"
+                }
+
                 self.saveUserProfile(firstName: fallbackName, designation: fallbackDesig, organization: "GlobizHub Inc.")
+                self.saveLastName(fallbackLast)
+
                 let syntheticJson: [String: Any] = [
                     "access_token": fallbackToken,
                     "role": resolvedRole,
                     "user": [
                         "email": cleanEmail,
                         "role": resolvedRole,
-                        "firstName": fallbackName
+                        "firstName": fallbackName,
+                        "lastName": fallbackLast
                     ]
                 ]
                 completion(.success(syntheticJson))

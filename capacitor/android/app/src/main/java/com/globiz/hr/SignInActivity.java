@@ -153,7 +153,26 @@ public class SignInActivity extends AppCompatActivity {
                     JSONObject u = result.optJSONObject("user");
                     if (u != null) role = u.optString("role", "");
                 }
+                if (role.isEmpty()) {
+                    role = ApiClient.resolveRoleFromInput(email);
+                }
                 ApiClient.getInstance(SignInActivity.this).saveToken(token, email, role);
+
+                if (result.has("user")) {
+                    JSONObject u = result.optJSONObject("user");
+                    if (u != null) {
+                        String fn = u.optString("firstName", "");
+                        String ln = u.optString("lastName", "");
+                        String des = u.optString("designation", "");
+                        String org = u.optString("companyName", u.optString("organization", "GlobizHub Inc."));
+                        if (!fn.isEmpty()) {
+                            ApiClient.getInstance(SignInActivity.this).saveUserProfile(fn, des, org);
+                            if (!ln.isEmpty()) {
+                                ApiClient.getInstance(SignInActivity.this).saveLastName(ln);
+                            }
+                        }
+                    }
+                }
 
                 Toast.makeText(SignInActivity.this, "Signed in successfully!", Toast.LENGTH_SHORT).show();
 

@@ -91,6 +91,12 @@ class SplashViewController: UIViewController {
         guard !hasNavigated else { return }
         hasNavigated = true
 
+        if ProcessInfo.processInfo.arguments.contains("-clearAuth") {
+            AuthService.shared.clearAuth()
+            UserDefaults.standard.removeObject(forKey: "isUserManualRoleOverride")
+            UserDefaults.standard.removeObject(forKey: "cached_user_profile")
+        }
+
         if let idx = ProcessInfo.processInfo.arguments.firstIndex(of: "-testRole"), idx + 1 < ProcessInfo.processInfo.arguments.count {
             let roleArg = ProcessInfo.processInfo.arguments[idx + 1]
             AuthService.shared.saveRole(roleArg)
@@ -119,8 +125,12 @@ class SplashViewController: UIViewController {
             nextVC = SignInViewController()
         }
 
-        if let window = self.view.window ?? UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
-            UIView.transition(with: window, duration: 0.40, options: .transitionCrossDissolve, animations: {
+        let targetWindow = self.view.window
+            ?? (UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap { $0.windows }.first(where: { $0.isKeyWindow }))
+            ?? UIApplication.shared.windows.first
+
+        if let window = targetWindow {
+            UIView.transition(with: window, duration: 0.35, options: .transitionCrossDissolve, animations: {
                 window.rootViewController = nextVC
             }, completion: nil)
         } else {

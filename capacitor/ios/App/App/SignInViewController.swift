@@ -279,6 +279,15 @@ class SignInViewController: UIViewController {
             passwordTextField.becomeFirstResponder()
         }
 
+        if let idx = ProcessInfo.processInfo.arguments.firstIndex(of: "-testLoginEmail"), idx + 1 < ProcessInfo.processInfo.arguments.count {
+            let testEmail = ProcessInfo.processInfo.arguments[idx + 1]
+            emailTextField.text = testEmail
+            passwordTextField.text = "12345678"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.didTapSignIn()
+            }
+        }
+
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tap)
     }
