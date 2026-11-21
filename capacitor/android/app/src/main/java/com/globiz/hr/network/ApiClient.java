@@ -1509,6 +1509,69 @@ public class ApiClient {
         return "An error occurred (" + statusCode + "). Please try again.";
     }
 
+    // MARK: - Offline Punch Queue & Synchronization
+    public void savePendingOfflinePunch(String type, String isoTime) {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit()
+                .putString("pending_offline_punch_type", type)
+                .putString("pending_offline_punch_time", isoTime)
+                .apply();
+    }
+
+    public String getPendingOfflinePunchType() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString("pending_offline_punch_type", null);
+    }
+
+    public String getPendingOfflinePunchTime() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString("pending_offline_punch_time", null);
+    }
+
+    public void clearPendingOfflinePunch() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit()
+                .remove("pending_offline_punch_type")
+                .remove("pending_offline_punch_time")
+                .apply();
+    }
+
+    public void syncPendingOfflinePunches() {
+        String type = getPendingOfflinePunchType();
+        String time = getPendingOfflinePunchTime();
+        String token = getToken();
+        if (type == null || time == null || token == null || token.isEmpty()) {
+            return;
+        }
+
+        String endpoint = "IN".equalsIgnoreCase(type) ? "/attendance/clock-in" : "/attendance/clock-out";
+        try {
+            JSONObject body = new JSONObject();
+            body.put("timestamp", time);
+            String userId = getUserId();
+            if (userId != null && !userId.isEmpty()) {
+                body.put("userId", userId);
+                body.put("employeeId", userId);
+            }
+            body.put("latitude", 0.0);
+            body.put("longitude", 0.0);
+
+            postJson(endpoint, body, token, new ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    clearPendingOfflinePunch();
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    if (statusCode >= 200 && statusCode < 300) {
+                        clearPendingOfflinePunch();
+                    }
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
     private <T> void postSuccess(ApiCallback<T> callback, T result) {
         mainHandler.post(() -> callback.onSuccess(result));
     }

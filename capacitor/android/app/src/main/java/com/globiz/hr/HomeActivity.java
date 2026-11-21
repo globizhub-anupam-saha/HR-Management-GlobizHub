@@ -305,6 +305,9 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         restoreUserAttendanceSession();
+        if (apiClient != null) {
+            apiClient.syncPendingOfflinePunches();
+        }
         scheduleShiftReminderNotifications();
         checkAndTriggerActiveShiftReminder();
 
@@ -373,6 +376,16 @@ public class HomeActivity extends AppCompatActivity {
         flAvatarContainer = findViewById(R.id.flAvatarContainer);
         ivUserAvatar = findViewById(R.id.ivUserAvatar);
         tvAvatarInitials = findViewById(R.id.tvAvatarInitials);
+        if (tvAvatarInitials != null) {
+            String initialName = apiClient.getFirstName();
+            if (initialName != null && !initialName.isEmpty()) {
+                if (initialName.contains("@")) initialName = initialName.substring(0, initialName.indexOf('@'));
+                initialName = initialName.trim();
+                if (!initialName.isEmpty()) {
+                    tvAvatarInitials.setText(initialName.substring(0, 1).toUpperCase(Locale.ROOT));
+                }
+            }
+        }
 
         if (flAvatarContainer != null) {
             flAvatarContainer.setOutlineProvider(new ViewOutlineProvider() {
@@ -633,9 +646,43 @@ public class HomeActivity extends AppCompatActivity {
 
     private boolean isWithinPunchInWindow() {
         int windowOpenMinutes = (shiftStartHour * 60 + shiftStartMinute) - 5;
+        int windowCloseMinutes = (shiftEndHour * 60 + shiftEndMinute);
         Calendar now = Calendar.getInstance();
         int currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
-        return currentMinutes >= windowOpenMinutes;
+        return currentMinutes >= windowOpenMinutes && currentMinutes <= windowCloseMinutes;
+    }
+
+    private void autoClockOutAtShiftEnd() {
+        if (!isCheckedIn) return;
+        Date outDate = new Date();
+        isCheckedIn = false;
+        isShiftCompletedToday = true;
+        stopTimer();
+
+        SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String nowIso = isoFmt.format(outDate);
+        apiClient.recordLocalClockOut(nowIso);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        String timeStr = sdf.format(outDate);
+        if (tvPunchedInAt != null) {
+            tvPunchedInAt.setText("• Shift Completed at " + timeStr);
+        }
+        updatePunchButtonUI(false);
+
+        String token = apiClient.getToken();
+        apiClient.clockOut(token, new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                loadAttendanceStats();
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                apiClient.savePendingOfflinePunch("OUT", nowIso);
+            }
+        });
     }
 
     private void updateShiftBadge() {
@@ -729,9 +776,13 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (currentMinutes >= shiftEndMin) {
+            if (isCheckedIn) {
+                autoClockOutAtShiftEnd();
+            }
             if (!prefs.getBoolean(endKey, false)) {
                 prefs.edit().putBoolean(endKey, true).apply();
-                triggerSystemNotification("Shift Completed • 06:00 PM",
+                String endFormatted = String.format(Locale.US, "%02d:%02d", shiftEndHour, shiftEndMinute);
+                triggerSystemNotification("Shift Completed • " + endFormatted,
                         "Great job today! Your shift is now over. Thank you for your dedication and hard work—don't forget to punch out!");
             }
         }
@@ -1160,76 +1211,111 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showTeamRosterDialog() {
-        if (cachedTeamMembers == null || cachedTeamMembers.length() == 0) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Team Presence")
-                    .setMessage("No team members currently active.")
-                    .setPositiveButton("OK", null)
-                    .show();
-        } else {
-            StringBuilder sb = new StringBuilder();
-            sb.append(cachedTeamMembers.length()).append(" Active Team Members:\n\n");
-            int limit = Math.min(cachedTeamMembers.length(), 8);
-            for (int i = 0; i < limit; i++) {
-                JSONObject m = cachedTeamMembers.optJSONObject(i);
-                if (m != null) {
-                    String fn = m.optString("firstName", "");
-                    String ln = m.optString("lastName", "");
-                    String desig = "";
-                    JSONObject dObj = m.optJSONObject("designation");
-                    if (dObj != null) {
-                        desig = dObj.optString("name", "");
-                    } else {
-                        desig = m.optString("designation", "");
-                    }
-                    String name = (fn + " " + ln).trim();
-                    if (!name.isEmpty()) {
-                        sb.append("• ").append(name);
-                        if (!desig.isEmpty()) {
-                            sb.append(" (").append(desig).append(")");
-                        }
-                        sb.append("\n");
-                    }
-                }
-            }
-            if (cachedTeamMembers.length() > 8) {
-                sb.append("\n...and ").append(cachedTeamMembers.length() - 8).append(" more");
-            }
-            new AlertDialog.Builder(this)
-                    .setTitle("Team Roster")
-                    .setMessage(sb.toString().trim())
-                    .setPositiveButton("OK", null)
-                    .show();
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_team_roster);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92),
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
         }
+
+        TextView tvOrg = dialog.findViewById(R.id.tvRosterOrgTitle);
+        TextView tvSub = dialog.findViewById(R.id.tvRosterSubtitle);
+        View btnClose = dialog.findViewById(R.id.btnRosterClose);
+        android.widget.ListView lv = dialog.findViewById(R.id.lvTeamRoster);
+
+        String org = apiClient.getOrganization();
+        if (org == null || org.isEmpty()) org = "GlobizHub Inc.";
+        if (tvOrg != null) tvOrg.setText(org);
+
+        int count = cachedTeamMembers != null ? cachedTeamMembers.length() : 0;
+        if (tvSub != null) tvSub.setText(count + " " + (count == 1 ? "Employee" : "Employees"));
+
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (lv != null) {
+            int[] colors = new int[]{
+                    Color.parseColor("#0056FD"),
+                    Color.parseColor("#10B981"),
+                    Color.parseColor("#F59E0B"),
+                    Color.parseColor("#8B5CF6"),
+                    Color.parseColor("#EC4899")
+            };
+
+            android.widget.BaseAdapter adapter = new android.widget.BaseAdapter() {
+                @Override
+                public int getCount() {
+                    return count;
+                }
+
+                @Override
+                public Object getItem(int position) {
+                    return cachedTeamMembers.optJSONObject(position);
+                }
+
+                @Override
+                public long getItemId(int position) {
+                    return position;
+                }
+
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+                    if (convertView == null) {
+                        convertView = getLayoutInflater().inflate(R.layout.item_team_roster, parent, false);
+                    }
+                    JSONObject m = cachedTeamMembers.optJSONObject(position);
+                    TextView tvInitial = convertView.findViewById(R.id.tvRosterInitial);
+                    TextView tvName = convertView.findViewById(R.id.tvRosterName);
+                    TextView tvRole = convertView.findViewById(R.id.tvRosterRole);
+                    FrameLayout flAvatar = convertView.findViewById(R.id.flRosterAvatar);
+
+                    if (m != null) {
+                        String fn = m.optString("firstName", "");
+                        String ln = m.optString("lastName", "");
+                        String fullName = (fn + " " + ln).trim();
+                        if (fullName.isEmpty()) fullName = "Team Member";
+                        if (tvName != null) tvName.setText(fullName);
+
+                        String initial = !fn.isEmpty() ? fn.substring(0, 1).toUpperCase(Locale.ROOT) :
+                                (!fullName.isEmpty() ? fullName.substring(0, 1).toUpperCase(Locale.ROOT) : "E");
+                        if (tvInitial != null) tvInitial.setText(initial);
+
+                        if (flAvatar != null) {
+                            GradientDrawable gd = new GradientDrawable();
+                            gd.setShape(GradientDrawable.OVAL);
+                            gd.setColor(colors[position % colors.length]);
+                            flAvatar.setBackground(gd);
+                        }
+
+                        String desig = "";
+                        JSONObject dObj = m.optJSONObject("designation");
+                        if (dObj != null) desig = dObj.optString("name", "");
+                        if (desig.isEmpty()) desig = m.optString("role", "Employee");
+
+                        String dept = "";
+                        JSONObject deptObj = m.optJSONObject("department");
+                        if (deptObj != null) dept = deptObj.optString("name", "");
+
+                        if (tvRole != null) {
+                            tvRole.setText(dept.isEmpty() ? desig : desig + " • " + dept);
+                        }
+                    }
+                    return convertView;
+                }
+            };
+            lv.setAdapter(adapter);
+        }
+
+        dialog.show();
     }
 
     private void showTasksDialog() {
-        if (cachedTasks == null || cachedTasks.length() == 0) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Tasks Due Today")
-                    .setMessage("All caught up! No pending tasks for today.")
-                    .setPositiveButton("OK", null)
-                    .show();
-        } else {
-            StringBuilder sb = new StringBuilder();
-            sb.append(cachedTasks.length()).append(" Task(s) Found:\n\n");
-            int limit = Math.min(cachedTasks.length(), 6);
-            for (int i = 0; i < limit; i++) {
-                JSONObject t = cachedTasks.optJSONObject(i);
-                if (t != null) {
-                    String title = t.optString("title", t.optString("name", "Task"));
-                    sb.append("• ").append(title).append("\n");
-                }
-            }
-            if (cachedTasks.length() > 6) {
-                sb.append("\n...and ").append(cachedTasks.length() - 6).append(" more");
-            }
-            new AlertDialog.Builder(this)
-                    .setTitle("Tasks Due Today")
-                    .setMessage(sb.toString().trim())
-                    .setPositiveButton("OK", null)
-                    .show();
-        }
+        startActivity(new Intent(this, TasksActivity.class));
     }
 
     // --- Dynamic Team Presence ---
@@ -1639,6 +1725,20 @@ public class HomeActivity extends AppCompatActivity {
                     JSONObject shift = item.optJSONObject("shift");
                     String start = shift != null ? shift.optString("startTime", "09:00") : item.optString("startTime", "09:00");
                     String end = shift != null ? shift.optString("endTime", "18:00") : item.optString("endTime", "18:00");
+                    String[] startParts = start.split(":");
+                    if (startParts.length >= 2) {
+                        try {
+                            shiftStartHour = Integer.parseInt(startParts[0]);
+                            shiftStartMinute = Integer.parseInt(startParts[1]);
+                        } catch (Exception ignored) {}
+                    }
+                    String[] endParts = end.split(":");
+                    if (endParts.length >= 2) {
+                        try {
+                            shiftEndHour = Integer.parseInt(endParts[0]);
+                            shiftEndMinute = Integer.parseInt(endParts[1]);
+                        } catch (Exception ignored) {}
+                    }
                     String formatted = formatShiftTime(start, end);
                     apiClient.saveShiftTiming(formatted);
 
@@ -1837,13 +1937,8 @@ public class HomeActivity extends AppCompatActivity {
                     if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
                         loadAttendanceStats();
                     } else {
-                        // Revert on critical error
-                        isCheckedIn = false;
-                        checkInDateTime = null;
-                        stopTimer();
-                        updateTimerDisplay(0, 0, 0);
-                        updatePunchButtonUI(false);
-                        Toast.makeText(HomeActivity.this, errorMessage != null ? errorMessage : "Punch In failed", Toast.LENGTH_SHORT).show();
+                        apiClient.savePendingOfflinePunch("IN", isoFmt.format(checkInDateTime));
+                        Toast.makeText(HomeActivity.this, "Punched In offline. Saved locally and will sync when connected.", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -1879,6 +1974,7 @@ public class HomeActivity extends AppCompatActivity {
 
                 @Override
                 public void onError(String errorMessage, int statusCode) {
+                    apiClient.savePendingOfflinePunch("OUT", isoFmt.format(outDate));
                     loadAttendanceStats();
                 }
             });
@@ -2094,14 +2190,17 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setHeatmapMode(boolean isYear) {
         isYearHeatmapMode = isYear;
+        int pad = dpToPx(12);
         if (isYear) {
             if (btnHeatmapModeYear != null) {
                 btnHeatmapModeYear.setBackgroundResource(R.drawable.bg_capsule_selected);
                 btnHeatmapModeYear.setTextColor(Color.WHITE);
+                btnHeatmapModeYear.setPadding(pad, 0, pad, 0);
             }
             if (btnHeatmapModeMonth != null) {
-                btnHeatmapModeMonth.setBackgroundColor(Color.TRANSPARENT);
+                btnHeatmapModeMonth.setBackgroundResource(0);
                 btnHeatmapModeMonth.setTextColor(Color.parseColor("#64748B"));
+                btnHeatmapModeMonth.setPadding(pad, 0, pad, 0);
             }
             if (layoutHeatmapMonthControls != null) layoutHeatmapMonthControls.setVisibility(View.GONE);
             if (layoutHeatmapMonthContainer != null) layoutHeatmapMonthContainer.setVisibility(View.GONE);
@@ -2111,10 +2210,12 @@ public class HomeActivity extends AppCompatActivity {
             if (btnHeatmapModeMonth != null) {
                 btnHeatmapModeMonth.setBackgroundResource(R.drawable.bg_capsule_selected);
                 btnHeatmapModeMonth.setTextColor(Color.WHITE);
+                btnHeatmapModeMonth.setPadding(pad, 0, pad, 0);
             }
             if (btnHeatmapModeYear != null) {
-                btnHeatmapModeYear.setBackgroundColor(Color.TRANSPARENT);
+                btnHeatmapModeYear.setBackgroundResource(0);
                 btnHeatmapModeYear.setTextColor(Color.parseColor("#64748B"));
+                btnHeatmapModeYear.setPadding(pad, 0, pad, 0);
             }
             if (layoutHeatmapMonthControls != null) layoutHeatmapMonthControls.setVisibility(View.VISIBLE);
             if (layoutHeatmapMonthContainer != null) layoutHeatmapMonthContainer.setVisibility(View.VISIBLE);
@@ -2544,65 +2645,40 @@ public class HomeActivity extends AppCompatActivity {
             public void onSuccess(JSONArray balances) {
                 if (isFinishing() || isDestroyed() || balances == null) return;
 
-                int casualLeft = 6;
-                int sickLeft = 4;
                 int totalAllocated = 0;
                 int totalUsed = 0;
-                boolean parsedAny = false;
 
                 for (int i = 0; i < balances.length(); i++) {
                     JSONObject b = balances.optJSONObject(i);
                     if (b == null) continue;
-                    String type = b.optString("leaveType", "").toUpperCase(Locale.ROOT);
-                    JSONObject policy = b.optJSONObject("leavePolicy");
-                    if (policy != null) {
-                        type += " " + policy.optString("name", "").toUpperCase(Locale.ROOT) + " " + policy.optString("type", "").toUpperCase(Locale.ROOT);
-                    }
                     int allocated = b.optInt("allocatedDays", 6);
                     int used = b.optInt("usedDays", 0);
-                    int expired = b.optInt("expiredDays", 0);
-                    int pending = b.optInt("pendingDays", 0);
-                    int remaining = b.optInt("remaining", b.optInt("available", Math.max(0, allocated - used - expired - pending)));
-
                     totalAllocated += allocated;
                     totalUsed += used;
-
-                    if (type.contains("CASUAL")) {
-                        casualLeft = remaining;
-                        parsedAny = true;
-                    } else if (type.contains("SICK") || type.contains("MEDICAL")) {
-                        sickLeft = remaining;
-                        parsedAny = true;
-                    }
                 }
 
-                if (!parsedAny || totalAllocated == 0) {
-                    casualLeft = 6;
-                    sickLeft = 4;
-                    totalAllocated = 10;
+                if (totalAllocated == 0) {
+                    totalAllocated = 24;
+                    totalUsed = 6;
                 }
 
-                if (tvCasualLeave != null) tvCasualLeave.setText("Casual: " + casualLeft + " left");
-                if (tvSickLeave != null) tvSickLeave.setText("Sick: " + sickLeft + " remaining");
+                int totalRemaining = Math.max(0, totalAllocated - totalUsed);
+                if (tvCasualLeave != null) tvCasualLeave.setText(totalRemaining + " Leaves Left");
+                if (tvSickLeave != null) tvSickLeave.setText("Allocated: " + totalAllocated + " • Used: " + totalUsed);
                 if (pbLeaveProgress != null) {
                     pbLeaveProgress.setMax(100);
-                    if (totalUsed == 0) {
-                        pbLeaveProgress.setProgress(100);
-                    } else {
-                        int totalRemaining = casualLeft + sickLeft;
-                        int progressPercent = (int) (100.0 * totalRemaining / Math.max(1, totalAllocated));
-                        pbLeaveProgress.setProgress(Math.max(8, Math.min(100, progressPercent)));
-                    }
+                    int progressPercent = (int) (100.0 * totalRemaining / Math.max(1, totalAllocated));
+                    pbLeaveProgress.setProgress(Math.max(8, Math.min(100, progressPercent)));
                 }
             }
 
             @Override
             public void onError(String errorMessage, int statusCode) {
-                if (tvCasualLeave != null) tvCasualLeave.setText("Casual: 6 left");
-                if (tvSickLeave != null) tvSickLeave.setText("Sick: 4 remaining");
+                if (tvCasualLeave != null) tvCasualLeave.setText("18 Leaves Left");
+                if (tvSickLeave != null) tvSickLeave.setText("Allocated: 24 • Used: 6");
                 if (pbLeaveProgress != null) {
                     pbLeaveProgress.setMax(100);
-                    pbLeaveProgress.setProgress(100);
+                    pbLeaveProgress.setProgress(75);
                 }
             }
         });
@@ -2725,7 +2801,7 @@ public class HomeActivity extends AppCompatActivity {
                 tvHolidayDaysLeft.setText("Tomorrow");
                 tvHolidayDaysLeft.setTextColor(Color.parseColor("#D97706"));
             } else {
-                tvHolidayDaysLeft.setText(current.daysRemaining + " days left");
+                tvHolidayDaysLeft.setText("In " + current.daysRemaining + " days");
                 tvHolidayDaysLeft.setTextColor(Color.parseColor("#D97706"));
             }
         }

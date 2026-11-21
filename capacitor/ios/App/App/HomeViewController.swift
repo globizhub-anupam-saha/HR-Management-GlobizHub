@@ -200,9 +200,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     private func isWithinPunchInWindow() -> Bool {
         let windowOpenMinutes = (shiftStartHour * 60 + shiftStartMinute) - 5
+        let windowCloseMinutes = (shiftEndHour * 60 + shiftEndMinute)
         let cal = Calendar.current
         let currentMinutes = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
-        return currentMinutes >= windowOpenMinutes
+        return currentMinutes >= windowOpenMinutes && currentMinutes <= windowCloseMinutes
     }
 
     private func updateShiftBadgeForStatus(isLate: Bool) {
@@ -305,6 +306,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         scrollView.setContentOffset(.zero, animated: false)
 
         restoreUserAttendanceSession()
+        AuthService.shared.syncPendingOfflinePunches()
         scheduleShiftReminderNotifications()
         checkAndTriggerActiveShiftReminder()
 
@@ -828,7 +830,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         leavesCard.translatesAutoresizingMaskIntoConstraints = false
         twoColumnRow.addArrangedSubview(leavesCard)
 
-        leavesTitleLabel.text = "Leaves"
+        leavesTitleLabel.text = "Total Leave"
         leavesTitleLabel.font = .systemFont(ofSize: 16, weight: .bold)
         leavesTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         leavesTitleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -840,20 +842,20 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         leavesCard.addSubview(leavesBadge)
 
         let calConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        leavesBadgeIcon.image = UIImage(systemName: "calendar", withConfiguration: calConfig)
-        leavesBadgeIcon.tintColor = UIColor(red: 37/255, green: 99/255, blue: 235/255, alpha: 1.0)
+        leavesBadgeIcon.image = UIImage(systemName: "leaf.fill", withConfiguration: calConfig) ?? UIImage(systemName: "calendar", withConfiguration: calConfig)
+        leavesBadgeIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         leavesBadgeIcon.contentMode = .scaleAspectFit
         leavesBadgeIcon.translatesAutoresizingMaskIntoConstraints = false
         leavesBadge.addSubview(leavesBadgeIcon)
 
-        leavesCasualLabel.text = "Casual: 6 left"
-        leavesCasualLabel.font = .systemFont(ofSize: 14, weight: .bold)
-        leavesCasualLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        leavesCasualLabel.text = "18 Leaves Left"
+        leavesCasualLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        leavesCasualLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         leavesCasualLabel.translatesAutoresizingMaskIntoConstraints = false
         leavesCard.addSubview(leavesCasualLabel)
 
-        leavesSickLabel.text = "Sick: 4 remaining"
-        leavesSickLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        leavesSickLabel.text = "Allocated: 24 • Used: 6"
+        leavesSickLabel.font = .systemFont(ofSize: 13, weight: .medium)
         leavesSickLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         leavesSickLabel.translatesAutoresizingMaskIntoConstraints = false
         leavesCard.addSubview(leavesSickLabel)
@@ -1040,7 +1042,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         updateTeamPresenceUI(members: [])
 
         // View Roster Button
-        viewRosterButton.setTitle("View Roster ›", for: .normal)
+        viewRosterButton.setTitle("View Roster", for: .normal)
         viewRosterButton.setTitleColor(UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), for: .normal)
         viewRosterButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
         viewRosterButton.translatesAutoresizingMaskIntoConstraints = false
@@ -2333,14 +2335,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.loadRealAttendanceHistoryForHeatmap()
                 case .failure(let err):
                     let errStr = err.localizedDescription.lowercased()
-                    if !errStr.contains("already") {
-                        self.isCheckedIn = false
-                        self.checkInDate = nil
-                        self.stopTimer()
-                        self.updateUIForAttendance(clockedIn: false)
-                        self.showError(err.localizedDescription)
-                    } else {
+                    if errStr.contains("already") {
                         self.loadAttendanceStats()
+                    } else {
+                        let isoFormatter = ISO8601DateFormatter()
+                        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                        let nowIso = isoFormatter.string(from: instantDate)
+                        AuthService.shared.savePendingOfflinePunch(type: "IN", isoTime: nowIso)
+                        self.showError("Punched In recorded offline. Saved locally and will sync when connected.")
                     }
                 }
             }
@@ -2364,8 +2366,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             AuthService.shared.clockOut { [weak self] result in
                 guard let self = self else { return }
                 self.punchCircleButton.isEnabled = true
-                self.loadAttendanceStats()
-                self.loadRealAttendanceHistoryForHeatmap()
+                switch result {
+                case .success:
+                    self.loadAttendanceStats()
+                    self.loadRealAttendanceHistoryForHeatmap()
+                case .failure:
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    let nowIso = isoFormatter.string(from: instantDate)
+                    AuthService.shared.savePendingOfflinePunch(type: "OUT", isoTime: nowIso)
+                    self.showError("Punched Out recorded offline. Saved locally and will sync when connected.")
+                }
             }
         }
     }
@@ -2697,37 +2708,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     @objc private func handleViewRoster() {
-        if teamMembersList.isEmpty {
-            showAlert(title: "Team Presence", message: "No team members currently active.")
-        } else {
-            var names: [String] = []
-            for m in teamMembersList.prefix(8) {
-                let fn = m["firstName"] as? String ?? ""
-                let ln = m["lastName"] as? String ?? ""
-                let desig = (m["designation"] as? [String: Any])?["name"] as? String ?? m["designation"] as? String ?? ""
-                let name = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
-                if !name.isEmpty {
-                    names.append(desig.isEmpty ? "• \(name)" : "• \(name) (\(desig))")
-                }
-            }
-            let moreText = teamMembersList.count > 8 ? "\n...and \(teamMembersList.count - 8) more" : ""
-            let rosterMsg = "\(teamMembersList.count) Active Team Members:\n\n" + names.joined(separator: "\n") + moreText
-            showAlert(title: "Team Roster", message: rosterMsg)
-        }
+        let rosterVC = TeamRosterModalViewController()
+        rosterVC.teamMembers = teamMembersList
+        let orgName = AuthService.shared.getOrganization()
+        rosterVC.organizationName = orgName.isEmpty ? "GlobizHub Inc." : orgName
+        rosterVC.modalPresentationStyle = .overFullScreen
+        rosterVC.modalTransitionStyle = .crossDissolve
+        present(rosterVC, animated: true)
     }
 
     @objc private func handleTasksAction() {
-        if myTasksList.isEmpty {
-            showAlert(title: "Tasks Due Today", message: "All caught up! No pending tasks for today.")
-        } else {
-            var titles: [String] = []
-            for t in myTasksList.prefix(6) {
-                let title = t["title"] as? String ?? t["name"] as? String ?? "Task"
-                titles.append("• \(title)")
-            }
-            let more = myTasksList.count > 6 ? "\n...and \(myTasksList.count - 6) more" : ""
-            showAlert(title: "Tasks Due Today", message: "\(myTasksList.count) Task(s) Found:\n\n" + titles.joined(separator: "\n") + more)
-        }
+        let tasksVC = TasksViewController()
+        navigationController?.pushViewController(tasksVC, animated: true)
     }
 
     private func showAlert(title: String, message: String) {
@@ -2744,16 +2736,33 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Profile & Real-time Info
     private func loadProfile() {
-        let email = AuthService.shared.getEmail()
-        let initial = email.isEmpty ? "A" : String(email.prefix(1)).uppercased()
-        avatarInitialsLabel.text = initial
+        let localName = AuthService.shared.getFirstName()
+        let initialLetter: String
+        if !localName.isEmpty {
+            initialLetter = String(localName.prefix(1)).uppercased()
+        } else if !AuthService.shared.getEmail().isEmpty {
+            initialLetter = String(AuthService.shared.getEmail().prefix(1)).uppercased()
+        } else {
+            initialLetter = "U"
+        }
+        avatarInitialsLabel.text = initialLetter
 
         AuthService.shared.getProfile { [weak self] result in
             guard let self = self else { return }
             switch result {
             case .success(let user):
-                let firstName = user["firstName"] as? String ?? ""
+                let rawName = user["firstName"] as? String ?? user["name"] as? String ?? ""
                 let photoUrl = user["profilePhoto"] as? String ?? ""
+
+                var cleanName = rawName
+                if cleanName.contains("@") {
+                    cleanName = String(cleanName.split(separator: "@").first ?? "")
+                }
+                cleanName = cleanName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let firstWord = cleanName.components(separatedBy: .whitespaces).first, !firstWord.isEmpty {
+                    cleanName = firstWord.prefix(1).uppercased() + firstWord.dropFirst()
+                }
+                if cleanName.isEmpty { cleanName = "User" }
 
                 var designation = ""
                 if let desigDict = user["designation"] as? [String: Any], let dName = desigDict["name"] as? String {
@@ -2789,18 +2798,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     AuthService.shared.saveSidebarModules(modules)
                 }
 
-                AuthService.shared.saveUserProfile(firstName: firstName, designation: designation, organization: companyName)
+                AuthService.shared.saveUserProfile(firstName: cleanName, designation: designation, organization: companyName)
 
-                if !firstName.isEmpty && !firstName.contains("@") {
-                    self.cachedFirstName = firstName
-                }
+                self.cachedFirstName = cleanName
+                self.avatarInitialsLabel.text = String(cleanName.prefix(1)).uppercased()
                 self.updateGreeting()
                 self.heroSubRoleLabel.text = "\(designation) • \(companyName)"
-
-                let displayName = self.cachedFirstName
-                if !displayName.isEmpty {
-                    self.avatarInitialsLabel.text = String(displayName.prefix(1)).uppercased()
-                }
 
                 if !photoUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     self.loadAvatarImage(urlStr: photoUrl)
@@ -2829,7 +2832,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     private func updateGreeting() {
         var nameToShow = cachedFirstName
-        if nameToShow.isEmpty || nameToShow.contains("@") {
+        if nameToShow.isEmpty || nameToShow == "User" || nameToShow.contains("@") {
             nameToShow = AuthService.shared.getFirstName()
         }
         if nameToShow.contains("@") {
@@ -2891,55 +2894,35 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             guard let self = self else { return }
             switch result {
             case .success(let allocations) where !allocations.isEmpty:
-                var casualRemaining: Double = 6
-                var sickRemaining: Double = 4
                 var totalAllocated: Double = 0
                 var totalUsed: Double = 0
-                var parsedAny = false
 
                 for alloc in allocations {
-                    let policy = alloc["leavePolicy"] as? [String: Any]
-                    let leaveTypeObj = alloc["leaveType"] as? [String: Any]
-                    let name = (policy?["name"] as? String) ?? (policy?["type"] as? String) ?? (leaveTypeObj?["name"] as? String) ?? (alloc["leaveType"] as? String) ?? ""
-                    let lowerName = name.lowercased()
-
                     let allocated = (alloc["allocatedDays"] as? NSNumber)?.doubleValue ?? 6.0
                     let used = (alloc["usedDays"] as? NSNumber)?.doubleValue ?? 0.0
-                    let expired = (alloc["expiredDays"] as? NSNumber)?.doubleValue ?? 0.0
-                    let pending = (alloc["pendingDays"] as? NSNumber)?.doubleValue ?? 0.0
-                    let rem = max(0, allocated - used - expired - pending)
-
                     totalAllocated += allocated
                     totalUsed += used
-
-                    if lowerName.contains("casual") {
-                        casualRemaining = rem
-                        parsedAny = true
-                    } else if lowerName.contains("sick") || lowerName.contains("medical") {
-                        sickRemaining = rem
-                        parsedAny = true
-                    }
                 }
 
-                if !parsedAny || totalAllocated == 0 {
-                    casualRemaining = 6
-                    sickRemaining = 4
-                    totalAllocated = 10
+                if totalAllocated == 0 {
+                    totalAllocated = 24
+                    totalUsed = 6
                 }
 
-                let casualText = (casualRemaining == floor(casualRemaining)) ? "\(Int(casualRemaining))" : String(format: "%.1f", casualRemaining)
-                let sickText = (sickRemaining == floor(sickRemaining)) ? "\(Int(sickRemaining))" : String(format: "%.1f", sickRemaining)
+                let totalRemaining = max(0, totalAllocated - totalUsed)
+                let remText = (totalRemaining == floor(totalRemaining)) ? "\(Int(totalRemaining))" : String(format: "%.1f", totalRemaining)
+                let allocText = (totalAllocated == floor(totalAllocated)) ? "\(Int(totalAllocated))" : String(format: "%.1f", totalAllocated)
+                let usedText = (totalUsed == floor(totalUsed)) ? "\(Int(totalUsed))" : String(format: "%.1f", totalUsed)
 
-                self.leavesCasualLabel.text = "Casual: \(casualText) left"
-                self.leavesSickLabel.text = "Sick: \(sickText) remaining"
+                self.leavesCasualLabel.text = "\(remText) Leaves Left"
+                self.leavesSickLabel.text = "Allocated: \(allocText) • Used: \(usedText)"
 
-                let totalRemaining = casualRemaining + sickRemaining
-                let ratio: CGFloat = totalUsed == 0 ? 1.0 : CGFloat(min(1.0, max(0.08, totalRemaining / max(1.0, totalAllocated))))
+                let ratio: CGFloat = totalAllocated > 0 ? CGFloat(min(1.0, max(0.08, totalRemaining / totalAllocated))) : 1.0
                 self.updateLeavesProgress(ratio: ratio)
             default:
-                self.leavesCasualLabel.text = "Casual: 6 left"
-                self.leavesSickLabel.text = "Sick: 4 remaining"
-                self.updateLeavesProgress(ratio: 1.0)
+                self.leavesCasualLabel.text = "18 Leaves Left"
+                self.leavesSickLabel.text = "Allocated: 24 • Used: 6"
+                self.updateLeavesProgress(ratio: 0.75)
             }
         }
     }
@@ -3077,7 +3060,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
             holidayDaysLeftBadge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
         } else {
-            holidayDaysLeftLabel.text = "\(daysLeft) days left"
+            holidayDaysLeftLabel.text = "In \(daysLeft) days"
             holidayDaysLeftLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
             holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
             holidayDaysLeftBadge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
@@ -3163,12 +3146,43 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         }
 
         if totalMinutes >= shiftEndMin {
+            if isCheckedIn {
+                autoClockOutAtShiftEnd()
+            }
             if !UserDefaults.standard.bool(forKey: endKey) {
                 UserDefaults.standard.set(true, forKey: endKey)
-                let title = "Shift Completed • 06:00 PM"
+                let endFormatted = String(format: "%02d:%02d", shiftEndHour, shiftEndMinute)
+                let title = "Shift Completed • \(endFormatted)"
                 let body = "Great job today! Your shift is now over. Thank you for your dedication and hard work—don't forget to punch out!"
                 AuthService.shared.recordLocalNotification(title: title, body: body)
                 updateNotificationBellBadge()
+            }
+        }
+    }
+
+    private func autoClockOutAtShiftEnd() {
+        guard isCheckedIn else { return }
+        let now = Date()
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "hh:mm a"
+        let timeStr = timeFormatter.string(from: now)
+
+        self.isCheckedIn = false
+        self.isShiftCompletedToday = true
+        self.stopTimer()
+        self.updateUIForAttendance(clockedIn: false)
+        self.punchStatusLabel.text = "• Shift Completed at \(timeStr)"
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let nowIso = isoFormatter.string(from: now)
+
+        AuthService.shared.clockOut { [weak self] result in
+            switch result {
+            case .success:
+                self?.loadAttendanceStats()
+            case .failure:
+                AuthService.shared.savePendingOfflinePunch(type: "OUT", isoTime: nowIso)
             }
         }
     }
@@ -3226,6 +3240,16 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             if case .success(let schedules) = result, let first = schedules.first, let shift = first["shift"] as? [String: Any] {
                 let start = shift["startTime"] as? String ?? "09:00"
                 let end = shift["endTime"] as? String ?? "18:00"
+                let startComp = start.split(separator: ":").compactMap { Int($0) }
+                if startComp.count >= 2 {
+                    self.shiftStartHour = startComp[0]
+                    self.shiftStartMinute = startComp[1]
+                }
+                let endComp = end.split(separator: ":").compactMap { Int($0) }
+                if endComp.count >= 2 {
+                    self.shiftEndHour = endComp[0]
+                    self.shiftEndMinute = endComp[1]
+                }
                 let formatted = self.formatShiftTime(start: start, end: end)
                 AuthService.shared.saveShiftTiming(formatted)
 
@@ -5029,5 +5053,227 @@ final class HomeSkeletonOverlay: UIView {
             gridStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20)
         ])
         return card
+    }
+}
+
+// MARK: - Team Roster Modal Dialog
+class TeamRosterModalViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    var teamMembers: [[String: Any]] = []
+    var organizationName: String = "GlobizHub Inc."
+
+    private let dimOverlay = UIView()
+    private let containerView = UIView()
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let closeButton = UIButton(type: .system)
+    private let tableView = UITableView()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+
+        dimOverlay.backgroundColor = UIColor.black.withAlphaComponent(0.45)
+        dimOverlay.translatesAutoresizingMaskIntoConstraints = false
+        dimOverlay.isUserInteractionEnabled = true
+        dimOverlay.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapClose)))
+        view.addSubview(dimOverlay)
+
+        containerView.backgroundColor = .white
+        containerView.layer.cornerRadius = 24
+        containerView.layer.masksToBounds = true
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(containerView)
+
+        titleLabel.text = organizationName
+        titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(titleLabel)
+
+        let count = teamMembers.count
+        subtitleLabel.text = "\(count) \(count == 1 ? "Employee" : "Employees")"
+        subtitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        subtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(subtitleLabel)
+
+        let xConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
+        closeButton.setImage(UIImage(systemName: "xmark", withConfiguration: xConfig), for: .normal)
+        closeButton.tintColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        closeButton.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        closeButton.layer.cornerRadius = 16
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.addTarget(self, action: #selector(didTapClose), for: .touchUpInside)
+        containerView.addSubview(closeButton)
+
+        let divider = UIView()
+        divider.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(divider)
+
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = .clear
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.register(TeamRosterCell.self, forCellReuseIdentifier: "TeamRosterCell")
+        containerView.addSubview(tableView)
+
+        let modalHeight = min(500, CGFloat(120 + max(1, teamMembers.count) * 64))
+
+        NSLayoutConstraint.activate([
+            dimOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+            dimOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            dimOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            dimOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            containerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9, constant: 0),
+            containerView.heightAnchor.constraint(equalToConstant: modalHeight),
+
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -12),
+
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            subtitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+
+            closeButton.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 18),
+            closeButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -18),
+            closeButton.widthAnchor.constraint(equalToConstant: 32),
+            closeButton.heightAnchor.constraint(equalToConstant: 32),
+
+            divider.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 16),
+            divider.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            divider.heightAnchor.constraint(equalToConstant: 1),
+
+            tableView.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 8),
+            tableView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            tableView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            tableView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+        ])
+    }
+
+    @objc private func didTapClose() {
+        dismiss(animated: true)
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return teamMembers.count
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 60
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TeamRosterCell", for: indexPath) as! TeamRosterCell
+        let member = teamMembers[indexPath.row]
+        cell.configure(with: member, index: indexPath.row)
+        return cell
+    }
+}
+
+class TeamRosterCell: UITableViewCell {
+    private let avatarCircle = UIView()
+    private let avatarLabel = UILabel()
+    private let nameLabel = UILabel()
+    private let roleLabel = UILabel()
+    private let statusBadge = UIView()
+    private let statusLabel = UILabel()
+
+    private let colors: [UIColor] = [
+        UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0),
+        UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0),
+        UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0),
+        UIColor(red: 139/255, green: 92/255, blue: 246/255, alpha: 1.0),
+        UIColor(red: 236/255, green: 72/255, blue: 153/255, alpha: 1.0)
+    ]
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        backgroundColor = .clear
+
+        avatarCircle.layer.cornerRadius = 18
+        avatarCircle.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(avatarCircle)
+
+        avatarLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        avatarLabel.textColor = .white
+        avatarLabel.textAlignment = .center
+        avatarLabel.translatesAutoresizingMaskIntoConstraints = false
+        avatarCircle.addSubview(avatarLabel)
+
+        let textStack = UIStackView()
+        textStack.axis = .vertical
+        textStack.spacing = 2
+        textStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(textStack)
+
+        nameLabel.font = .systemFont(ofSize: 14, weight: .bold)
+        nameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        textStack.addArrangedSubview(nameLabel)
+
+        roleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        roleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        textStack.addArrangedSubview(roleLabel)
+
+        statusBadge.backgroundColor = UIColor(red: 236/255, green: 253/255, blue: 245/255, alpha: 1.0)
+        statusBadge.layer.cornerRadius = 10
+        statusBadge.layer.borderWidth = 1
+        statusBadge.layer.borderColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0).cgColor
+        statusBadge.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(statusBadge)
+
+        statusLabel.text = "Active"
+        statusLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        statusLabel.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusBadge.addSubview(statusLabel)
+
+        NSLayoutConstraint.activate([
+            avatarCircle.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            avatarCircle.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            avatarCircle.widthAnchor.constraint(equalToConstant: 36),
+            avatarCircle.heightAnchor.constraint(equalToConstant: 36),
+
+            avatarLabel.centerXAnchor.constraint(equalTo: avatarCircle.centerXAnchor),
+            avatarLabel.centerYAnchor.constraint(equalTo: avatarCircle.centerYAnchor),
+
+            textStack.leadingAnchor.constraint(equalTo: avatarCircle.trailingAnchor, constant: 12),
+            textStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            textStack.trailingAnchor.constraint(lessThanOrEqualTo: statusBadge.leadingAnchor, constant: -8),
+
+            statusBadge.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            statusBadge.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            statusBadge.heightAnchor.constraint(equalToConstant: 22),
+
+            statusLabel.leadingAnchor.constraint(equalTo: statusBadge.leadingAnchor, constant: 8),
+            statusLabel.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor, constant: -8),
+            statusLabel.centerYAnchor.constraint(equalTo: statusBadge.centerYAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(with member: [String: Any], index: Int) {
+        let fn = member["firstName"] as? String ?? ""
+        let ln = member["lastName"] as? String ?? ""
+        let fullName = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
+        nameLabel.text = fullName.isEmpty ? "Team Member" : fullName
+
+        let initial = !fn.isEmpty ? String(fn.prefix(1)).uppercased() : (!fullName.isEmpty ? String(fullName.prefix(1)).uppercased() : "E")
+        avatarLabel.text = initial
+        avatarCircle.backgroundColor = colors[index % colors.count]
+
+        var desig = (member["designation"] as? [String: Any])?["name"] as? String ?? member["designation"] as? String ?? ""
+        if desig.isEmpty {
+            desig = member["role"] as? String ?? "Employee"
+        }
+        let dept = (member["department"] as? [String: Any])?["name"] as? String ?? member["department"] as? String ?? ""
+        roleLabel.text = dept.isEmpty ? desig : "\(desig) • \(dept)"
     }
 }

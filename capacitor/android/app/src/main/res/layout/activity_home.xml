@@ -469,7 +469,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Leaves"
+                        android:text="Total Leave"
                         android:textColor="#0F172A"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -484,7 +484,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/ic_calendar"
+                            android:src="@drawable/ic_total_leave"
                             android:tint="#2563EB" />
                     </FrameLayout>
                 </RelativeLayout>
@@ -502,9 +502,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Casual: 6 left"
-                        android:textColor="#1E293B"
-                        android:textSize="14sp"
+                        android:text="18 Leaves Left"
+                        android:textColor="#0F172A"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -512,7 +512,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="end"
-                        android:text="Sick: 4 remaining"
+                        android:text="Allocated: 24 • Used: 6"
                         android:textColor="#64748B"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -718,7 +718,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:text="View Roster &gt;"
+                        android:text="View Roster"
                         android:textColor="#0056FD"
                         android:textSize="14sp"
                         android:textStyle="bold" />

@@ -1544,6 +1544,51 @@ class AuthService {
         }.resume()
     }
 
+    // MARK: - Offline Punch Queue & Synchronization
+    func savePendingOfflinePunch(type: String, isoTime: String) {
+        let punch: [String: String] = ["type": type, "timestamp": isoTime]
+        UserDefaults.standard.set(punch, forKey: "TeamHub_PendingOfflinePunch")
+    }
+
+    func getPendingOfflinePunch() -> [String: String]? {
+        return UserDefaults.standard.dictionary(forKey: "TeamHub_PendingOfflinePunch") as? [String: String]
+    }
+
+    func clearPendingOfflinePunch() {
+        UserDefaults.standard.removeObject(forKey: "TeamHub_PendingOfflinePunch")
+    }
+
+    func syncPendingOfflinePunches(completion: (() -> Void)? = nil) {
+        guard let pending = getPendingOfflinePunch(),
+              let type = pending["type"],
+              let timestamp = pending["timestamp"],
+              let token = getToken() else {
+            completion?()
+            return
+        }
+        let endpoint = type == "IN" ? "/attendance/clock-in" : "/attendance/clock-out"
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            completion?()
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let payload: [String: Any] = ["timestamp": timestamp]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload, options: [])
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+                    self?.clearPendingOfflinePunch()
+                }
+                completion?()
+            }
+        }.resume()
+    }
+
     // MARK: - Error Parsing Helper
     private func parseErrorMessage(from json: [String: Any], statusCode: Int) -> String {
         if let msgArray = json["message"] as? [String] {
