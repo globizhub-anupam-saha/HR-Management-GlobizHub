@@ -216,12 +216,14 @@ class SettingsViewController: UIViewController {
 
         profileNameLabel.font = .systemFont(ofSize: 18, weight: .bold)
         profileNameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        profileNameLabel.text = "Team Member"
+        profileNameLabel.text = "Anupam Saha"
+        profileNameLabel.translatesAutoresizingMaskIntoConstraints = false
         rightColumn.addArrangedSubview(profileNameLabel)
 
         profileEmailLabel.font = .systemFont(ofSize: 14, weight: .regular)
         profileEmailLabel.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
-        profileEmailLabel.text = "employee@globizhub.com"
+        profileEmailLabel.text = "anupam.saha@globizhub.com"
+        profileEmailLabel.translatesAutoresizingMaskIntoConstraints = false
         rightColumn.addArrangedSubview(profileEmailLabel)
 
         // View Profile Button
@@ -311,6 +313,12 @@ class SettingsViewController: UIViewController {
         ])
         orgCard.addArrangedSubview(orgHeader)
         contentView.addArrangedSubview(orgCard)
+
+        // 1B. Account Settings Card (Below Organization)
+        let accountSettingsCard = makeCardView()
+        let accountRow = makeNavRow(icon: "person.crop.circle.badge.checkmark", title: "Account Settings", action: #selector(handleAccountSettings))
+        accountSettingsCard.addArrangedSubview(accountRow)
+        contentView.addArrangedSubview(accountSettingsCard)
 
         // 2. Help & Support Card (Replaces Attendance box)
         let helpCard = makeCardView()
@@ -635,6 +643,10 @@ class SettingsViewController: UIViewController {
         }
     }
 
+    @objc private func handleAccountSettings() {
+        handleViewProfile()
+    }
+
     @objc private func handleHelpSupport() {
         let helpVC = HelpSupportViewController()
         if let nav = navigationController {
@@ -646,15 +658,15 @@ class SettingsViewController: UIViewController {
     }
 
     @objc private func handlePrivacyPolicy() {
-        let alert = UIAlertController(title: "Privacy Policy", message: "GlobizHR prioritizes your personal data privacy and statutory security. Data is encrypted in transit and at rest in compliance with Indian IT and GDPR frameworks.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        if let url = URL(string: "https://hr.globizhub.com/privacy") {
+            UIApplication.shared.open(url)
+        }
     }
 
     @objc private func handleTermsOfService() {
-        let alert = UIAlertController(title: "Terms of Service", message: "By using GlobizHR mobile client, you agree to adhere to company organization workplace conduct, attendance accuracy policies, and authorized system usage.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        if let url = URL(string: "https://hr.globizhub.com/terms") {
+            UIApplication.shared.open(url)
+        }
     }
 
     @objc private func handleWriteUs() {
@@ -767,36 +779,34 @@ class SettingsViewController: UIViewController {
     // MARK: - Data Loading
     private func loadProfileData() {
         let savedEmail = AuthService.shared.getEmail()
-        let resolvedEmail = savedEmail.isEmpty ? "employee@globizhub.com" : savedEmail
+        let resolvedEmail = savedEmail.isEmpty ? "anupam.saha@globizhub.com" : savedEmail
         profileEmailLabel.text = resolvedEmail
 
-        let savedFirst = AuthService.shared.getFirstName()
-        let resolvedName = savedFirst.isEmpty ? (savedEmail.contains("@") ? String(savedEmail.prefix(upTo: savedEmail.firstIndex(of: "@")!)) : "Alex Morgan") : savedFirst
-        profileNameLabel.text = resolvedName
-
-        let fallbackInitial = String(resolvedName.prefix(1)).uppercased()
-        avatarInitialsLabel.text = fallbackInitial.isEmpty ? "U" : fallbackInitial
+        profileNameLabel.text = AuthService.shared.getFullName()
+        avatarInitialsLabel.text = AuthService.shared.getUserInitials()
+        avatarImageView.isHidden = true
+        avatarInitialsLabel.isHidden = false
         updateRoleBadgeTitle()
 
         AuthService.shared.getProfile { [weak self] result in
             guard let self = self else { return }
             switch result {
             case .success(let user):
-                let firstName = user["firstName"] as? String ?? ""
-                let lastName = user["lastName"] as? String ?? ""
-                let email = user["email"] as? String ?? savedEmail
+                let firstName = (user["firstName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let lastName = (user["lastName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                var email = (user["email"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if email.isEmpty {
+                    email = resolvedEmail
+                }
                 let photoUrl = user["profilePhoto"] as? String ?? user["profileImage"] as? String ?? ""
 
                 var fullName = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
                 if fullName.isEmpty {
-                    fullName = email.contains("@") ? String(email.prefix(upTo: email.firstIndex(of: "@")!)) : "Team Member"
+                    fullName = AuthService.shared.getFullName()
                 }
                 self.profileNameLabel.text = fullName
                 self.profileEmailLabel.text = email
-
-                if !firstName.isEmpty {
-                    self.avatarInitialsLabel.text = String(firstName.prefix(1)).uppercased()
-                }
+                self.avatarInitialsLabel.text = AuthService.shared.getUserInitials()
 
                 if !photoUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     self.loadAvatarImage(urlStr: photoUrl)

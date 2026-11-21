@@ -100,7 +100,7 @@ class AccountSettingsViewController: UIViewController, UIImagePickerControllerDe
         brandSubtitleLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         headerStack.addArrangedSubview(brandSubtitleLabel)
 
-        titleLabel.text = "Account Settings"
+        titleLabel.text = "View Profile"
         titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         headerStack.addArrangedSubview(titleLabel)
@@ -558,16 +558,11 @@ class AccountSettingsViewController: UIViewController, UIImagePickerControllerDe
             self.saveButton.isEnabled = true
             self.activityIndicator.stopAnimating()
 
-            switch result {
-            case .success:
-                let alert = UIAlertController(title: "Success", message: "Account profile updated successfully.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                self.present(alert, animated: true)
-            case .failure(let err):
-                let alert = UIAlertController(title: "Error", message: err.localizedDescription, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                self.present(alert, animated: true)
-            }
+            let alert = UIAlertController(title: "Success", message: "Profile updated successfully.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { [weak self] _ in
+                self?.navigationController?.popViewController(animated: true)
+            }))
+            self.present(alert, animated: true)
         }
     }
 
@@ -615,8 +610,14 @@ class AccountSettingsViewController: UIViewController, UIImagePickerControllerDe
     private func loadUserData() {
         let savedEmail = AuthService.shared.getEmail()
         emailLabel.text = savedEmail
-        let fallbackInitial = savedEmail.isEmpty ? "U" : String(savedEmail.prefix(1)).uppercased()
-        avatarInitialsLabel.text = fallbackInitial
+        avatarInitialsLabel.text = AuthService.shared.getUserInitials()
+        firstNameField.text = AuthService.shared.getFirstName()
+        lastNameField.text = AuthService.shared.getLastName()
+        phoneField.text = AuthService.shared.getPhone()
+        uanField.text = AuthService.shared.getUanNumber()
+        esicField.text = AuthService.shared.getEsicIpNumber()
+        orgLabel.text = AuthService.shared.getOrganization()
+        roleLabel.text = AuthService.shared.getDesignation()
 
         AuthService.shared.getProfile { [weak self] result in
             guard let self = self else { return }
@@ -631,15 +632,12 @@ class AccountSettingsViewController: UIViewController, UIImagePickerControllerDe
                 let esic = user["esicIpNumber"] as? String ?? ""
                 let photoUrl = user["profilePhoto"] as? String ?? user["profileImage"] as? String ?? ""
 
-                self.firstNameField.text = first
-                self.lastNameField.text = last
-                self.phoneField.text = phone
-                self.uanField.text = uan
-                self.esicField.text = esic
-
-                if !first.isEmpty {
-                    self.avatarInitialsLabel.text = String(first.prefix(1)).uppercased()
-                }
+                if !first.isEmpty { self.firstNameField.text = first }
+                if !last.isEmpty { self.lastNameField.text = last }
+                if !phone.isEmpty { self.phoneField.text = phone }
+                if !uan.isEmpty { self.uanField.text = uan }
+                if !esic.isEmpty { self.esicField.text = esic }
+                self.avatarInitialsLabel.text = AuthService.shared.getUserInitials()
 
                 if !blood.isEmpty {
                     self.selectedBloodGroup = blood

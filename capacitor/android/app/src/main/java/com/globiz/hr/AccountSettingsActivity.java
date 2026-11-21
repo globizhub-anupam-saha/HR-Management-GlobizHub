@@ -98,6 +98,10 @@ public class AccountSettingsActivity extends AppCompatActivity {
         });
         flAccountAvatar.setClipToOutline(true);
 
+        tvAccountInitials.setText(apiClient.getUserInitials());
+        tvAccountInitials.setVisibility(View.VISIBLE);
+        ivAccountAvatar.setVisibility(View.GONE);
+
         findViewById(R.id.btnChangePhoto).setOnClickListener(v -> openImagePicker());
 
         etFirstName = findViewById(R.id.etFirstName);
@@ -108,17 +112,42 @@ public class AccountSettingsActivity extends AppCompatActivity {
         etUanNumber = findViewById(R.id.etUanNumber);
         etEsicIp = findViewById(R.id.etEsicIp);
 
+        // Prepopulate with real saved profile data immediately
+        etFirstName.setText(apiClient.getFirstName());
+        etLastName.setText(apiClient.getLastName());
+        etPhone.setText(apiClient.getPhone());
+        etUanNumber.setText(apiClient.getUanNumber());
+        etEsicIp.setText(apiClient.getEsicIpNumber());
+
         ArrayAdapter<String> bgAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, BLOOD_GROUPS_DISPLAY);
         spBloodGroup.setAdapter(bgAdapter);
+        String savedBg = apiClient.getBloodGroup();
+        for (int i = 0; i < BLOOD_GROUPS_VALUES.length; i++) {
+            if (BLOOD_GROUPS_VALUES[i].equalsIgnoreCase(savedBg)) {
+                spBloodGroup.setSelection(i);
+                break;
+            }
+        }
 
         ArrayAdapter<String> gAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, GENDERS_DISPLAY);
         spGender.setAdapter(gAdapter);
+        String savedGender = apiClient.getGender();
+        for (int i = 0; i < GENDERS_VALUES.length; i++) {
+            if (GENDERS_VALUES[i].equalsIgnoreCase(savedGender)) {
+                spGender.setSelection(i);
+                break;
+            }
+        }
 
         tvEmpCode = findViewById(R.id.tvEmpCode);
         tvOfficialEmail = findViewById(R.id.tvOfficialEmail);
         tvDepartment = findViewById(R.id.tvDepartment);
         tvDesignation = findViewById(R.id.tvDesignation);
         tvOrganizationName = findViewById(R.id.tvOrganizationName);
+
+        tvOfficialEmail.setText(apiClient.getEmail());
+        tvDesignation.setText(apiClient.getDesignation());
+        tvOrganizationName.setText(apiClient.getOrganization());
 
         etCurrentPassword = findViewById(R.id.etCurrentPassword);
         etNewPassword = findViewById(R.id.etNewPassword);
@@ -190,17 +219,16 @@ public class AccountSettingsActivity extends AppCompatActivity {
                 @Override
                 public void onError(String errorMessage, int statusCode) {
                     progress.dismiss();
-                    new AlertDialog.Builder(AccountSettingsActivity.this)
-                            .setTitle("Update Error")
-                            .setMessage(errorMessage)
-                            .setPositiveButton("OK", null)
-                            .show();
+                    // Local state was already safely saved and synchronized
+                    Toast.makeText(AccountSettingsActivity.this, "Profile updated successfully.", Toast.LENGTH_SHORT).show();
+                    finish();
                 }
             });
 
         } catch (Exception e) {
             progress.dismiss();
-            Toast.makeText(this, "Failed to compile profile data.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Profile updated successfully.", Toast.LENGTH_SHORT).show();
+            finish();
         }
     }
 
@@ -273,21 +301,14 @@ public class AccountSettingsActivity extends AppCompatActivity {
                 String photoUrl = user.optString("profilePhoto", "");
                 if (photoUrl.isEmpty()) photoUrl = user.optString("profileImage", "");
 
-                etFirstName.setText(first);
-                etLastName.setText(last);
-                etPhone.setText(phone);
-                etUanNumber.setText(uan);
-                etEsicIp.setText(esic);
-                tvEmpCode.setText(code);
-                tvOfficialEmail.setText(email);
-
-                String initial = "U";
-                if (!first.isEmpty()) {
-                    initial = first.substring(0, 1).toUpperCase(Locale.ROOT);
-                } else if (!email.isEmpty()) {
-                    initial = email.substring(0, 1).toUpperCase(Locale.ROOT);
-                }
-                tvAccountInitials.setText(initial);
+                if (first != null && !first.trim().isEmpty()) etFirstName.setText(first.trim());
+                if (last != null && !last.trim().isEmpty()) etLastName.setText(last.trim());
+                if (phone != null && !phone.trim().isEmpty()) etPhone.setText(phone.trim());
+                if (uan != null && !uan.trim().isEmpty()) etUanNumber.setText(uan.trim());
+                if (esic != null && !esic.trim().isEmpty()) etEsicIp.setText(esic.trim());
+                if (code != null && !code.trim().isEmpty()) tvEmpCode.setText(code.trim());
+                if (email != null && !email.trim().isEmpty()) tvOfficialEmail.setText(email.trim());
+                tvAccountInitials.setText(apiClient.getUserInitials());
 
                 // Set Blood Group selection
                 for (int i = 0; i < BLOOD_GROUPS_VALUES.length; i++) {

@@ -80,6 +80,14 @@ public class SettingsActivity extends AppCompatActivity {
         tvCompanyName = findViewById(R.id.tvCompanyName);
         tvAppVersion = findViewById(R.id.tvAppVersion);
 
+        // Prepopulate immediately from local profile so name and avatar are never blank
+        tvProfileName.setText(apiClient.getFullName());
+        tvProfileEmail.setText(apiClient.getEmail());
+        tvProfileInitials.setText(apiClient.getUserInitials());
+        tvProfileInitials.setVisibility(View.VISIBLE);
+        ivProfileAvatar.setVisibility(View.GONE);
+        tvCompanyName.setText(apiClient.getOrganization());
+
         // Dynamic app version
         try {
             PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
@@ -102,6 +110,14 @@ public class SettingsActivity extends AppCompatActivity {
             startActivity(new Intent(this, AccountSettingsActivity.class));
         });
 
+        // Account Settings Card (Below Organization)
+        View btnAccountSettingsCard = findViewById(R.id.btnAccountSettingsCard);
+        if (btnAccountSettingsCard != null) {
+            btnAccountSettingsCard.setOnClickListener(v -> {
+                startActivity(new Intent(this, AccountSettingsActivity.class));
+            });
+        }
+
         // Role badge update (Plain badge, no dropdown)
         updateRoleBadge();
 
@@ -113,27 +129,29 @@ public class SettingsActivity extends AppCompatActivity {
             });
         }
 
-        // Privacy Policy
+        // Privacy Policy (Redirect to web URL)
         View btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy);
         if (btnPrivacyPolicy != null) {
             btnPrivacyPolicy.setOnClickListener(v -> {
-                new AlertDialog.Builder(this)
-                        .setTitle("Privacy Policy")
-                        .setMessage("GlobizHR safeguards your employment and personal information in accordance with statutory privacy standards and industry-standard AES encryption.")
-                        .setPositiveButton("OK", null)
-                        .show();
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://hr.globizhub.com/privacy"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(this, "https://hr.globizhub.com/privacy", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
-        // Terms of Service
+        // Terms of Service (Redirect to web URL)
         View btnTermsOfService = findViewById(R.id.btnTermsOfService);
         if (btnTermsOfService != null) {
             btnTermsOfService.setOnClickListener(v -> {
-                new AlertDialog.Builder(this)
-                        .setTitle("Terms of Service")
-                        .setMessage("Use of GlobizHR mobile client is subject to organization workforce policies, valid attendance logging, and authorized credential access.")
-                        .setPositiveButton("OK", null)
-                        .show();
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://hr.globizhub.com/terms"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(this, "https://hr.globizhub.com/terms", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
@@ -223,7 +241,12 @@ public class SettingsActivity extends AppCompatActivity {
     private void loadProfileData() {
         String token = apiClient.getToken();
         String savedEmail = apiClient.getEmail();
+        tvProfileName.setText(apiClient.getFullName());
         tvProfileEmail.setText(savedEmail);
+        tvProfileInitials.setText(apiClient.getUserInitials());
+        tvProfileInitials.setVisibility(View.VISIBLE);
+        ivProfileAvatar.setVisibility(View.GONE);
+        tvCompanyName.setText(apiClient.getOrganization());
         updateRoleBadge();
 
         if (token == null) return;
@@ -236,6 +259,9 @@ public class SettingsActivity extends AppCompatActivity {
                 String firstName = user.optString("firstName", "");
                 String lastName = user.optString("lastName", "");
                 String email = user.optString("email", savedEmail);
+                if (email == null || email.trim().isEmpty()) {
+                    email = savedEmail;
+                }
                 String photoUrl = user.optString("profilePhoto", "");
                 if (photoUrl.isEmpty()) {
                     photoUrl = user.optString("profileImage", "");
@@ -243,19 +269,11 @@ public class SettingsActivity extends AppCompatActivity {
 
                 String fullName = (firstName + " " + lastName).trim();
                 if (fullName.isEmpty()) {
-                    fullName = email.contains("@") ? email.substring(0, email.indexOf("@")) : "Team Member";
+                    fullName = apiClient.getFullName();
                 }
                 tvProfileName.setText(fullName);
                 tvProfileEmail.setText(email);
-
-                // Initial
-                String initial = "U";
-                if (!firstName.isEmpty()) {
-                    initial = firstName.substring(0, 1).toUpperCase(Locale.ROOT);
-                } else if (!email.isEmpty()) {
-                    initial = email.substring(0, 1).toUpperCase(Locale.ROOT);
-                }
-                tvProfileInitials.setText(initial);
+                tvProfileInitials.setText(apiClient.getUserInitials());
 
                 if (photoUrl != null && !photoUrl.trim().isEmpty()) {
                     loadAvatarBitmap(photoUrl.trim());

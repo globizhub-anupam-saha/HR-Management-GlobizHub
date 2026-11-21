@@ -2736,16 +2736,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Profile & Real-time Info
     private func loadProfile() {
-        let localName = AuthService.shared.getFirstName()
-        let initialLetter: String
-        if !localName.isEmpty {
-            initialLetter = String(localName.prefix(1)).uppercased()
-        } else if !AuthService.shared.getEmail().isEmpty {
-            initialLetter = String(AuthService.shared.getEmail().prefix(1)).uppercased()
-        } else {
-            initialLetter = "U"
-        }
-        avatarInitialsLabel.text = initialLetter
+        avatarInitialsLabel.text = AuthService.shared.getUserInitials()
 
         AuthService.shared.getProfile { [weak self] result in
             guard let self = self else { return }
@@ -2801,7 +2792,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 AuthService.shared.saveUserProfile(firstName: cleanName, designation: designation, organization: companyName)
 
                 self.cachedFirstName = cleanName
-                self.avatarInitialsLabel.text = String(cleanName.prefix(1)).uppercased()
+                self.avatarInitialsLabel.text = AuthService.shared.getUserInitials()
                 self.updateGreeting()
                 self.heroSubRoleLabel.text = "\(designation) • \(companyName)"
 

@@ -74,6 +74,7 @@ public class AppHeaderHelper {
         if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvAttendanceTitle);
         if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvMoreTitle);
         if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvSettingsTitle);
+        if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvAccountTitle);
         if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvNotificationsTitle);
         if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvCustomizeTitle);
         if (tvTitle == null) tvTitle = activity.findViewById(R.id.tvDeleteAccountTitle);
@@ -84,6 +85,7 @@ public class AppHeaderHelper {
 
         // 4. Back Arrow Navigation
         View btnBack = activity.findViewById(R.id.btnHeaderBack);
+        if (btnBack == null) btnBack = activity.findViewById(R.id.btnAccountBack);
         if (btnBack == null) btnBack = activity.findViewById(R.id.btnCustomizeBack);
         if (btnBack == null) btnBack = activity.findViewById(R.id.btnNotificationsBack);
         if (btnBack == null) btnBack = activity.findViewById(R.id.btnBack);
@@ -126,12 +128,7 @@ public class AppHeaderHelper {
         TextView tvAvatarInitials = activity.findViewById(R.id.tvAvatarInitials);
 
         if (tvAvatarInitials != null) {
-            String firstName = apiClient.getFirstName();
-            if (firstName != null && !firstName.trim().isEmpty()) {
-                tvAvatarInitials.setText(firstName.trim().substring(0, 1).toUpperCase(Locale.ROOT));
-            } else {
-                tvAvatarInitials.setText("U");
-            }
+            tvAvatarInitials.setText(apiClient.getUserInitials());
         }
 
         if (flAvatarContainer != null) {
@@ -201,6 +198,7 @@ public class AppHeaderHelper {
         // This guarantees that the topInset region is pure white background behind the system status bar/punch hole,
         // and child elements (GLOBIZHR text, titles, avatars, notification icons) start safely below the status bar.
         View topBar = activity.findViewById(R.id.topBar);
+        if (topBar == null) topBar = activity.findViewById(R.id.accountSettingsTopBar);
         if (topBar == null) topBar = activity.findViewById(R.id.settingsTopBar);
         if (topBar == null) topBar = activity.findViewById(R.id.notificationsTopBar);
         if (topBar == null) topBar = activity.findViewById(R.id.customizeTopBar);
@@ -251,9 +249,10 @@ public class AppHeaderHelper {
                 );
             }
         } else {
-            // For screens without a bottom navigation bar (Settings, Notifications, Customize, etc.),
+            // For screens without a bottom navigation bar (Settings, Account Settings, Notifications, Customize, etc.),
             // apply navigation bar insets to the scroll/content container so bottom actions stay comfortably reachable
             View contentContainer = activity.findViewById(R.id.settingsContentContainer);
+            if (contentContainer == null) contentContainer = activity.findViewById(R.id.accountContentContainer);
             if (contentContainer == null) contentContainer = activity.findViewById(R.id.lvNotifications);
             if (contentContainer == null) contentContainer = activity.findViewById(R.id.rvCustomizeTabs);
             if (contentContainer == null) contentContainer = activity.findViewById(R.id.btnDoDeleteAccount);
@@ -303,12 +302,7 @@ public class AppHeaderHelper {
         // Update Avatar Initial
         TextView tvAvatarInitials = activity.findViewById(R.id.tvAvatarInitials);
         if (tvAvatarInitials != null) {
-            String firstName = apiClient.getFirstName();
-            if (firstName != null && !firstName.trim().isEmpty()) {
-                tvAvatarInitials.setText(firstName.trim().substring(0, 1).toUpperCase(Locale.ROOT));
-            } else {
-                tvAvatarInitials.setText("U");
-            }
+            tvAvatarInitials.setText(apiClient.getUserInitials());
         }
     }
 }

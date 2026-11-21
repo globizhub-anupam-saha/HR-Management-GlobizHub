@@ -145,10 +145,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
+                        android:text="AS"
                         android:textColor="#FFFFFF"
-                        android:textSize="22sp"
-                        android:textStyle="bold"
-                        tools:text="A" />
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
                 </FrameLayout>
 
                 <LinearLayout
@@ -161,19 +161,19 @@
                         android:id="@+id/tvProfileName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Anupam Saha"
                         android:textColor="#000000"
                         android:textSize="20sp"
-                        android:textStyle="bold"
-                        tools:text="Team Member" />
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvProfileEmail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
+                        android:text="employee@globizhub.com"
                         android:textColor="#1E293B"
-                        android:textSize="15sp"
-                        tools:text="employee@globizhub.com" />
+                        android:textSize="15sp" />
 
                     <!-- Side-by-side: View Profile Button + Role Badge (No dropdown) -->
                     <LinearLayout
@@ -258,6 +258,65 @@
                         android:textSize="13sp"
                         android:textStyle="bold"
                         tools:text="GlobizHub Inc." />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <!-- GROUP 1B: ACCOUNT SETTINGS (Below Organization) -->
+            <LinearLayout
+                android:id="@+id/btnAccountSettingsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_settings_card"
+                android:elevation="1dp"
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="16dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/iconAccountSettings"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_security" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="12dp"
+                        android:layout_toEndOf="@id/iconAccountSettings"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Account Settings"
+                            android:textColor="#0F172A"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Manage profile, personal info &amp; security"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_chevron_right" />
                 </RelativeLayout>
             </LinearLayout>
 

@@ -377,14 +377,7 @@ public class HomeActivity extends AppCompatActivity {
         ivUserAvatar = findViewById(R.id.ivUserAvatar);
         tvAvatarInitials = findViewById(R.id.tvAvatarInitials);
         if (tvAvatarInitials != null) {
-            String initialName = apiClient.getFirstName();
-            if (initialName != null && !initialName.isEmpty()) {
-                if (initialName.contains("@")) initialName = initialName.substring(0, initialName.indexOf('@'));
-                initialName = initialName.trim();
-                if (!initialName.isEmpty()) {
-                    tvAvatarInitials.setText(initialName.substring(0, 1).toUpperCase(Locale.ROOT));
-                }
-            }
+            tvAvatarInitials.setText(apiClient.getUserInitials());
         }
 
         if (flAvatarContainer != null) {
@@ -1655,7 +1648,7 @@ public class HomeActivity extends AppCompatActivity {
 
                 // Avatar initials
                 if (tvAvatarInitials != null) {
-                    tvAvatarInitials.setText(cleanFirstName.substring(0, 1).toUpperCase(Locale.ROOT));
+                    tvAvatarInitials.setText(apiClient.getUserInitials());
                 }
 
                 // Profile photo

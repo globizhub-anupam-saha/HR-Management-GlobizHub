@@ -62,7 +62,7 @@
                         android:id="@+id/tvAccountTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Account Settings"
+                        android:text="View Profile"
                         android:textColor="#0F172A"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -126,10 +126,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
+                        android:text="AS"
                         android:textColor="#FFFFFF"
                         android:textSize="26sp"
-                        android:textStyle="bold"
-                        tools:text="A" />
+                        android:textStyle="bold" />
                 </FrameLayout>
 
                 <LinearLayout
