@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Dedicated Axios instance for SaaS Platform Administration APIs
 const platformApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "https://hr.globizhub.com/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000",
 });
 
 // Strictly isolated token storage: platform_token (never conflated with tenant hrms_token)
