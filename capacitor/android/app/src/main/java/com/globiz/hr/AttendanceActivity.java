@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class AttendanceActivity extends AppCompatActivity {
 
@@ -399,7 +400,13 @@ public class AttendanceActivity extends AppCompatActivity {
             try {
                 JSONObject obj = array.getJSONObject(i);
                 String clockInRaw = obj.optString("clockIn", null);
+                if (clockInRaw == null || clockInRaw.isEmpty() || "null".equalsIgnoreCase(clockInRaw)) {
+                    clockInRaw = obj.optString("checkInTime", null);
+                }
                 String clockOutRaw = obj.optString("clockOut", null);
+                if (clockOutRaw == null || clockOutRaw.isEmpty() || "null".equalsIgnoreCase(clockOutRaw)) {
+                    clockOutRaw = obj.optString("checkOutTime", null);
+                }
 
                 // Use user-defined location only if valid and not dummy, otherwise use system location
                 String loc = obj.optString("location", null);
@@ -407,8 +414,17 @@ public class AttendanceActivity extends AppCompatActivity {
                     loc = systemLoc;
                 }
 
-                if (clockInRaw != null) {
-                    Date inDate = apiDateFmt.parse(clockInRaw);
+                if (clockInRaw != null && !clockInRaw.isEmpty() && !"null".equalsIgnoreCase(clockInRaw)) {
+                    Date inDate = null;
+                    try {
+                        inDate = apiDateFmt.parse(clockInRaw);
+                    } catch (Exception ignored) {
+                        try {
+                            SimpleDateFormat isoZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                            isoZ.setTimeZone(TimeZone.getTimeZone("UTC"));
+                            inDate = isoZ.parse(clockInRaw);
+                        } catch (Exception ignored2) {}
+                    }
                     if (inDate != null) {
                         String dateDisplay = formatOrdinalDate(inDate);
                         String inRange = rangeTimeFmt.format(inDate).toUpperCase();
@@ -417,14 +433,23 @@ public class AttendanceActivity extends AppCompatActivity {
                         String outSummary = "--:--";
 
                         if (clockOutRaw != null && !clockOutRaw.isEmpty() && !"null".equalsIgnoreCase(clockOutRaw)) {
-                            Date outDate = apiDateFmt.parse(clockOutRaw);
+                            Date outDate = null;
+                            try {
+                                outDate = apiDateFmt.parse(clockOutRaw);
+                            } catch (Exception ignored) {
+                                try {
+                                    SimpleDateFormat isoZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                                    isoZ.setTimeZone(TimeZone.getTimeZone("UTC"));
+                                    outDate = isoZ.parse(clockOutRaw);
+                                } catch (Exception ignored2) {}
+                            }
                             if (outDate != null) {
                                 outRange = rangeTimeFmt.format(outDate).toUpperCase();
                                 outSummary = summaryTimeFmt.format(outDate).toLowerCase();
                             }
                         }
 
-                        // Real-time status calculation (Early, On Time, Late)
+                        // Real-time status calculation (Early, On Time, Late: 9:01+ is late)
                         String computedStatus = calculateStatusFromTime(inDate);
 
                         historyItems.add(new AttendanceItem(
@@ -565,10 +590,10 @@ public class AttendanceActivity extends AppCompatActivity {
         int hour = cal.get(Calendar.HOUR_OF_DAY);
         int minute = cal.get(Calendar.MINUTE);
 
-        // Standard 09:00 AM shift with 15-minute grace period
+        // Standard 09:00 AM shift: 9:00:59 is On Time, 9:01+ is Late
         if (hour < 9) {
             return "EARLY";
-        } else if (hour == 9 && minute <= 15) {
+        } else if (hour == 9 && minute == 0) {
             return "ON_TIME";
         } else {
             return "LATE";

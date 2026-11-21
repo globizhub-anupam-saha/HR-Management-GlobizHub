@@ -152,11 +152,16 @@ class AuthService {
         return email.isEmpty ? base : "\(base)_\(email)"
     }
 
-    func recordLocalClockIn(isoTime: String) {
+    func recordLocalClockIn(isoTime: String, isLate: Bool = false) {
         UserDefaults.standard.set("CLOCKED_IN", forKey: userScopedKey(localAttendanceStatusKey))
         UserDefaults.standard.set(isoTime, forKey: userScopedKey(localCheckInIsoKey))
+        UserDefaults.standard.set(isLate, forKey: userScopedKey("globiz_is_late"))
         UserDefaults.standard.removeObject(forKey: userScopedKey(localCheckOutIsoKey))
         UserDefaults.standard.synchronize()
+    }
+
+    func getLocalIsLate() -> Bool {
+        return UserDefaults.standard.bool(forKey: userScopedKey("globiz_is_late"))
     }
 
     func recordLocalClockOut(isoTime: String) {
@@ -630,10 +635,23 @@ class AuthService {
 
     // MARK: - Clock In / Clock Out
     func clockIn(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let nowIso = isoFormatter.string(from: Date())
+        let cal = Calendar.current
+        let h = cal.component(.hour, from: Date())
+        let m = cal.component(.minute, from: Date())
+        let isLate = (h > 9 || (h == 9 && m > 0))
+        recordLocalClockIn(isoTime: nowIso, isLate: isLate)
+        clearLocalBreakSessions()
         postAttendance(endpoint: "/attendance/clock-in", completion: completion)
     }
 
     func clockOut(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let nowIso = isoFormatter.string(from: Date())
+        recordLocalClockOut(isoTime: nowIso)
         postAttendance(endpoint: "/attendance/clock-out", completion: completion)
     }
 

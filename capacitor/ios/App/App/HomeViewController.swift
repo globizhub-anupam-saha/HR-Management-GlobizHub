@@ -154,6 +154,33 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private var liveTimer: Timer?
     private var cachedFirstName = AuthService.shared.getFirstName()
 
+    // Shift Timing Window & Punctuality State
+    private var shiftStartHour: Int = 9
+    private var shiftStartMinute: Int = 0
+    private var shiftEndHour: Int = 18
+    private var shiftEndMinute: Int = 0
+    private var isTodayLate: Bool = false
+    private var isShiftCompletedToday: Bool = false
+
+    private func isWithinPunchInWindow() -> Bool {
+        let windowOpenMinutes = (shiftStartHour * 60 + shiftStartMinute) - 5
+        let cal = Calendar.current
+        let currentMinutes = cal.component(.hour, from: Date()) * 60 + cal.component(.minute, from: Date())
+        return currentMinutes >= windowOpenMinutes
+    }
+
+    private func updateShiftBadgeForStatus(isLate: Bool) {
+        if isLate {
+            shiftOnTrackBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+            shiftOnTrackLabel.text = "Late"
+            shiftOnTrackLabel.textColor = UIColor(red: 180/255, green: 83/255, blue: 9/255, alpha: 1.0)
+        } else {
+            shiftOnTrackBadge.backgroundColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0)
+            shiftOnTrackLabel.text = "On Track"
+            shiftOnTrackLabel.textColor = UIColor(red: 6/255, green: 95/255, blue: 70/255, alpha: 1.0)
+        }
+    }
+
     // Minimum 3-Minute Shift Duration Lock
     private let minShiftLockDuration: TimeInterval = 180.0 // 3 minutes
 
@@ -233,11 +260,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         setupBottomNavBar()
         scrollView.setContentOffset(.zero, animated: false)
 
-        // Reset attendance UI to prevent stale timer carryover when switching accounts
-        stopTimer()
-        isCheckedIn = false
-        checkInDate = nil
-        updateUIForAttendance(clockedIn: false)
+        restoreUserAttendanceSession()
+        scheduleShiftReminderNotifications()
+        checkAndTriggerActiveShiftReminder()
+
         cachedFirstName = AuthService.shared.getFirstName()
 
         updateGreeting()
@@ -1078,7 +1104,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             let cal = Calendar.current
             let h = cal.component(.hour, from: startDate)
             let m = cal.component(.minute, from: startDate)
-            let isLate = (h > 9 || (h == 9 && m > 15))
+            let isLate = (h > 9 || (h == 9 && m > 0))
 
             let rec = RealAttendanceRecord(
                 dateKey: todayKey,
@@ -1100,6 +1126,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 case .success(let records):
                     self.attendanceHistoryMap.removeAll()
                     let apiFmt = ISO8601DateFormatter()
+                    let isoFallback = ISO8601DateFormatter()
+                    isoFallback.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
                     let keyFmt = DateFormatter()
                     keyFmt.dateFormat = "yyyy-MM-dd"
                     keyFmt.locale = Locale(identifier: "en_US_POSIX")
@@ -1110,22 +1138,24 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     let cal = Calendar.current
 
                     for record in records {
-                        guard let clockInRaw = record["clockIn"] as? String,
-                              let inDate = apiFmt.date(from: clockInRaw) else { continue }
+                        let clockInRaw = (record["clockIn"] as? String) ?? (record["checkInTime"] as? String)
+                        guard let clockInRaw = clockInRaw, !clockInRaw.isEmpty, clockInRaw.lowercased() != "null",
+                              let inDate = apiFmt.date(from: clockInRaw) ?? isoFallback.date(from: clockInRaw) else { continue }
                         let dateKey = keyFmt.string(from: inDate)
                         let inFormatted = timeFmt.string(from: inDate)
 
                         var outDate: Date? = nil
                         var outFormatted = "In Progress"
-                        if let clockOutRaw = record["clockOut"] as? String,
-                           let parsedOut = apiFmt.date(from: clockOutRaw) {
+                        let clockOutRaw = (record["clockOut"] as? String) ?? (record["checkOutTime"] as? String)
+                        if let clockOutRaw = clockOutRaw, !clockOutRaw.isEmpty, clockOutRaw.lowercased() != "null",
+                           let parsedOut = apiFmt.date(from: clockOutRaw) ?? isoFallback.date(from: clockOutRaw) {
                             outDate = parsedOut
                             outFormatted = timeFmt.string(from: parsedOut)
                         }
 
                         let h = cal.component(.hour, from: inDate)
                         let m = cal.component(.minute, from: inDate)
-                        let isLate = (h > 9 || (h == 9 && m > 15))
+                        let isLate = (h > 9 || (h == 9 && m > 0))
 
                         let item = RealAttendanceRecord(
                             dateKey: dateKey,
@@ -1511,7 +1541,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
                 let h = cal.component(.hour, from: startDate)
                 let m = cal.component(.minute, from: startDate)
-                isLate = (h > 9 || (h == 9 && m > 15))
+                isLate = (h > 9 || (h == 9 && m > 0))
                 shiftDesc = "Clock In: \(inTime)  •  Shift End: In Progress"
             } else {
                 hasRecord = false
@@ -1700,7 +1730,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
                 let h = cal.component(.hour, from: startDate)
                 let m = cal.component(.minute, from: startDate)
-                isLate = (h > 9 || (h == 9 && m > 15))
+                isLate = (h > 9 || (h == 9 && m > 0))
                 shiftDesc = "Clock In: \(inTime)  •  Shift End: In Progress"
             } else {
                 hasRecord = false
@@ -1873,7 +1903,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         if let startDate = checkInDate {
             let punchH = cal.component(.hour, from: startDate)
             let punchM = cal.component(.minute, from: startDate)
-            isLate = (punchH > 9 || (punchH == 9 && punchM > 15))
+            isLate = (punchH > 9 || (punchH == 9 && punchM > 0))
         }
 
         let bg = isLate ? ghLateColor : ghOnTimeColor
@@ -2100,11 +2130,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 2-Second Hold Gesture Handlers
     @objc private func punchTouchDown() {
-        if isCheckedIn {
-            hintTitleLabel.text = "Shift in Progress"
-            hintSubtitleLabel.text = "Your shift is currently active and being recorded in real-time."
-            hintIconView.tintColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
+        if !isCheckedIn && !isWithinPunchInWindow() {
+            hintTitleLabel.text = "Shift Starts at 09:00 AM"
+            hintSubtitleLabel.text = "Clock-in opens 5 minutes before shift at 08:55 AM."
+            hintIconView.tintColor = UIColor(red: 0/255, green: 87/255, blue: 255/255, alpha: 1.0)
             showHintPopup()
+            let feedback = UIImpactFeedbackGenerator(style: .medium)
+            feedback.prepare()
+            feedback.impactOccurred()
             return
         }
 
@@ -2127,12 +2160,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     private func showContextualShortTapHint() {
         if !isCheckedIn {
-            hintTitleLabel.text = "Hold for 2 seconds to punch in"
-            hintSubtitleLabel.text = "Keep your finger pressed on the button to start your shift."
-            hintIconView.tintColor = UIColor(red: 0/255, green: 87/255, blue: 255/255, alpha: 1.0)
+            if !isWithinPunchInWindow() {
+                hintTitleLabel.text = "Shift Starts at 09:00 AM"
+                hintSubtitleLabel.text = "Clock-in opens 5 minutes before shift at 08:55 AM."
+                hintIconView.tintColor = UIColor(red: 0/255, green: 87/255, blue: 255/255, alpha: 1.0)
+            } else {
+                hintTitleLabel.text = "Hold for 2 seconds to punch in"
+                hintSubtitleLabel.text = "Keep your finger pressed on the button to start your shift."
+                hintIconView.tintColor = UIColor(red: 0/255, green: 87/255, blue: 255/255, alpha: 1.0)
+            }
         } else {
-            hintTitleLabel.text = "Shift in Progress"
-            hintSubtitleLabel.text = "Your shift is currently active and being recorded in real-time."
+            hintTitleLabel.text = "Hold for 2 seconds to punch out"
+            hintSubtitleLabel.text = "Keep your finger pressed on the button to end and finalize your shift."
             hintIconView.tintColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
         }
         showHintPopup()
@@ -2180,7 +2219,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let notify = UINotificationFeedbackGenerator()
         notify.notificationOccurred(.success)
 
-        // 2. Execute Clock In API Call & Sync System Data
         punchCircleButton.isEnabled = false
         if !isCheckedIn {
             accumulatedBreakDuration = 0
@@ -2192,9 +2230,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             self.isCheckedIn = true
             let instantDate = Date()
             self.checkInDate = instantDate
+            let cal = Calendar.current
+            let h = cal.component(.hour, from: instantDate)
+            let m = cal.component(.minute, from: instantDate)
+            self.isTodayLate = (h > shiftStartHour || (h == shiftStartHour && m > shiftStartMinute))
+
             self.updateUIForAttendance(clockedIn: true)
             self.startTimer()
             self.postShiftNotification(isClockIn: true)
+            self.updateShiftBadgeForStatus(isLate: self.isTodayLate)
+            self.syncTodayAttendanceRecord()
+            self.renderMonthlyHeatmap()
 
             AuthService.shared.clockIn { [weak self] result in
                 guard let self = self else { return }
@@ -2216,6 +2262,29 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                         self.loadAttendanceStats()
                     }
                 }
+            }
+        } else {
+            // Punch Out when holding 2s while clocked in!
+            let instantDate = Date()
+            let timeFormatter = DateFormatter()
+            timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+            timeFormatter.dateFormat = "hh:mm a"
+            let timeStr = timeFormatter.string(from: instantDate)
+
+            self.isCheckedIn = false
+            self.isShiftCompletedToday = true
+            self.stopTimer()
+            self.updateUIForAttendance(clockedIn: false)
+            self.punchStatusLabel.text = "• Clocked Out at \(timeStr)"
+            self.postShiftNotification(isClockIn: false)
+            self.syncTodayAttendanceRecord()
+            self.renderMonthlyHeatmap()
+
+            AuthService.shared.clockOut { [weak self] result in
+                guard let self = self else { return }
+                self.punchCircleButton.isEnabled = true
+                self.loadAttendanceStats()
+                self.loadRealAttendanceHistoryForHeatmap()
             }
         }
     }
@@ -2946,6 +3015,111 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - Attendance API & Live Clock
+    private func restoreUserAttendanceSession() {
+        let localStatus = AuthService.shared.getLocalAttendanceStatus()
+        let localCheckIn = AuthService.shared.getLocalCheckInIso()
+        let localCheckOut = AuthService.shared.getLocalCheckOutIso()
+
+        if localStatus == "CLOCKED_IN", let checkInStr = localCheckIn {
+            let apiFmt = ISO8601DateFormatter()
+            let isoFallback = ISO8601DateFormatter()
+            isoFallback.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let parsedDate = apiFmt.date(from: checkInStr) ?? isoFallback.date(from: checkInStr) {
+                if Calendar.current.isDateInToday(parsedDate) {
+                    self.isCheckedIn = true
+                    self.checkInDate = parsedDate
+                    self.isTodayLate = AuthService.shared.getLocalIsLate()
+                    self.startTimer()
+                    self.updateUIForAttendance(clockedIn: true)
+                    self.updateShiftBadgeForStatus(isLate: self.isTodayLate)
+                    return
+                }
+            }
+        } else if localStatus == "CLOCKED_OUT", let checkOutStr = localCheckOut {
+            let apiFmt = ISO8601DateFormatter()
+            let isoFallback = ISO8601DateFormatter()
+            isoFallback.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let parsedOut = apiFmt.date(from: checkOutStr) ?? isoFallback.date(from: checkOutStr) {
+                if Calendar.current.isDateInToday(parsedOut) {
+                    self.isShiftCompletedToday = true
+                    self.isCheckedIn = false
+                    self.stopTimer()
+                    self.updateUIForAttendance(clockedIn: false)
+                    return
+                }
+            }
+        }
+
+        self.isCheckedIn = false
+        self.checkInDate = nil
+        self.stopTimer()
+        self.updateUIForAttendance(clockedIn: false)
+    }
+
+    private func checkAndTriggerActiveShiftReminder() {
+        let cal = Calendar.current
+        let hour = cal.component(.hour, from: Date())
+        let minute = cal.component(.minute, from: Date())
+        let totalMinutes = hour * 60 + minute
+        let shiftStartMin = shiftStartHour * 60 + shiftStartMinute
+        let shiftEndMin = shiftEndHour * 60 + shiftEndMinute
+
+        let todayKey = DateFormatter()
+        todayKey.dateFormat = "yyyy-MM-dd"
+        let dateString = todayKey.string(from: Date())
+
+        let preKey = "ShiftNotif_Pre_\(dateString)"
+        let endKey = "ShiftNotif_End_\(dateString)"
+
+        if totalMinutes >= (shiftStartMin - 5) && totalMinutes <= (shiftStartMin + 15) {
+            if !UserDefaults.standard.bool(forKey: preKey) && !isCheckedIn {
+                UserDefaults.standard.set(true, forKey: preKey)
+                let title = "Upcoming Shift • Starting in 5 mins"
+                let body = "Good morning! Your shift starts at 09:00 AM. Punch in now to start on time. Have a wonderful and productive work day!"
+                AuthService.shared.recordLocalNotification(title: title, body: body)
+                updateNotificationBellBadge()
+            }
+        }
+
+        if totalMinutes >= shiftEndMin {
+            if !UserDefaults.standard.bool(forKey: endKey) {
+                UserDefaults.standard.set(true, forKey: endKey)
+                let title = "Shift Completed • 06:00 PM"
+                let body = "Great job today! Your shift is now over. Thank you for your dedication and hard work—don't forget to punch out!"
+                AuthService.shared.recordLocalNotification(title: title, body: body)
+                updateNotificationBellBadge()
+            }
+        }
+    }
+
+    private func scheduleShiftReminderNotifications() {
+        let center = UNUserNotificationCenter.current()
+
+        let preShiftContent = UNMutableNotificationContent()
+        preShiftContent.title = "Upcoming Shift • Starting in 5 mins"
+        preShiftContent.body = "Good morning! Your shift starts at 09:00 AM. Punch in now to start on time. Have a wonderful and productive work day!"
+        preShiftContent.sound = .default
+
+        var preDateComponents = DateComponents()
+        preDateComponents.hour = 8
+        preDateComponents.minute = 55
+        let preTrigger = UNCalendarNotificationTrigger(dateMatching: preDateComponents, repeats: true)
+        let preRequest = UNNotificationRequest(identifier: "shift_pre_start_5m", content: preShiftContent, trigger: preTrigger)
+        center.add(preRequest, withCompletionHandler: nil)
+
+        let endShiftContent = UNMutableNotificationContent()
+        endShiftContent.title = "Shift Completed • 06:00 PM"
+        endShiftContent.body = "Great job today! Your shift is now over. Thank you for your dedication and hard work—don't forget to punch out!"
+        endShiftContent.sound = .default
+
+        var endDateComponents = DateComponents()
+        endDateComponents.hour = 18
+        endDateComponents.minute = 0
+        let endTrigger = UNCalendarNotificationTrigger(dateMatching: endDateComponents, repeats: true)
+        let endRequest = UNNotificationRequest(identifier: "shift_end_reminder_6pm", content: endShiftContent, trigger: endTrigger)
+        center.add(endRequest, withCompletionHandler: nil)
+    }
+
     private func formatShiftTime(start: String, end: String) -> String {
         let inFormatter = DateFormatter()
         inFormatter.dateFormat = "HH:mm"
@@ -3001,27 +3175,27 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     }
                 }
 
-                let checkInStr = stats["checkInTime"] as? String
+                let checkInStr = (stats["checkInTime"] as? String) ?? (stats["firstCheckIn"] as? String)
                 let checkOutStr = stats["checkOutTime"] as? String
 
-                if let inStr = checkInStr, !inStr.isEmpty, inStr != "<null>",
-                   (checkOutStr == nil || checkOutStr?.isEmpty == true || checkOutStr == "<null>") {
+                if let checkOut = checkOutStr, !checkOut.isEmpty, checkOut != "<null>", checkOut != "null" {
+                    self.isCheckedIn = false
+                    self.isShiftCompletedToday = true
+                    self.stopTimer()
+                    self.updateUIForAttendance(clockedIn: false)
+                } else if let inStr = checkInStr, !inStr.isEmpty, inStr != "<null>", inStr != "null" {
                     self.isCheckedIn = true
-                    self.checkInDate = self.parseIsoDate(inStr)
+                    if let parsed = self.parseIsoDate(inStr) {
+                        self.checkInDate = parsed
+                    }
                     self.updateUIForAttendance(clockedIn: true)
                     self.startTimer()
                     self.syncTodayAttendanceRecord()
                     self.renderMonthlyHeatmap()
-                } else {
-                    self.isCheckedIn = false
-                    self.checkInDate = nil
-                    self.stopTimer()
-                    self.updateUIForAttendance(clockedIn: false)
                 }
             case .failure:
-                self.isCheckedIn = false
-                self.stopTimer()
-                self.updateUIForAttendance(clockedIn: false)
+                // Keep local session if active, do not overwrite with false
+                break
             }
         }
     }
@@ -3029,32 +3203,55 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private func updateUIForAttendance(clockedIn: Bool) {
         if clockedIn {
             updatePunchInStatusText()
-            // Active shift state: confident royal blue/green
-            punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-            punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
+            // Active shift state: emerald green circle and soft green glow ring
+            punchCircleButton.backgroundColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
+            punchCircleButton.layer.shadowColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 0.35).cgColor
             punchIconView.tintColor = .white
-            punchGlowRing.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 0.85)
+            punchGlowRing.backgroundColor = UIColor(red: 220/255, green: 252/255, blue: 231/255, alpha: 0.85)
         } else {
-            punchStatusLabel.text = "• Not Clocked In"
-            punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-            liveTimerLabel.text = "00h 00m 00s"
-            punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-            punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
-            punchIconView.tintColor = .white
-            punchGlowRing.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 0.85)
+            if isShiftCompletedToday {
+                punchStatusLabel.text = "• Shift Completed for Today"
+                punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+                punchCircleButton.backgroundColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+                punchCircleButton.layer.shadowColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 0.25).cgColor
+                punchIconView.tintColor = .white
+                punchGlowRing.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 0.85)
+            } else if !isWithinPunchInWindow() {
+                punchStatusLabel.text = "• Shift Scheduled for 09:00 AM"
+                punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+                punchCircleButton.backgroundColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+                punchCircleButton.layer.shadowColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 0.25).cgColor
+                punchIconView.tintColor = .white
+                punchGlowRing.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 0.85)
+            } else {
+                punchStatusLabel.text = "• Ready to Punch In"
+                punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+                punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+                punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
+                punchIconView.tintColor = .white
+                punchGlowRing.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 0.85)
+            }
         }
         updatePunchInstructionLabel()
     }
 
     private func updatePunchInstructionLabel() {
         if !isCheckedIn {
-            punchInstructionLabel.text = "Hold 2s to Punch In"
-            punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            if isShiftCompletedToday {
+                punchInstructionLabel.text = "Shift Completed for Today"
+                punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            } else if !isWithinPunchInWindow() {
+                punchInstructionLabel.text = "Shift starts at 09:00 AM • Opens at 08:55 AM"
+                punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            } else {
+                punchInstructionLabel.text = "Hold 2s to Punch In"
+                punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            }
         } else if isOnBreak {
             punchInstructionLabel.text = "Shift on break • Resume to continue"
             punchInstructionLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
         } else {
-            punchInstructionLabel.text = "Shift in Progress"
+            punchInstructionLabel.text = "Shift in Progress • Hold 2s to Punch Out"
             punchInstructionLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
         }
     }

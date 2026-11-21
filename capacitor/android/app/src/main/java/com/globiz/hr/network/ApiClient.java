@@ -229,13 +229,23 @@ public class ApiClient {
     }
 
     public void recordLocalClockIn(String isoTimestamp) {
+        recordLocalClockIn(isoTimestamp, false);
+    }
+
+    public void recordLocalClockIn(String isoTimestamp, boolean isLate) {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         prefs.edit()
                 .putString(userScopedKey(KEY_LAST_CHECK_IN), isoTimestamp)
+                .putBoolean(userScopedKey("KEY_IS_LATE"), isLate)
                 .remove(userScopedKey(KEY_LAST_CHECK_OUT))
                 .remove(userScopedKey(KEY_LAST_BREAK_TIME_STR))
                 .putString(userScopedKey(KEY_ATTENDANCE_STATUS), "CHECKED_IN")
                 .apply();
+    }
+
+    public boolean getLocalIsLate() {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(userScopedKey("KEY_IS_LATE"), false);
     }
 
     public void recordLocalClockOut(String isoTimestamp) {

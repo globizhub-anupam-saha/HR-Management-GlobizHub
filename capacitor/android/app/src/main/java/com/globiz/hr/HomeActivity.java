@@ -2,11 +2,13 @@ package com.globiz.hr;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -187,6 +189,14 @@ public class HomeActivity extends AppCompatActivity {
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private Runnable timerRunnable;
 
+    // Shift Timing Window & Punctuality State
+    private boolean isTodayLate = false;
+    private boolean isShiftCompletedToday = false;
+    private int shiftStartHour = 9;
+    private int shiftStartMinute = 0;
+    private int shiftEndHour = 18;
+    private int shiftEndMinute = 0;
+
     // 2-Second Hold State & Lockout Policies
     private static final long REQUIRED_HOLD_MS = 2000;
     private static final long MIN_SHIFT_LOCK_MS = 3 * 60 * 1000; // 3 minutes minimum shift
@@ -252,16 +262,10 @@ public class HomeActivity extends AppCompatActivity {
             isInitialLoad = false;
         }
 
-        // Reset attendance state immediately to avoid any stale timer carryover when switching accounts
-        stopTimer();
-        isCheckedIn = false;
-        checkInDateTime = null;
-        updateTimerDisplay(0, 0, 0);
-        updatePunchButtonUI(false);
-        if (tvPunchedInAt != null) {
-            tvPunchedInAt.setText("• Clocked Out");
-            tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
-        }
+        restoreUserAttendanceSession();
+        scheduleShiftReminderNotifications();
+        checkAndTriggerActiveShiftReminder();
+
         cachedFirstName = apiClient.getFirstName();
 
         updateGreeting();
@@ -503,22 +507,226 @@ public class HomeActivity extends AppCompatActivity {
         return (int) Math.max(1, (remMs + 59999) / 60000);
     }
 
+    private void restoreUserAttendanceSession() {
+        String localStatus = apiClient.getLocalAttendanceStatus();
+        String localCheckIn = apiClient.getLocalCheckInIso();
+        String localCheckOut = apiClient.getLocalCheckOutIso();
+
+        if ("CHECKED_IN".equalsIgnoreCase(localStatus) && localCheckIn != null) {
+            Date parsedDate = parseIsoDate(localCheckIn);
+            if (parsedDate != null && isDateToday(parsedDate)) {
+                isCheckedIn = true;
+                checkInDateTime = parsedDate;
+                isTodayLate = apiClient.getLocalIsLate();
+                isOnBreak = apiClient.isOnBreak();
+                startTimer();
+                updatePunchButtonUI(true);
+                updateBreakUI(isOnBreak);
+                updateShiftBadge();
+                return;
+            }
+        } else if ("CHECKED_OUT".equalsIgnoreCase(localStatus) && localCheckOut != null) {
+            Date parsedOut = parseIsoDate(localCheckOut);
+            if (parsedOut != null && isDateToday(parsedOut)) {
+                isShiftCompletedToday = true;
+                isCheckedIn = false;
+                stopTimer();
+                updatePunchButtonUI(false);
+                if (tvPunchedInAt != null) {
+                    SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+                    tvPunchedInAt.setText("• Clocked Out at " + timeFmt.format(parsedOut));
+                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                }
+                return;
+            }
+        }
+
+        isCheckedIn = false;
+        checkInDateTime = null;
+        stopTimer();
+        updateTimerDisplay(0, 0, 0);
+        updatePunchButtonUI(false);
+    }
+
+    private boolean isDateToday(Date date) {
+        if (date == null) return false;
+        Calendar today = Calendar.getInstance();
+        Calendar check = Calendar.getInstance();
+        check.setTime(date);
+        return today.get(Calendar.YEAR) == check.get(Calendar.YEAR) &&
+                today.get(Calendar.DAY_OF_YEAR) == check.get(Calendar.DAY_OF_YEAR);
+    }
+
+    private boolean isWithinPunchInWindow() {
+        int windowOpenMinutes = (shiftStartHour * 60 + shiftStartMinute) - 5;
+        Calendar now = Calendar.getInstance();
+        int currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+        return currentMinutes >= windowOpenMinutes;
+    }
+
+    private void updateShiftBadge() {
+        if (tvShiftStatusBadge != null) {
+            if (isTodayLate) {
+                tvShiftStatusBadge.setText("Late");
+                tvShiftStatusBadge.setTextColor(Color.parseColor("#B45309"));
+                tvShiftStatusBadge.setBackgroundResource(R.drawable.bg_badge_late);
+            } else {
+                tvShiftStatusBadge.setText("On Track");
+                tvShiftStatusBadge.setTextColor(Color.parseColor("#065F46"));
+                tvShiftStatusBadge.setBackgroundResource(R.drawable.bg_mint_pill);
+            }
+        }
+    }
+
+    private void scheduleShiftReminderNotifications() {
+        try {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager == null) return;
+
+            // 1. 08:55 AM (5 min before 9:00 AM)
+            Calendar preCal = Calendar.getInstance();
+            preCal.set(Calendar.HOUR_OF_DAY, 8);
+            preCal.set(Calendar.MINUTE, 55);
+            preCal.set(Calendar.SECOND, 0);
+            if (preCal.getTimeInMillis() <= System.currentTimeMillis()) {
+                preCal.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            Intent preIntent = new Intent(this, ShiftNotificationReceiver.class);
+            preIntent.setAction(ShiftNotificationReceiver.ACTION_SHIFT_START_REMINDER);
+            PendingIntent prePi = PendingIntent.getBroadcast(
+                    this,
+                    1001,
+                    preIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            alarmManager.setInexactRepeating(
+                    AlarmManager.RTC_WAKEUP,
+                    preCal.getTimeInMillis(),
+                    AlarmManager.INTERVAL_DAY,
+                    prePi
+            );
+
+            // 2. 06:00 PM (18:00)
+            Calendar endCal = Calendar.getInstance();
+            endCal.set(Calendar.HOUR_OF_DAY, 18);
+            endCal.set(Calendar.MINUTE, 0);
+            endCal.set(Calendar.SECOND, 0);
+            if (endCal.getTimeInMillis() <= System.currentTimeMillis()) {
+                endCal.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            Intent endIntent = new Intent(this, ShiftNotificationReceiver.class);
+            endIntent.setAction(ShiftNotificationReceiver.ACTION_SHIFT_END_REMINDER);
+            PendingIntent endPi = PendingIntent.getBroadcast(
+                    this,
+                    1002,
+                    endIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            alarmManager.setInexactRepeating(
+                    AlarmManager.RTC_WAKEUP,
+                    endCal.getTimeInMillis(),
+                    AlarmManager.INTERVAL_DAY,
+                    endPi
+            );
+        } catch (Exception ignored) {}
+    }
+
+    private void checkAndTriggerActiveShiftReminder() {
+        Calendar now = Calendar.getInstance();
+        int hour = now.get(Calendar.HOUR_OF_DAY);
+        int minute = now.get(Calendar.MINUTE);
+        int currentMinutes = hour * 60 + minute;
+        int shiftStartMin = shiftStartHour * 60 + shiftStartMinute;
+        int shiftEndMin = shiftEndHour * 60 + shiftEndMinute;
+
+        SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        String todayDateStr = dateFmt.format(now.getTime());
+        SharedPreferences prefs = getSharedPreferences("Globiz_Shift_Reminders", MODE_PRIVATE);
+
+        String preKey = "shift_pre_" + todayDateStr;
+        String endKey = "shift_end_" + todayDateStr;
+
+        if (currentMinutes >= (shiftStartMin - 5) && currentMinutes <= (shiftStartMin + 15)) {
+            if (!prefs.getBoolean(preKey, false) && !isCheckedIn) {
+                prefs.edit().putBoolean(preKey, true).apply();
+                triggerSystemNotification("Upcoming Shift • Starting in 5 mins",
+                        "Good morning! Your shift starts at 09:00 AM. Punch in now to start on time. Have a wonderful and productive work day!");
+            }
+        }
+
+        if (currentMinutes >= shiftEndMin) {
+            if (!prefs.getBoolean(endKey, false)) {
+                prefs.edit().putBoolean(endKey, true).apply();
+                triggerSystemNotification("Shift Completed • 06:00 PM",
+                        "Great job today! Your shift is now over. Thank you for your dedication and hard work—don't forget to punch out!");
+            }
+        }
+    }
+
     private void updatePunchButtonUI(boolean clockedIn) {
-        if (viewPunchGlowRing != null) {
-            viewPunchGlowRing.setBackgroundResource(clockedIn ? R.drawable.bg_blue_glow_ring : R.drawable.bg_blue_glow_ring);
-        }
-        if (flPunchButton != null) {
-            flPunchButton.setBackgroundResource(clockedIn ? R.drawable.bg_blue_circle : R.drawable.bg_blue_circle);
-        }
-        if (ivPunchIcon != null) {
-            ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
-        }
-        if (btnTakeBreak != null) {
-            btnTakeBreak.setAlpha(clockedIn ? 1.0f : 0.6f);
-        }
-        if (!clockedIn) {
+        if (clockedIn) {
+            if (viewPunchGlowRing != null) {
+                viewPunchGlowRing.setBackgroundResource(R.drawable.bg_green_glow_ring);
+            }
+            if (flPunchButton != null) {
+                flPunchButton.setBackgroundResource(R.drawable.bg_green_circle);
+            }
+            if (ivPunchIcon != null) {
+                ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
+            }
+            if (btnTakeBreak != null) {
+                btnTakeBreak.setAlpha(1.0f);
+            }
+            if (checkInDateTime != null && tvPunchedInAt != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a", Locale.US);
+                tvPunchedInAt.setText("• Punched In at " + sdf.format(checkInDateTime));
+                tvPunchedInAt.setTextColor(Color.parseColor("#059669"));
+            }
+        } else {
             isOnBreak = false;
             updateBreakUI(false);
+            if (btnTakeBreak != null) {
+                btnTakeBreak.setAlpha(0.6f);
+            }
+            if (isShiftCompletedToday) {
+                if (viewPunchGlowRing != null) {
+                    viewPunchGlowRing.setBackgroundResource(R.drawable.bg_slate_glow_ring);
+                }
+                if (flPunchButton != null) {
+                    flPunchButton.setBackgroundResource(R.drawable.bg_slate_circle);
+                }
+                if (ivPunchIcon != null) {
+                    ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
+                }
+            } else if (!isWithinPunchInWindow()) {
+                if (viewPunchGlowRing != null) {
+                    viewPunchGlowRing.setBackgroundResource(R.drawable.bg_slate_glow_ring);
+                }
+                if (flPunchButton != null) {
+                    flPunchButton.setBackgroundResource(R.drawable.bg_slate_circle);
+                }
+                if (ivPunchIcon != null) {
+                    ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
+                }
+                if (tvPunchedInAt != null) {
+                    tvPunchedInAt.setText("• Shift Scheduled at 09:00 AM");
+                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                }
+            } else {
+                if (viewPunchGlowRing != null) {
+                    viewPunchGlowRing.setBackgroundResource(R.drawable.bg_blue_glow_ring);
+                }
+                if (flPunchButton != null) {
+                    flPunchButton.setBackgroundResource(R.drawable.bg_blue_circle);
+                }
+                if (ivPunchIcon != null) {
+                    ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
+                }
+                if (tvPunchedInAt != null) {
+                    tvPunchedInAt.setText("• Ready to Punch In");
+                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                }
+            }
         }
         updateInstructionLabel();
     }
@@ -551,13 +759,21 @@ public class HomeActivity extends AppCompatActivity {
     private void updateInstructionLabel() {
         if (tvPunchInstruction == null) return;
         if (!isCheckedIn) {
-            tvPunchInstruction.setText("Hold 2s to Punch In");
-            tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
+            if (isShiftCompletedToday) {
+                tvPunchInstruction.setText("Shift Completed for Today");
+                tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
+            } else if (!isWithinPunchInWindow()) {
+                tvPunchInstruction.setText("Shift starts at 09:00 AM • Opens at 08:55 AM");
+                tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
+            } else {
+                tvPunchInstruction.setText("Hold 2s to Punch In");
+                tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
+            }
         } else if (isOnBreak) {
             tvPunchInstruction.setText("Shift on break • Resume to continue");
             tvPunchInstruction.setTextColor(Color.parseColor("#D97706"));
         } else {
-            tvPunchInstruction.setText("Shift in Progress");
+            tvPunchInstruction.setText("Shift in Progress • Hold 2s to Punch Out");
             tvPunchInstruction.setTextColor(Color.parseColor("#059669"));
         }
     }
@@ -583,8 +799,8 @@ public class HomeActivity extends AppCompatActivity {
         flPunchButton.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    if (isCheckedIn) {
-                        showHintPopup("Shift is already in progress");
+                    if (!isCheckedIn && !isWithinPunchInWindow()) {
+                        showHintPopup("Shift starts at 09:00 AM • Clock-in opens at 08:55 AM (5 mins early)");
                         v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                         return true;
                     }
@@ -624,7 +840,13 @@ public class HomeActivity extends AppCompatActivity {
 
                         long duration = System.currentTimeMillis() - pressStartTime;
                         if (duration < REQUIRED_HOLD_MS) {
-                            showHintPopup("Hold for 2 seconds to punch in");
+                            if (isCheckedIn) {
+                                showHintPopup("Hold for 2 seconds to punch out");
+                            } else if (!isWithinPunchInWindow()) {
+                                showHintPopup("Shift starts at 09:00 AM • Clock-in opens at 08:55 AM (5 mins early)");
+                            } else {
+                                showHintPopup("Hold for 2 seconds to punch in");
+                            }
                         }
                         isHolding = false;
                     }
@@ -1347,38 +1569,49 @@ public class HomeActivity extends AppCompatActivity {
                 String checkOutTimeStr = stats.has("checkOutTime") && !stats.isNull("checkOutTime") ? stats.optString("checkOutTime") : null;
                 boolean remoteOnBreak = stats.optBoolean("isOnBreak", false);
 
-                if (("CHECKED_IN".equalsIgnoreCase(status) || (checkInTimeStr != null && (checkOutTimeStr == null || "null".equals(checkOutTimeStr) || checkOutTimeStr.isEmpty())))
+                if (checkOutTimeStr != null && !checkOutTimeStr.isEmpty() && !"null".equalsIgnoreCase(checkOutTimeStr)) {
+                    isCheckedIn = false;
+                    isShiftCompletedToday = true;
+                    stopTimer();
+                    updatePunchButtonUI(false);
+                    if (tvPunchedInAt != null) {
+                        Date outDate = parseIsoDate(checkOutTimeStr);
+                        if (outDate != null) {
+                            SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
+                            tvPunchedInAt.setText("• Clocked Out at " + timeFmt.format(outDate));
+                        } else {
+                            tvPunchedInAt.setText("• Shift Completed");
+                        }
+                        tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                    }
+                } else if (("CHECKED_IN".equalsIgnoreCase(status) || (checkInTimeStr != null && !checkInTimeStr.isEmpty() && !"null".equalsIgnoreCase(checkInTimeStr)))
                         && !"CHECKED_OUT".equalsIgnoreCase(status)) {
                     isCheckedIn = true;
                     if (checkInTimeStr != null && !checkInTimeStr.equals("null")) {
-                        checkInDateTime = parseIsoDate(checkInTimeStr);
+                        Date parsed = parseIsoDate(checkInTimeStr);
+                        if (parsed != null) checkInDateTime = parsed;
                     }
                     if (checkInDateTime == null) {
                         checkInDateTime = new Date();
                     }
+                    Calendar c = Calendar.getInstance();
+                    c.setTime(checkInDateTime);
+                    int h = c.get(Calendar.HOUR_OF_DAY);
+                    int m = c.get(Calendar.MINUTE);
+                    isTodayLate = (h > shiftStartHour || (h == shiftStartHour && m > shiftStartMinute));
+
                     startTimer();
                     updatePunchButtonUI(true);
+                    updateShiftBadge();
                     isOnBreak = remoteOnBreak || apiClient.isOnBreak();
                     updateBreakUI(isOnBreak);
-                } else {
-                    isCheckedIn = false;
-                    checkInDateTime = null;
-                    isOnBreak = false;
-                    updateBreakUI(false);
-                    stopTimer();
-                    updateTimerDisplay(0, 0, 0);
-                    if (tvPunchedInAt != null) {
-                        tvPunchedInAt.setText("• Not Punched In Yet");
-                        tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
-                    }
-                    updatePunchButtonUI(false);
                 }
                 hideSkeletonLoading();
             }
 
             @Override
             public void onError(String errorMessage, int statusCode) {
-                // Default fallback
+                // Keep local session if active, do not overwrite with false
                 hideSkeletonLoading();
             }
         });
@@ -1432,54 +1665,107 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void handleCheckInOutToggle() {
-        if (isCheckedIn) {
-            showHintPopup("Shift is already in progress");
-            return;
-        }
-
         String token = apiClient.getToken();
 
-        // Punch In
-        accumulatedBreakTimeMs = 0;
-        currentBreakStartDate = null;
-        lastBreakSessionText = null;
-        if (tvBreakTimer != null) tvBreakTimer.setVisibility(View.GONE);
-
-        // Instant Seamless Watch Start (0ms delay)
-        isCheckedIn = true;
-        checkInDateTime = new Date();
-        startTimer();
-        updatePunchButtonUI(true);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-        SimpleDateFormat dateSdf = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
-        String timeStr = sdf.format(checkInDateTime);
-        String dateStr = dateSdf.format(checkInDateTime);
-
-        triggerSystemNotification("Attendance • Punched In", "Clocked in at " + timeStr + " on " + dateStr);
-        Toast.makeText(HomeActivity.this, "Punched In at " + timeStr, Toast.LENGTH_SHORT).show();
-
-        apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
-            @Override
-            public void onSuccess(JSONObject result) {
-                loadAttendanceStats();
+        if (!isCheckedIn) {
+            // Punch In
+            if (!isWithinPunchInWindow()) {
+                showHintPopup("Shift starts at 09:00 AM • Clock-in opens at 08:55 AM (5 mins early)");
+                return;
             }
 
-            @Override
-            public void onError(String errorMessage, int statusCode) {
-                if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+            accumulatedBreakTimeMs = 0;
+            currentBreakStartDate = null;
+            lastBreakSessionText = null;
+            if (tvBreakTimer != null) tvBreakTimer.setVisibility(View.GONE);
+
+            isCheckedIn = true;
+            checkInDateTime = new Date();
+            Calendar c = Calendar.getInstance();
+            c.setTime(checkInDateTime);
+            int h = c.get(Calendar.HOUR_OF_DAY);
+            int m = c.get(Calendar.MINUTE);
+            isTodayLate = (h > shiftStartHour || (h == shiftStartHour && m > shiftStartMinute));
+
+            SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+            apiClient.recordLocalClockIn(isoFmt.format(checkInDateTime), isTodayLate);
+
+            startTimer();
+            updatePunchButtonUI(true);
+            updateShiftBadge();
+            syncTodayAttendanceRecord();
+            renderMonthlyHeatmap();
+
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+            SimpleDateFormat dateSdf = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
+            String timeStr = sdf.format(checkInDateTime);
+            String dateStr = dateSdf.format(checkInDateTime);
+
+            String statusDesc = isTodayLate ? " (Late)" : " (On Time)";
+            triggerSystemNotification("Attendance • Punched In", "Clocked in at " + timeStr + statusDesc + " on " + dateStr + ". Have a wonderful work day!");
+            Toast.makeText(HomeActivity.this, "Punched In at " + timeStr + statusDesc, Toast.LENGTH_SHORT).show();
+
+            apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
                     loadAttendanceStats();
-                } else {
-                    // Revert on actual network/authorization error
-                    isCheckedIn = false;
-                    checkInDateTime = null;
-                    stopTimer();
-                    updateTimerDisplay(0, 0, 0);
-                    updatePunchButtonUI(false);
-                    Toast.makeText(HomeActivity.this, errorMessage != null ? errorMessage : "Punch In failed", Toast.LENGTH_SHORT).show();
+                    loadAttendanceHistoryForHeatmap();
                 }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+                        loadAttendanceStats();
+                    } else {
+                        // Revert on critical error
+                        isCheckedIn = false;
+                        checkInDateTime = null;
+                        stopTimer();
+                        updateTimerDisplay(0, 0, 0);
+                        updatePunchButtonUI(false);
+                        Toast.makeText(HomeActivity.this, errorMessage != null ? errorMessage : "Punch In failed", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        } else {
+            // Punch Out
+            Date outDate = new Date();
+            isCheckedIn = false;
+            isShiftCompletedToday = true;
+            stopTimer();
+
+            SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+            apiClient.recordLocalClockOut(isoFmt.format(outDate));
+
+            updatePunchButtonUI(false);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+            String timeStr = sdf.format(outDate);
+            if (tvPunchedInAt != null) {
+                tvPunchedInAt.setText("• Clocked Out at " + timeStr);
+                tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
             }
-        });
+
+            triggerSystemNotification("Attendance • Punched Out", "Clocked out at " + timeStr + ". Thank you for your dedication and hard work!");
+            Toast.makeText(HomeActivity.this, "Clocked Out at " + timeStr, Toast.LENGTH_SHORT).show();
+
+            apiClient.clockOut(token, new ApiClient.ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    loadAttendanceStats();
+                    loadAttendanceHistoryForHeatmap();
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    loadAttendanceStats();
+                }
+            });
+            syncTodayAttendanceRecord();
+            renderMonthlyHeatmap();
+        }
     }
 
     private void startTimer() {
@@ -1586,7 +1872,7 @@ public class HomeActivity extends AppCompatActivity {
             c.setTime(checkInDateTime);
             int h = c.get(Calendar.HOUR_OF_DAY);
             int m = c.get(Calendar.MINUTE);
-            rec.isLate = (h > 9 || (h == 9 && m > 15));
+            rec.isLate = (h > 9 || (h == 9 && m > 0));
 
             attendanceHistoryMap.put(todayKey, rec);
         }
@@ -1610,7 +1896,13 @@ public class HomeActivity extends AppCompatActivity {
                         try {
                             JSONObject obj = response.getJSONObject(i);
                             String clockInRaw = obj.optString("clockIn", null);
+                            if (clockInRaw == null || clockInRaw.isEmpty() || "null".equalsIgnoreCase(clockInRaw)) {
+                                clockInRaw = obj.optString("checkInTime", null);
+                            }
                             String clockOutRaw = obj.optString("clockOut", null);
+                            if (clockOutRaw == null || clockOutRaw.isEmpty() || "null".equalsIgnoreCase(clockOutRaw)) {
+                                clockOutRaw = obj.optString("checkOutTime", null);
+                            }
                             if (clockInRaw != null && !clockInRaw.isEmpty() && !"null".equalsIgnoreCase(clockInRaw)) {
                                 Date inDate = null;
                                 try {
@@ -1647,7 +1939,7 @@ public class HomeActivity extends AppCompatActivity {
                                     c.setTime(inDate);
                                     int h = c.get(Calendar.HOUR_OF_DAY);
                                     int m = c.get(Calendar.MINUTE);
-                                    rec.isLate = (h > 9 || (h == 9 && m > 15));
+                                    rec.isLate = (h > 9 || (h == 9 && m > 0));
 
                                     attendanceHistoryMap.put(rec.dateKey, rec);
                                 }
@@ -1769,7 +2061,7 @@ public class HomeActivity extends AppCompatActivity {
                 c.setTime(checkInDateTime);
                 int h = c.get(Calendar.HOUR_OF_DAY);
                 int m = c.get(Calendar.MINUTE);
-                data.isLate = (h > 9 || (h == 9 && m > 15));
+                data.isLate = (h > 9 || (h == 9 && m > 0));
                 SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
                 data.clockInTime = timeFmt.format(checkInDateTime);
                 data.clockOutTime = "In Progress";
@@ -1931,7 +2223,7 @@ public class HomeActivity extends AppCompatActivity {
                 c.setTime(checkInDateTime);
                 int h = c.get(Calendar.HOUR_OF_DAY);
                 int m = c.get(Calendar.MINUTE);
-                data.isLate = (h > 9 || (h == 9 && m > 15));
+                data.isLate = (h > 9 || (h == 9 && m > 0));
                 SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
                 data.clockInTime = timeFmt.format(checkInDateTime);
                 data.clockOutTime = "In Progress";

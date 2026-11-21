@@ -843,38 +843,46 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
 
         let systemLoc = getSystemLocation()
 
+        let isoFallback = ISO8601DateFormatter()
+        isoFallback.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
         for record in records {
-            let clockInRaw = record["clockIn"] as? String
-            let clockOutRaw = record["clockOut"] as? String
+            let clockInRaw = (record["clockIn"] as? String) ?? (record["checkInTime"] as? String)
+            let clockOutRaw = (record["clockOut"] as? String) ?? (record["checkOutTime"] as? String)
             var location = (record["location"] as? String) ?? systemLoc
             if location.isEmpty || location.lowercased() == "null" || location.lowercased().contains("jakande") || location.lowercased().contains("lekki") {
                 location = systemLoc
             }
 
-            if let clockInRaw = clockInRaw, let inDate = apiFmt.date(from: clockInRaw) {
-                let dateDisplay = formatOrdinalDate(inDate)
-                let inRange = rangeFmt.string(from: inDate).uppercased()
-                var outRange = "--:--"
-                let inSummary = summaryFmt.string(from: inDate).lowercased()
-                var outSummary = "--:--"
+            if let clockInRaw = clockInRaw, !clockInRaw.isEmpty, clockInRaw.lowercased() != "null" {
+                let inDate = apiFmt.date(from: clockInRaw) ?? isoFallback.date(from: clockInRaw)
+                if let inDate = inDate {
+                    let dateDisplay = formatOrdinalDate(inDate)
+                    let inRange = rangeFmt.string(from: inDate).uppercased()
+                    var outRange = "--:--"
+                    let inSummary = summaryFmt.string(from: inDate).lowercased()
+                    var outSummary = "--:--"
 
-                if let clockOutRaw = clockOutRaw, !clockOutRaw.isEmpty, clockOutRaw.lowercased() != "null", let outDate = apiFmt.date(from: clockOutRaw) {
-                    outRange = rangeFmt.string(from: outDate).uppercased()
-                    outSummary = summaryFmt.string(from: outDate).lowercased()
+                    if let clockOutRaw = clockOutRaw, !clockOutRaw.isEmpty, clockOutRaw.lowercased() != "null" {
+                        if let outDate = apiFmt.date(from: clockOutRaw) ?? isoFallback.date(from: clockOutRaw) {
+                            outRange = rangeFmt.string(from: outDate).uppercased()
+                            outSummary = summaryFmt.string(from: outDate).lowercased()
+                        }
+                    }
+
+                    let computedStatus = calculateStatusFromTime(inDate)
+
+                    historyItems.append(HistoryItem(
+                        rawDate: inDate,
+                        dateDisplay: dateDisplay,
+                        timeRange: "\(inRange) - \(outRange)",
+                        location: location,
+                        status: computedStatus,
+                        clockIn: inSummary,
+                        clockOut: outSummary,
+                        breakTime: "--:--"
+                    ))
                 }
-
-                let computedStatus = calculateStatusFromTime(inDate)
-
-                historyItems.append(HistoryItem(
-                    rawDate: inDate,
-                    dateDisplay: dateDisplay,
-                    timeRange: "\(inRange) - \(outRange)",
-                    location: location,
-                    status: computedStatus,
-                    clockIn: inSummary,
-                    clockOut: outSummary,
-                    breakTime: "--:--"
-                ))
             }
         }
 
@@ -1122,9 +1130,10 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         let hour = calendar.component(.hour, from: date)
         let minute = calendar.component(.minute, from: date)
 
+        // 09:00:59 is On Time, 09:01+ is Late
         if hour < 9 {
             return "EARLY"
-        } else if hour == 9 && minute <= 15 {
+        } else if hour == 9 && minute == 0 {
             return "ON_TIME"
         } else {
             return "LATE"

@@ -171,6 +171,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Scheduled Shift Reminder Receiver -->
+        <receiver
+            android:name=".ShiftNotificationReceiver"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->
