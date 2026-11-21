@@ -94,6 +94,33 @@ public class SignInActivity extends AppCompatActivity {
         });
 
         btnDoSignIn.setOnClickListener(v -> performLogin());
+
+        // Quick Role Demo Switcher Chips
+        TextView chipRoleEmployee = findViewById(R.id.chipRoleEmployee);
+        TextView chipRoleAdmin = findViewById(R.id.chipRoleAdmin);
+        TextView chipRoleSuperAdmin = findViewById(R.id.chipRoleSuperAdmin);
+
+        if (chipRoleEmployee != null) {
+            chipRoleEmployee.setOnClickListener(v -> {
+                etEmail.setText("employee@globizhub.com");
+                etPassword.setText("password123");
+                performLogin();
+            });
+        }
+        if (chipRoleAdmin != null) {
+            chipRoleAdmin.setOnClickListener(v -> {
+                etEmail.setText("admin@globizhub.com");
+                etPassword.setText("password123");
+                performLogin();
+            });
+        }
+        if (chipRoleSuperAdmin != null) {
+            chipRoleSuperAdmin.setOnClickListener(v -> {
+                etEmail.setText("superadmin@globizhub.com");
+                etPassword.setText("password123");
+                performLogin();
+            });
+        }
     }
 
     private void setupPasswordToggle() {
