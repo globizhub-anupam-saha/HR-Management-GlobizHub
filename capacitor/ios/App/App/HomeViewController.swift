@@ -71,6 +71,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private var holidayDots: [UIView] = []
     private let holidayNameLabel = UILabel()
     private let holidayDateLabel = UILabel()
+    private let holidayDaysLeftBadge = UIView()
     private let holidayDaysLeftLabel = UILabel()
     private var upcomingHolidays: [[String: Any]] = []
     private var currentHolidayIndex = 0
@@ -702,13 +703,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - 3. Leaves & Holiday Row
     private func setupTwoColumnRow() {
-        twoColumnRow.axis = .horizontal
-        twoColumnRow.distribution = .fillEqually
-        twoColumnRow.spacing = 12
+        twoColumnRow.axis = .vertical
+        twoColumnRow.distribution = .fill
+        twoColumnRow.spacing = 14
         twoColumnRow.translatesAutoresizingMaskIntoConstraints = false
         cardsStackView.addArrangedSubview(twoColumnRow)
 
-        // Card A: Leaves
+        // Card A: Leaves (Full-width 1st)
         leavesCard.backgroundColor = .white
         leavesCard.layer.cornerRadius = 20
         leavesCard.layer.borderWidth = 1
@@ -739,13 +740,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         leavesBadge.addSubview(leavesBadgeIcon)
 
         leavesCasualLabel.text = "Casual: 6 left"
-        leavesCasualLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        leavesCasualLabel.font = .systemFont(ofSize: 14, weight: .bold)
         leavesCasualLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
         leavesCasualLabel.translatesAutoresizingMaskIntoConstraints = false
         leavesCard.addSubview(leavesCasualLabel)
 
         leavesSickLabel.text = "Sick: 4 remaining"
-        leavesSickLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        leavesSickLabel.font = .systemFont(ofSize: 13, weight: .regular)
         leavesSickLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         leavesSickLabel.translatesAutoresizingMaskIntoConstraints = false
         leavesCard.addSubview(leavesSickLabel)
@@ -761,7 +762,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         leavesProgressBar.translatesAutoresizingMaskIntoConstraints = false
         leavesProgressTrack.addSubview(leavesProgressBar)
 
-        // Card B: Holiday (Interactive Swipe / Tap to cycle through 3 upcoming holidays)
+        // Card B: Holiday (Full-width below Leaves)
         holidayCard.backgroundColor = .white
         holidayCard.layer.cornerRadius = 20
         holidayCard.layer.borderWidth = 1
@@ -782,7 +783,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         twoColumnRow.addArrangedSubview(holidayCard)
 
         holidayTitleLabel.text = "Upcoming Holidays"
-        holidayTitleLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        holidayTitleLabel.font = .systemFont(ofSize: 16, weight: .bold)
         holidayTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         holidayTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         holidayCard.addSubview(holidayTitleLabel)
@@ -808,75 +809,89 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         }
 
         holidayNameLabel.text = "Diwali"
-        holidayNameLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        holidayNameLabel.font = .systemFont(ofSize: 16, weight: .bold)
         holidayNameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         holidayNameLabel.translatesAutoresizingMaskIntoConstraints = false
         holidayCard.addSubview(holidayNameLabel)
 
         holidayDateLabel.text = "Fri, Nov 1"
-        holidayDateLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        holidayDateLabel.font = .systemFont(ofSize: 13, weight: .regular)
         holidayDateLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         holidayDateLabel.translatesAutoresizingMaskIntoConstraints = false
         holidayCard.addSubview(holidayDateLabel)
+
+        holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+        holidayDaysLeftBadge.layer.cornerRadius = 10
+        holidayDaysLeftBadge.layer.borderWidth = 1
+        holidayDaysLeftBadge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
+        holidayDaysLeftBadge.translatesAutoresizingMaskIntoConstraints = false
+        holidayCard.addSubview(holidayDaysLeftBadge)
 
         holidayDaysLeftLabel.text = "In 8 days"
         holidayDaysLeftLabel.font = .systemFont(ofSize: 12, weight: .bold)
         holidayDaysLeftLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
         holidayDaysLeftLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.addSubview(holidayDaysLeftLabel)
+        holidayDaysLeftBadge.addSubview(holidayDaysLeftLabel)
+
+        leavesProgressWidthConstraint = leavesProgressBar.widthAnchor.constraint(equalTo: leavesProgressTrack.widthAnchor, multiplier: 0.70)
+        leavesProgressWidthConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
-            // Leaves Card Constraints
+            leavesCard.widthAnchor.constraint(equalTo: twoColumnRow.widthAnchor),
+            holidayCard.widthAnchor.constraint(equalTo: twoColumnRow.widthAnchor),
+
+            // Leaves Card Constraints (Full width)
             leavesTitleLabel.topAnchor.constraint(equalTo: leavesCard.topAnchor, constant: 16),
-            leavesTitleLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 14),
+            leavesTitleLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 16),
 
             leavesBadge.topAnchor.constraint(equalTo: leavesCard.topAnchor, constant: 14),
-            leavesBadge.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -14),
+            leavesBadge.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -16),
             leavesBadge.widthAnchor.constraint(equalToConstant: 32),
             leavesBadge.heightAnchor.constraint(equalToConstant: 32),
 
             leavesBadgeIcon.centerXAnchor.constraint(equalTo: leavesBadge.centerXAnchor),
             leavesBadgeIcon.centerYAnchor.constraint(equalTo: leavesBadge.centerYAnchor),
 
-            leavesCasualLabel.topAnchor.constraint(equalTo: leavesTitleLabel.bottomAnchor, constant: 12),
-            leavesCasualLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 14),
-            leavesCasualLabel.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -14),
+            leavesCasualLabel.topAnchor.constraint(equalTo: leavesTitleLabel.bottomAnchor, constant: 14),
+            leavesCasualLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 16),
 
-            leavesSickLabel.topAnchor.constraint(equalTo: leavesCasualLabel.bottomAnchor, constant: 2),
-            leavesSickLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 14),
-            leavesSickLabel.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -14),
+            leavesSickLabel.centerYAnchor.constraint(equalTo: leavesCasualLabel.centerYAnchor),
+            leavesSickLabel.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -16),
+            leavesSickLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leavesCasualLabel.trailingAnchor, constant: 12),
 
-            leavesProgressTrack.topAnchor.constraint(equalTo: leavesSickLabel.bottomAnchor, constant: 12),
-            leavesProgressTrack.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 14),
-            leavesProgressTrack.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -14),
+            leavesProgressTrack.topAnchor.constraint(equalTo: leavesCasualLabel.bottomAnchor, constant: 12),
+            leavesProgressTrack.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 16),
+            leavesProgressTrack.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -16),
             leavesProgressTrack.heightAnchor.constraint(equalToConstant: 5),
             leavesProgressTrack.bottomAnchor.constraint(equalTo: leavesCard.bottomAnchor, constant: -16),
 
             leavesProgressBar.topAnchor.constraint(equalTo: leavesProgressTrack.topAnchor),
             leavesProgressBar.bottomAnchor.constraint(equalTo: leavesProgressTrack.bottomAnchor),
             leavesProgressBar.leadingAnchor.constraint(equalTo: leavesProgressTrack.leadingAnchor),
-            leavesProgressBar.widthAnchor.constraint(equalTo: leavesProgressTrack.widthAnchor, multiplier: 0.70),
 
-            // Holiday Card Constraints - Dots brought DOWN to bottom trailing
+            // Holiday Card Constraints (Full width)
             holidayTitleLabel.topAnchor.constraint(equalTo: holidayCard.topAnchor, constant: 16),
-            holidayTitleLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 14),
-            holidayTitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: holidayCard.trailingAnchor, constant: -14),
+            holidayTitleLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 16),
 
-            holidayNameLabel.topAnchor.constraint(equalTo: holidayTitleLabel.bottomAnchor, constant: 12),
-            holidayNameLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 14),
-            holidayNameLabel.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -14),
+            holidayDotsStack.centerYAnchor.constraint(equalTo: holidayTitleLabel.centerYAnchor),
+            holidayDotsStack.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -16),
 
-            holidayDateLabel.topAnchor.constraint(equalTo: holidayNameLabel.bottomAnchor, constant: 2),
-            holidayDateLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 14),
-            holidayDateLabel.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -14),
+            holidayNameLabel.topAnchor.constraint(equalTo: holidayTitleLabel.bottomAnchor, constant: 14),
+            holidayNameLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 16),
+            holidayNameLabel.trailingAnchor.constraint(lessThanOrEqualTo: holidayDaysLeftBadge.leadingAnchor, constant: -12),
 
-            holidayDaysLeftLabel.topAnchor.constraint(equalTo: holidayDateLabel.bottomAnchor, constant: 6),
-            holidayDaysLeftLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 14),
-            holidayDaysLeftLabel.bottomAnchor.constraint(equalTo: holidayCard.bottomAnchor, constant: -16),
+            holidayDateLabel.topAnchor.constraint(equalTo: holidayNameLabel.bottomAnchor, constant: 4),
+            holidayDateLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 16),
+            holidayDateLabel.trailingAnchor.constraint(lessThanOrEqualTo: holidayDaysLeftBadge.leadingAnchor, constant: -12),
+            holidayDateLabel.bottomAnchor.constraint(equalTo: holidayCard.bottomAnchor, constant: -16),
 
-            holidayDotsStack.centerYAnchor.constraint(equalTo: holidayDaysLeftLabel.centerYAnchor),
-            holidayDotsStack.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -14),
-            holidayDaysLeftLabel.trailingAnchor.constraint(lessThanOrEqualTo: holidayDotsStack.leadingAnchor, constant: -8)
+            holidayDaysLeftBadge.centerYAnchor.constraint(equalTo: holidayNameLabel.centerYAnchor),
+            holidayDaysLeftBadge.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -16),
+
+            holidayDaysLeftLabel.topAnchor.constraint(equalTo: holidayDaysLeftBadge.topAnchor, constant: 4),
+            holidayDaysLeftLabel.bottomAnchor.constraint(equalTo: holidayDaysLeftBadge.bottomAnchor, constant: -4),
+            holidayDaysLeftLabel.leadingAnchor.constraint(equalTo: holidayDaysLeftBadge.leadingAnchor, constant: 10),
+            holidayDaysLeftLabel.trailingAnchor.constraint(equalTo: holidayDaysLeftBadge.trailingAnchor, constant: -10)
         ])
     }
 
@@ -2904,12 +2919,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         if daysLeft == 0 {
             holidayDaysLeftLabel.text = "Today"
             holidayDaysLeftLabel.textColor = UIColor(red: 220/255, green: 38/255, blue: 38/255, alpha: 1.0)
+            holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 242/255, blue: 242/255, alpha: 1.0)
+            holidayDaysLeftBadge.layer.borderColor = UIColor(red: 254/255, green: 202/255, blue: 202/255, alpha: 1.0).cgColor
         } else if daysLeft == 1 {
             holidayDaysLeftLabel.text = "Tomorrow"
             holidayDaysLeftLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+            holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+            holidayDaysLeftBadge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
         } else {
             holidayDaysLeftLabel.text = "\(daysLeft) days left"
             holidayDaysLeftLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+            holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+            holidayDaysLeftBadge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
         }
 
         // Update dots indicator

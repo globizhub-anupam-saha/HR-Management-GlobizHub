@@ -442,174 +442,195 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 3. 2-COLUMN ROW (Leaves & Holiday) -->
+            <!-- 3. LEAVES CARD (Full Width 1st) -->
             <LinearLayout
+                android:id="@+id/cvLeavesCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_profile_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:elevation="1dp"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <!-- Left Card: Leaves -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Leaves"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <FrameLayout
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/bg_day_pill_active">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_calendar"
+                            android:tint="#2563EB" />
+                    </FrameLayout>
+                </RelativeLayout>
+
+                <!-- Two stat texts side-by-side -->
                 <LinearLayout
-                    android:id="@+id/cvLeavesCard"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_profile_card"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="1dp"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Leaves"
-                            android:textColor="#0F172A"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <FrameLayout
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:layout_alignParentEnd="true"
-                            android:background="@drawable/bg_day_pill_active">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_calendar"
-                                android:tint="#2563EB" />
-                        </FrameLayout>
-                    </RelativeLayout>
+                    android:layout_marginTop="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/tvCasualLeave"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_weight="1"
                         android:text="Casual: 6 left"
                         android:textColor="#1E293B"
-                        android:textSize="13sp"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvSickLeave"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:gravity="end"
                         android:text="Sick: 4 remaining"
                         android:textColor="#64748B"
-                        android:textSize="12sp" />
-
-                    <!-- Progress Bar -->
-                    <ProgressBar
-                        android:id="@+id/pbLeaveProgress"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="4dp"
-                        android:layout_marginTop="10dp"
-                        android:max="10"
-                        android:progress="6"
-                        android:progressTint="#0056FD"
-                        android:progressBackgroundTint="#E2E8F0" />
+                        android:textSize="13sp" />
                 </LinearLayout>
 
-                <!-- Right Card: Holiday -->
-                <LinearLayout
-                    android:id="@+id/cvHolidayCard"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_profile_card"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="1dp"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                <!-- Progress Bar -->
+                <ProgressBar
+                    android:id="@+id/pbLeaveProgress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="5dp"
+                    android:layout_marginTop="12dp"
+                    android:max="100"
+                    android:progress="60"
+                    android:progressTint="#0056FD"
+                    android:progressBackgroundTint="#E2E8F0" />
+            </LinearLayout>
+
+            <!-- 4. UPCOMING HOLIDAYS CARD (Full Width 2nd) -->
+            <LinearLayout
+                android:id="@+id/cvHolidayCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_profile_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:elevation="1dp"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Header Row: Title & Carousel Dots -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
                     <TextView
                         android:id="@+id/tvHolidayTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
                         android:text="Upcoming Holidays"
                         android:textColor="#0F172A"
-                        android:textSize="15sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvHolidayName"
+                    <LinearLayout
+                        android:id="@+id/llHolidayDots"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Diwali"
-                        android:textColor="#0F172A"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:gravity="center"
+                        android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/tvHolidayDate"
+                        <View
+                            android:id="@+id/dotHoliday0"
+                            android:layout_width="12dp"
+                            android:layout_height="6dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/bg_holiday_dot_active" />
+
+                        <View
+                            android:id="@+id/dotHoliday1"
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/bg_holiday_dot_inactive" />
+
+                        <View
+                            android:id="@+id/dotHoliday2"
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:background="@drawable/bg_holiday_dot_inactive" />
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <!-- Content Row: Name & Date on left, Days Left badge on right -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp">
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Fri, Nov 1"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp">
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="12dp"
+                        android:layout_toStartOf="@+id/tvHolidayDaysLeft"
+                        android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvHolidayDaysLeft"
+                            android:id="@+id/tvHolidayName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:text="In 8 days"
-                            android:textColor="#B45309"
-                            android:textSize="12sp"
+                            android:text="Diwali"
+                            android:textColor="#0F172A"
+                            android:textSize="16sp"
                             android:textStyle="bold" />
 
-                        <LinearLayout
-                            android:id="@+id/llHolidayDots"
+                        <TextView
+                            android:id="@+id/tvHolidayDate"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:orientation="horizontal"
-                            android:gravity="center">
+                            android:layout_marginTop="4dp"
+                            android:text="Fri, Nov 1"
+                            android:textColor="#64748B"
+                            android:textSize="13sp" />
+                    </LinearLayout>
 
-                            <View
-                                android:id="@+id/dotHoliday0"
-                                android:layout_width="12dp"
-                                android:layout_height="6dp"
-                                android:layout_marginEnd="4dp"
-                                android:background="@drawable/bg_holiday_dot_active" />
-
-                            <View
-                                android:id="@+id/dotHoliday1"
-                                android:layout_width="6dp"
-                                android:layout_height="6dp"
-                                android:layout_marginEnd="4dp"
-                                android:background="@drawable/bg_holiday_dot_inactive" />
-
-                            <View
-                                android:id="@+id/dotHoliday2"
-                                android:layout_width="6dp"
-                                android:layout_height="6dp"
-                                android:background="@drawable/bg_holiday_dot_inactive" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                </LinearLayout>
+                    <TextView
+                        android:id="@+id/tvHolidayDaysLeft"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/bg_badge_late"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:text="In 8 days"
+                        android:textColor="#B45309"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
             </LinearLayout>
 
             <!-- 4. TEAM PRESENCE CARD -->
