@@ -84,13 +84,8 @@ public class SplashActivity extends AppCompatActivity {
         if (ApiClient.getInstance(SplashActivity.this).isLoggedIn()) {
             intent = new Intent(SplashActivity.this, HomeActivity.class);
         } else {
-            boolean hasCompletedOnboarding = getSharedPreferences("globiz_prefs", MODE_PRIVATE)
-                    .getBoolean("has_completed_onboarding", false);
-            if (hasCompletedOnboarding) {
-                intent = new Intent(SplashActivity.this, SignInActivity.class);
-            } else {
-                intent = new Intent(SplashActivity.this, OnboardingActivity.class);
-            }
+            // First-time install / unauthenticated user starts directly with the Sign In (Auth) screen
+            intent = new Intent(SplashActivity.this, SignInActivity.class);
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 

@@ -103,10 +103,9 @@ class SplashViewController: UIViewController {
             nextVC = SettingsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteHome") || AuthService.shared.isLoggedIn {
             nextVC = HomeViewController()
-        } else if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
-            nextVC = SignInViewController()
         } else {
-            nextVC = OnboardingViewController()
+            // First-time install / unauthenticated user starts directly with the Sign In (Auth) screen
+            nextVC = SignInViewController()
         }
 
         if let window = self.view.window ?? UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
