@@ -1,10 +1,15 @@
 package com.globiz.hr;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Outline;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.FrameLayout;
@@ -33,15 +38,11 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvProfileInitials;
     private TextView tvProfileName;
     private TextView tvProfileEmail;
+    private TextView tvRoleBadge;
     private TextView tvCompanyName;
     private TextView tvAppVersion;
 
-    private androidx.appcompat.widget.SwitchCompat swAttendanceConfirm;
-    private androidx.appcompat.widget.SwitchCompat swAttendanceNotes;
-    private androidx.appcompat.widget.SwitchCompat swLocationAccuracy;
     private androidx.appcompat.widget.SwitchCompat swPushNotification;
-
-    private static final String PREFS_SETTINGS = "TeamHub_Settings_Prefs";
 
     private ApiClient apiClient;
 
@@ -61,10 +62,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        View viewNotificationDot = findViewById(R.id.viewNotificationDot);
-        if (viewNotificationDot != null) {
-            viewNotificationDot.setVisibility(apiClient.hasUnreadLocalNotifications() ? View.VISIBLE : View.GONE);
-        }
+        loadProfileData();
     }
 
     private void initViews() {
@@ -73,55 +71,24 @@ public class SettingsActivity extends AppCompatActivity {
         TabletHelper.applyTabletConstraint(findViewById(R.id.settingsContentContainer));
         TabletHelper.applyTabletConstraint(findViewById(R.id.settingsTopBar));
 
-        View btnNotifications = findViewById(R.id.btnNotifications);
-        View viewNotificationDot = findViewById(R.id.viewNotificationDot);
-        if (viewNotificationDot != null) {
-            viewNotificationDot.setVisibility(apiClient.hasUnreadLocalNotifications() ? View.VISIBLE : View.GONE);
-        }
-        if (btnNotifications != null) {
-            btnNotifications.setOnClickListener(v -> {
-                apiClient.markLocalNotificationsAsRead();
-                if (viewNotificationDot != null) {
-                    viewNotificationDot.setVisibility(View.GONE);
-                }
-                startActivity(new Intent(this, NotificationsActivity.class));
-            });
-        }
-
         flProfileAvatar = findViewById(R.id.flProfileAvatar);
         ivProfileAvatar = findViewById(R.id.ivProfileAvatar);
         tvProfileInitials = findViewById(R.id.tvProfileInitials);
         tvProfileName = findViewById(R.id.tvProfileName);
         tvProfileEmail = findViewById(R.id.tvProfileEmail);
+        tvRoleBadge = findViewById(R.id.tvRoleBadge);
         tvCompanyName = findViewById(R.id.tvCompanyName);
         tvAppVersion = findViewById(R.id.tvAppVersion);
 
-        if (tvAppVersion != null) {
-            tvAppVersion.setText("1.0");
+        // Dynamic app version
+        try {
+            PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            tvAppVersion.setText(pInfo.versionName + " (" + pInfo.versionCode + ")");
+        } catch (Exception e) {
+            tvAppVersion.setText("1.0.0 (1)");
         }
 
-        swAttendanceConfirm = findViewById(R.id.swAttendanceConfirm);
-        swAttendanceNotes = findViewById(R.id.swAttendanceNotes);
-        swLocationAccuracy = findViewById(R.id.swLocationAccuracy);
-        swPushNotification = findViewById(R.id.swPushNotification);
-
-        setupSwitchAutoSave(swAttendanceConfirm, "pref_attendance_confirm", true);
-        setupSwitchAutoSave(swAttendanceNotes, "pref_attendance_notes", false);
-        setupSwitchAutoSave(swLocationAccuracy, "pref_location_accuracy", false);
-        if (swPushNotification != null) {
-            swPushNotification.setChecked(AppNotificationManager.isPushNotificationEnabled(this));
-            swPushNotification.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                AppNotificationManager.setPushNotificationEnabled(this, isChecked);
-                if (isChecked) {
-                    AppNotificationManager.requestNotificationPermission(this);
-                    Toast.makeText(this, "Push notifications enabled", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Push notifications paused (in-app records retained)", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-        // Circular outline
+        // Circular avatar outline
         flProfileAvatar.setOutlineProvider(new ViewOutlineProvider() {
             @Override
             public void getOutline(View view, Outline outline) {
@@ -130,43 +97,134 @@ public class SettingsActivity extends AppCompatActivity {
         });
         flProfileAvatar.setClipToOutline(true);
 
+        // View Profile -> Account Settings
         findViewById(R.id.btnViewProfile).setOnClickListener(v -> {
-            Toast.makeText(this, "Profile view", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, AccountSettingsActivity.class));
         });
 
-        View btnSwitchRole = findViewById(R.id.btnSwitchRole);
-        TextView tvRoleBadge = findViewById(R.id.tvRoleBadge);
-        updateRoleBadge(tvRoleBadge);
+        // Role badge update (Plain badge, no dropdown)
+        updateRoleBadge();
 
-        if (btnSwitchRole != null) {
-            btnSwitchRole.setOnClickListener(v -> showRoleSwitcherDialog(tvRoleBadge));
+        // Help & Support Box
+        View btnHelpSupport = findViewById(R.id.btnHelpSupport);
+        if (btnHelpSupport != null) {
+            btnHelpSupport.setOnClickListener(v -> {
+                startActivity(new Intent(this, HelpSupportActivity.class));
+            });
         }
 
-        findViewById(R.id.btnRefresh).setOnClickListener(v -> {
-            loadProfileData();
-            Toast.makeText(this, "Settings refreshed", Toast.LENGTH_SHORT).show();
-        });
+        // Privacy Policy
+        View btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy);
+        if (btnPrivacyPolicy != null) {
+            btnPrivacyPolicy.setOnClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Privacy Policy")
+                        .setMessage("GlobizHR safeguards your employment and personal information in accordance with statutory privacy standards and industry-standard AES encryption.")
+                        .setPositiveButton("OK", null)
+                        .show();
+            });
+        }
 
-        findViewById(R.id.btnManageAccount).setOnClickListener(v -> {
-            startActivity(new Intent(this, DeleteAccountActivity.class));
-        });
+        // Terms of Service
+        View btnTermsOfService = findViewById(R.id.btnTermsOfService);
+        if (btnTermsOfService != null) {
+            btnTermsOfService.setOnClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Terms of Service")
+                        .setMessage("Use of GlobizHR mobile client is subject to organization workforce policies, valid attendance logging, and authorized credential access.")
+                        .setPositiveButton("OK", null)
+                        .show();
+            });
+        }
 
-        findViewById(R.id.btnSignOut).setOnClickListener(v -> confirmSignOut());
+        // Write Us
+        View btnWriteUs = findViewById(R.id.btnWriteUs);
+        if (btnWriteUs != null) {
+            btnWriteUs.setOnClickListener(v -> {
+                try {
+                    Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
+                    emailIntent.setData(Uri.parse("mailto:support@globizhub.com?subject=GlobizHR%20Support"));
+                    startActivity(emailIntent);
+                } catch (Exception e) {
+                    Toast.makeText(this, "Email: support@globizhub.com", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        // App Issues & Feedback
+        View btnAppIssuesFeedback = findViewById(R.id.btnAppIssuesFeedback);
+        if (btnAppIssuesFeedback != null) {
+            btnAppIssuesFeedback.setOnClickListener(v -> {
+                startActivity(new Intent(this, HelpSupportActivity.class));
+            });
+        }
+
+        // Refresh App (2s HUD, reloads data, navigates to HomeActivity)
+        View btnRefresh = findViewById(R.id.btnRefresh);
+        if (btnRefresh != null) {
+            btnRefresh.setOnClickListener(v -> handleRefreshApp());
+        }
+
+        // Push Notification Toggle
+        swPushNotification = findViewById(R.id.swPushNotification);
+        if (swPushNotification != null) {
+            swPushNotification.setChecked(AppNotificationManager.isPushNotificationEnabled(this));
+            swPushNotification.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                AppNotificationManager.setPushNotificationEnabled(this, isChecked);
+                if (isChecked) {
+                    AppNotificationManager.requestNotificationPermission(this);
+                    Toast.makeText(this, "Push notifications enabled", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Push notifications paused", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Manage Account
+        View btnManageAccount = findViewById(R.id.btnManageAccount);
+        if (btnManageAccount != null) {
+            btnManageAccount.setOnClickListener(v -> {
+                startActivity(new Intent(this, DeleteAccountActivity.class));
+            });
+        }
+
+        // Sign Out
+        View btnSignOut = findViewById(R.id.btnSignOut);
+        if (btnSignOut != null) {
+            btnSignOut.setOnClickListener(v -> confirmSignOut());
+        }
     }
 
-    private void setupSwitchAutoSave(androidx.appcompat.widget.SwitchCompat sw, String prefKey, boolean defaultValue) {
-        if (sw == null) return;
-        android.content.SharedPreferences sp = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE);
-        sw.setChecked(sp.getBoolean(prefKey, defaultValue));
-        sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            sp.edit().putBoolean(prefKey, isChecked).apply();
-        });
+    private void handleRefreshApp() {
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Refreshing GlobizHR...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                progressDialog.dismiss();
+                loadProfileData();
+
+                Intent intent = new Intent(this, HomeActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
+            }
+        }, 2000);
+    }
+
+    private void updateRoleBadge() {
+        if (tvRoleBadge == null) return;
+        UserRole currentRole = UserRole.fromString(apiClient.getRole());
+        tvRoleBadge.setText(currentRole.getDisplayName());
     }
 
     private void loadProfileData() {
         String token = apiClient.getToken();
         String savedEmail = apiClient.getEmail();
         tvProfileEmail.setText(savedEmail);
+        updateRoleBadge();
 
         if (token == null) return;
 
@@ -179,6 +237,9 @@ public class SettingsActivity extends AppCompatActivity {
                 String lastName = user.optString("lastName", "");
                 String email = user.optString("email", savedEmail);
                 String photoUrl = user.optString("profilePhoto", "");
+                if (photoUrl.isEmpty()) {
+                    photoUrl = user.optString("profileImage", "");
+                }
 
                 String fullName = (firstName + " " + lastName).trim();
                 if (fullName.isEmpty()) {
@@ -203,7 +264,7 @@ public class SettingsActivity extends AppCompatActivity {
                     tvProfileInitials.setVisibility(View.VISIBLE);
                 }
 
-                // Real-time Organization / Company Name
+                // Organization / Company Name
                 String resolvedOrgName = null;
                 if (user.has("company") && !user.isNull("company")) {
                     JSONObject compObj = user.optJSONObject("company");
@@ -225,10 +286,10 @@ public class SettingsActivity extends AppCompatActivity {
                 if ((resolvedOrgName == null || resolvedOrgName.isEmpty()) && user.has("organizationName")) {
                     resolvedOrgName = user.optString("organizationName", "");
                 }
-                if (resolvedOrgName == null || resolvedOrgName.isEmpty() || "acmecorp".equalsIgnoreCase(resolvedOrgName)) {
+                if (resolvedOrgName == null || resolvedOrgName.isEmpty() || "acmecorp".equalsIgnoreCase(resolvedOrgName) || "null".equalsIgnoreCase(resolvedOrgName)) {
                     resolvedOrgName = apiClient.getOrganization();
                 }
-                if (resolvedOrgName == null || resolvedOrgName.isEmpty() || "acmecorp".equalsIgnoreCase(resolvedOrgName)) {
+                if (resolvedOrgName == null || resolvedOrgName.isEmpty() || "acmecorp".equalsIgnoreCase(resolvedOrgName) || "null".equalsIgnoreCase(resolvedOrgName)) {
                     resolvedOrgName = "GlobizHub Inc.";
                 }
                 tvCompanyName.setText(resolvedOrgName);
@@ -236,7 +297,7 @@ public class SettingsActivity extends AppCompatActivity {
 
             @Override
             public void onError(String errorMessage, int statusCode) {
-                // Keep defaults
+                // Keep default state
             }
         });
     }
@@ -261,31 +322,6 @@ public class SettingsActivity extends AppCompatActivity {
             } catch (Exception ignored) {
             }
         });
-    }
-
-    private void updateRoleBadge(TextView tvRoleBadge) {
-        if (tvRoleBadge == null) return;
-        UserRole currentRole = UserRole.fromString(apiClient.getRole());
-        tvRoleBadge.setText(currentRole.getDisplayName());
-    }
-
-    private void showRoleSwitcherDialog(TextView tvRoleBadge) {
-        String[] roles = {"Employee", "Admin", "Super Admin"};
-        new AlertDialog.Builder(this)
-                .setTitle("Select Active Role")
-                .setItems(roles, (dialog, which) -> {
-                    String selectedRole = "EMPLOYEE";
-                    if (which == 1) selectedRole = "ADMIN";
-                    else if (which == 2) selectedRole = "SUPER_ADMIN";
-
-                    apiClient.saveRole(selectedRole);
-                    getSharedPreferences("TeamHub_Role_Override", MODE_PRIVATE)
-                            .edit().putBoolean("is_role_overridden", true).apply();
-                    updateRoleBadge(tvRoleBadge);
-                    Toast.makeText(this, "Active role updated to " + roles[which] + ". App navigation and modules synchronized.", Toast.LENGTH_LONG).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     private void confirmSignOut() {

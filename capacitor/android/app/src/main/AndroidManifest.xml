@@ -96,6 +96,22 @@
             android:screenOrientation="portrait"
             android:exported="false" />
 
+        <!-- Account Settings Activity -->
+        <activity
+            android:name=".AccountSettingsActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <!-- Help and Support Activity -->
+        <activity
+            android:name=".HelpSupportActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
         <!-- Customize Tabs Activity -->
         <activity
             android:name=".CustomizeTabsActivity"

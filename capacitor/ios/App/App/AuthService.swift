@@ -1374,6 +1374,176 @@ class AuthService {
         }.resume()
     }
 
+    // MARK: - Update Profile
+    func updateProfile(data: [String: Any], completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/employees/me"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: data)
+
+        URLSession.shared.dataTask(with: request) { resData, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let http = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("No response from server")))
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: resData ?? Data())) as? [String: Any] ?? data
+                if http.statusCode >= 200 && http.statusCode < 300 {
+                    if let first = data["firstName"] as? String {
+                        UserDefaults.standard.set(first, forKey: self.firstNameKey)
+                    }
+                    if let last = data["lastName"] as? String {
+                        UserDefaults.standard.set(last, forKey: "TeamHubAuth_LastName")
+                    }
+                    if let phone = data["phone"] as? String {
+                        UserDefaults.standard.set(phone, forKey: "TeamHubAuth_Phone")
+                    }
+                    UserDefaults.standard.synchronize()
+                    completion(.success(json))
+                } else {
+                    let msg = self.parseErrorMessage(from: json, statusCode: http.statusCode)
+                    completion(.failure(.serverError(msg, http.statusCode)))
+                }
+            }
+        }.resume()
+    }
+
+    // MARK: - Change Password
+    func changePassword(current: String, newPass: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/auth/change-password"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let body = ["currentPassword": current, "newPassword": newPass]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { resData, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let http = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("No response from server")))
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: resData ?? Data())) as? [String: Any] ?? [:]
+                if http.statusCode >= 200 && http.statusCode < 300 {
+                    completion(.success(json))
+                } else {
+                    let msg = self.parseErrorMessage(from: json, statusCode: http.statusCode)
+                    completion(.failure(.serverError(msg, http.statusCode)))
+                }
+            }
+        }.resume()
+    }
+
+    // MARK: - Support Tickets
+    func createSupportTicket(title: String, category: String, priority: String, description: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/support/tickets"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let body: [String: Any] = [
+            "title": title,
+            "category": category,
+            "priority": priority,
+            "description": description
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { resData, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let http = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("No response from server")))
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: resData ?? Data())) as? [String: Any] ?? [:]
+                if http.statusCode >= 200 && http.statusCode < 300 {
+                    completion(.success(json))
+                } else {
+                    let msg = self.parseErrorMessage(from: json, statusCode: http.statusCode)
+                    completion(.failure(.serverError(msg, http.statusCode)))
+                }
+            }
+        }.resume()
+    }
+
+    func getMySupportTickets(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/support/my-tickets"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { resData, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let http = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("No response from server")))
+                    return
+                }
+                if http.statusCode >= 200 && http.statusCode < 300, let data = resData {
+                    if let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] {
+                        completion(.success(list))
+                        return
+                    }
+                }
+                completion(.success([]))
+            }
+        }.resume()
+    }
+
     // MARK: - Error Parsing Helper
     private func parseErrorMessage(from json: [String: Any], statusCode: Int) -> String {
         if let msgArray = json["message"] as? [String] {

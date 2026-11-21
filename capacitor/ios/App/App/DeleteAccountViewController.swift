@@ -7,8 +7,6 @@ class DeleteAccountViewController: UIViewController {
     private let backButton = UIButton(type: .system)
     private let brandSubtitleLabel = UILabel()
     private let titleLabel = UILabel()
-    private let avatarContainer = UIView()
-    private let avatarInitialsLabel = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -17,12 +15,6 @@ class DeleteAccountViewController: UIViewController {
 
         setupTopBar()
         setupCenterContent()
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        let firstName = AuthService.shared.getFirstName()
-        avatarInitialsLabel.text = firstName.isEmpty ? "U" : String(firstName.prefix(1)).uppercased()
     }
 
     private func setupTopBar() {
@@ -67,23 +59,6 @@ class DeleteAccountViewController: UIViewController {
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         headerStack.addArrangedSubview(titleLabel)
 
-        // Profile Avatar on Right
-        avatarContainer.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        avatarContainer.layer.cornerRadius = 18
-        avatarContainer.layer.masksToBounds = true
-        avatarContainer.translatesAutoresizingMaskIntoConstraints = false
-        avatarContainer.isUserInteractionEnabled = true
-        avatarContainer.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapAvatar)))
-        topBarContainer.addSubview(avatarContainer)
-
-        let firstName = AuthService.shared.getFirstName()
-        avatarInitialsLabel.text = firstName.isEmpty ? "U" : String(firstName.prefix(1)).uppercased()
-        avatarInitialsLabel.textColor = .white
-        avatarInitialsLabel.font = .systemFont(ofSize: 14, weight: .bold)
-        avatarInitialsLabel.textAlignment = .center
-        avatarInitialsLabel.translatesAutoresizingMaskIntoConstraints = false
-        avatarContainer.addSubview(avatarInitialsLabel)
-
         let divider = UIView()
         divider.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
         divider.translatesAutoresizingMaskIntoConstraints = false
@@ -110,35 +85,11 @@ class DeleteAccountViewController: UIViewController {
             backButton.widthAnchor.constraint(equalToConstant: 36),
             backButton.heightAnchor.constraint(equalToConstant: 36),
 
-            avatarContainer.trailingAnchor.constraint(equalTo: topBarContainer.trailingAnchor, constant: -16),
-            avatarContainer.centerYAnchor.constraint(equalTo: topBarContainer.centerYAnchor),
-            avatarContainer.widthAnchor.constraint(equalToConstant: 36),
-            avatarContainer.heightAnchor.constraint(equalToConstant: 36),
-
-            avatarInitialsLabel.centerXAnchor.constraint(equalTo: avatarContainer.centerXAnchor),
-            avatarInitialsLabel.centerYAnchor.constraint(equalTo: avatarContainer.centerYAnchor),
-
             divider.bottomAnchor.constraint(equalTo: topBar.bottomAnchor),
             divider.leadingAnchor.constraint(equalTo: topBar.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: topBar.trailingAnchor),
             divider.heightAnchor.constraint(equalToConstant: 1)
         ])
-    }
-
-    @objc private func didTapAvatar() {
-        if let nav = navigationController {
-            for vc in nav.viewControllers {
-                if let settingsVC = vc as? SettingsViewController {
-                    nav.popToViewController(settingsVC, animated: true)
-                    return
-                }
-            }
-            let settingsVC = SettingsViewController()
-            nav.pushViewController(settingsVC, animated: true)
-        } else {
-            let settingsVC = SettingsViewController()
-            present(settingsVC, animated: true)
-        }
     }
 
     private func setupCenterContent() {
@@ -166,7 +117,13 @@ class DeleteAccountViewController: UIViewController {
         deleteButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
         deleteButton.backgroundColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
         deleteButton.layer.cornerRadius = 24
+        deleteButton.layer.shadowColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 0.35).cgColor
+        deleteButton.layer.shadowOffset = CGSize(width: 0, height: 4)
+        deleteButton.layer.shadowRadius = 8
+        deleteButton.layer.shadowOpacity = 1.0
         deleteButton.contentEdgeInsets = UIEdgeInsets(top: 14, left: 36, bottom: 14, right: 36)
+        deleteButton.translatesAutoresizingMaskIntoConstraints = false
+        deleteButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
         deleteButton.addTarget(self, action: #selector(handleDeleteAccountTap), for: .touchUpInside)
         centerStack.addArrangedSubview(deleteButton)
 
@@ -252,69 +209,37 @@ class DeleteAccountViewController: UIViewController {
     }
 
     @objc private func handleDeleteAccountTap() {
-        let email = AuthService.shared.getEmail()
-
-        // Trigger email dispatch via server
-        if !email.isEmpty {
-            AuthService.shared.forgotPassword(email: email) { _ in }
+        let userEmail = AuthService.shared.getEmail()
+        let alert = UIAlertController(title: "Verify Account Deletion", message: "A verification confirmation will be required to permanently delete \(userEmail).", preferredStyle: .alert)
+        alert.addTextField { tf in
+            tf.placeholder = "Enter 6-digit confirmation code"
+            tf.keyboardType = .numberPad
         }
-
-        let alert = UIAlertController(
-            title: "Verify Account Deletion",
-            message: "A 6-digit verification code has been dispatched to \(email.isEmpty ? "your registered email" : email). Enter the code below to permanently delete your account:",
-            preferredStyle: .alert
-        )
-
-        alert.addTextField { textField in
-            textField.placeholder = "Enter 6-digit code"
-            textField.keyboardType = .numberPad
-            textField.textAlignment = .center
-            textField.font = .systemFont(ofSize: 20, weight: .bold)
-        }
-
-        let confirmAction = UIAlertAction(title: "Verify & Delete", style: .destructive) { [weak self] _ in
-            guard let self = self else { return }
-            let code = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        alert.addAction(UIAlertAction(title: "Delete Permanently", style: .destructive, handler: { [weak self] _ in
+            let code = alert.textFields?.first?.text ?? ""
             if code.count < 6 {
-                let errAlert = UIAlertController(title: "Error", message: "Please enter a valid 6-digit verification code.", preferredStyle: .alert)
-                errAlert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                self.present(errAlert, animated: true)
+                let errAlert = UIAlertController(title: "Invalid Code", message: "Please enter the complete 6-digit security code.", preferredStyle: .alert)
+                errAlert.addAction(UIAlertAction(title: "OK", style: .default))
+                self?.present(errAlert, animated: true)
                 return
             }
-
-            self.executePermanentDeletion()
-        }
-
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-
-        alert.addAction(confirmAction)
-        alert.addAction(cancelAction)
+            self?.executeDeleteAccount()
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(alert, animated: true)
     }
 
-    private func executePermanentDeletion() {
+    private func executeDeleteAccount() {
         AuthService.shared.clearAuth()
+        let signInVC = SignInViewController()
+        let nav = UINavigationController(rootViewController: signInVC)
+        nav.modalPresentationStyle = .fullScreen
 
-        let successAlert = UIAlertController(
-            title: "Account Deleted",
-            message: "Your account and all associated information have been permanently removed.",
-            preferredStyle: .alert
-        )
-
-        successAlert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            let signInVC = SignInViewController()
-            let nav = UINavigationController(rootViewController: signInVC)
-            nav.modalPresentationStyle = .fullScreen
-
-            if let window = self.view.window {
-                window.rootViewController = nav
-                UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
-            } else {
-                self.present(nav, animated: true)
-            }
-        })
-
-        present(successAlert, animated: true)
+        if let window = view.window {
+            window.rootViewController = nav
+            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
+        } else {
+            present(nav, animated: true)
+        }
     }
 }

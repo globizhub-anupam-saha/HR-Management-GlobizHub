@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 
 class SettingsViewController: UIViewController {
 
@@ -7,7 +8,6 @@ class SettingsViewController: UIViewController {
     private let backButton = UIButton(type: .system)
     private let brandSubtitleLabel = UILabel()
     private let titleLabel = UILabel()
-    private let notificationButton = UIButton(type: .system)
     private let notifBadgeDot = UIView()
     private let signOutTopButton = UIButton(type: .system)
 
@@ -22,7 +22,7 @@ class SettingsViewController: UIViewController {
     private let profileNameLabel = UILabel()
     private let profileEmailLabel = UILabel()
     private let viewProfileButton = UIButton(type: .custom)
-    private let roleButton = UIButton(type: .system)
+    private let roleBadge = UILabel()
 
     private let companyNameLabel = UILabel()
 
@@ -47,6 +47,7 @@ class SettingsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         notifBadgeDot.isHidden = !AuthService.shared.hasUnreadLocalNotifications()
+        loadProfileData()
     }
 
     private func setupTopBar() {
@@ -91,7 +92,7 @@ class SettingsViewController: UIViewController {
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         headerStack.addArrangedSubview(titleLabel)
 
-        // Right stack: Sign Out Power Icon only (Notification bell completely removed as requested)
+        // Right: Sign Out Power Button
         let rightStack = UIStackView()
         rightStack.axis = .horizontal
         rightStack.spacing = 6
@@ -147,25 +148,13 @@ class SettingsViewController: UIViewController {
         ])
     }
 
-    @objc private func handleNotifications() {
-        AuthService.shared.markLocalNotificationsAsRead()
-        notifBadgeDot.isHidden = true
-        let notifVC = NotificationsViewController()
-        if let nav = navigationController {
-            nav.pushViewController(notifVC, animated: true)
-        } else {
-            notifVC.modalPresentationStyle = .fullScreen
-            present(notifVC, animated: true)
-        }
-    }
-
     private func setupScrollView() {
         scrollView.showsVerticalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
 
         contentView.axis = .vertical
-        contentView.spacing = 12
+        contentView.spacing = 14
         contentView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentView)
 
@@ -221,44 +210,61 @@ class SettingsViewController: UIViewController {
         let rightColumn = UIStackView()
         rightColumn.axis = .vertical
         rightColumn.alignment = .leading
-        rightColumn.spacing = 3
+        rightColumn.spacing = 4
         rightColumn.translatesAutoresizingMaskIntoConstraints = false
         profileCard.addSubview(rightColumn)
 
-        profileNameLabel.font = .systemFont(ofSize: 20, weight: .bold)
-        profileNameLabel.textColor = .black
+        profileNameLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        profileNameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        profileNameLabel.text = "Team Member"
         rightColumn.addArrangedSubview(profileNameLabel)
 
-        profileEmailLabel.font = .systemFont(ofSize: 15, weight: .regular)
-        profileEmailLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        profileEmailLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        profileEmailLabel.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+        profileEmailLabel.text = "employee@globizhub.com"
         rightColumn.addArrangedSubview(profileEmailLabel)
 
+        // View Profile Button
         viewProfileButton.setTitle("View Profile", for: .normal)
         viewProfileButton.setTitleColor(.white, for: .normal)
         viewProfileButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
         viewProfileButton.backgroundColor = .black
-        viewProfileButton.layer.cornerRadius = 18
+        viewProfileButton.layer.cornerRadius = 16
         viewProfileButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        viewProfileButton.addTarget(self, action: #selector(handleViewProfile), for: .touchUpInside)
         viewProfileButton.translatesAutoresizingMaskIntoConstraints = false
+        viewProfileButton.heightAnchor.constraint(equalToConstant: 34).isActive = true
 
-        updateRoleButtonTitle()
-        roleButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
-        roleButton.setTitleColor(UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), for: .normal)
-        roleButton.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
-        roleButton.layer.cornerRadius = 16
-        roleButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)
-        roleButton.addTarget(self, action: #selector(handleSwitchRole), for: .touchUpInside)
-        roleButton.translatesAutoresizingMaskIntoConstraints = false
+        // Role Container & Label (Plain badge, no dropdown)
+        let roleContainer = UIView()
+        roleContainer.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+        roleContainer.layer.cornerRadius = 16
+        roleContainer.translatesAutoresizingMaskIntoConstraints = false
+        roleContainer.heightAnchor.constraint(equalToConstant: 34).isActive = true
 
-        let buttonRow = UIStackView(arrangedSubviews: [viewProfileButton, roleButton])
+        roleBadge.font = .systemFont(ofSize: 12, weight: .bold)
+        roleBadge.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        roleBadge.textAlignment = .center
+        roleBadge.translatesAutoresizingMaskIntoConstraints = false
+        roleContainer.addSubview(roleBadge)
+
+        NSLayoutConstraint.activate([
+            roleBadge.centerYAnchor.constraint(equalTo: roleContainer.centerYAnchor),
+            roleBadge.leadingAnchor.constraint(equalTo: roleContainer.leadingAnchor, constant: 14),
+            roleBadge.trailingAnchor.constraint(equalTo: roleContainer.trailingAnchor, constant: -14)
+        ])
+        updateRoleBadgeTitle()
+
+        // Horizontal Row: View Profile + Role Badge
+        let buttonRow = UIStackView(arrangedSubviews: [viewProfileButton, roleContainer])
         buttonRow.axis = .horizontal
-        buttonRow.spacing = 8
+        buttonRow.spacing = 10
         buttonRow.alignment = .center
         buttonRow.translatesAutoresizingMaskIntoConstraints = false
 
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
-        spacer.heightAnchor.constraint(equalToConstant: 8).isActive = true
+        spacer.heightAnchor.constraint(equalToConstant: 6).isActive = true
         rightColumn.addArrangedSubview(spacer)
         rightColumn.addArrangedSubview(buttonRow)
 
@@ -283,41 +289,34 @@ class SettingsViewController: UIViewController {
         ])
     }
 
+    private func updateRoleBadgeTitle() {
+        let role = AuthService.shared.getRole()
+        let userRole = UserRole.from(string: role)
+        roleBadge.text = userRole.displayName
+    }
+
     // MARK: - Settings Groups
     private func setupSettingsGroups() {
-        // 1. Organization
+        // 1. Organization Card (Plain text organization, no dropdown)
         let orgCard = makeCardView()
         let orgHeader = makeRow(icon: "building.2.fill", title: "Organization")
-        companyNameLabel.text = "GlobizHub"
+        companyNameLabel.text = "GlobizHub Inc."
         companyNameLabel.font = .systemFont(ofSize: 13, weight: .bold)
         companyNameLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-
-        let chevronDown = UIImageView(image: UIImage(systemName: "chevron.down"))
-        chevronDown.tintColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        chevronDown.contentMode = .scaleAspectFit
-
-        let orgRightStack = UIStackView(arrangedSubviews: [companyNameLabel, chevronDown])
-        orgRightStack.spacing = 4
-        orgRightStack.alignment = .center
-        orgRightStack.translatesAutoresizingMaskIntoConstraints = false
-        orgHeader.addSubview(orgRightStack)
+        companyNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        orgHeader.addSubview(companyNameLabel)
         NSLayoutConstraint.activate([
-            orgRightStack.trailingAnchor.constraint(equalTo: orgHeader.trailingAnchor),
-            orgRightStack.centerYAnchor.constraint(equalTo: orgHeader.centerYAnchor),
-            chevronDown.widthAnchor.constraint(equalToConstant: 14),
-            chevronDown.heightAnchor.constraint(equalToConstant: 14)
+            companyNameLabel.trailingAnchor.constraint(equalTo: orgHeader.trailingAnchor),
+            companyNameLabel.centerYAnchor.constraint(equalTo: orgHeader.centerYAnchor)
         ])
         orgCard.addArrangedSubview(orgHeader)
         contentView.addArrangedSubview(orgCard)
 
-        // 2. Attendance
-        let attCard = makeCardView()
-        attCard.addArrangedSubview(makeRow(icon: "clock.fill", title: "Attendance"))
-        attCard.addArrangedSubview(makeDivider())
-        attCard.addArrangedSubview(makeSwitchRow(title: "Check-in/Check-out Confirmation", key: "pref_attendance_confirm", defaultValue: true))
-        attCard.addArrangedSubview(makeDivider())
-        attCard.addArrangedSubview(makeSwitchRow(title: "Check-in Notes", key: "pref_attendance_notes", defaultValue: false))
-        contentView.addArrangedSubview(attCard)
+        // 2. Help & Support Card (Replaces Attendance box)
+        let helpCard = makeCardView()
+        let helpRow = makeNavRow(icon: "questionmark.circle.fill", title: "Help & Support", action: #selector(handleHelpSupport))
+        helpCard.addArrangedSubview(helpRow)
+        contentView.addArrangedSubview(helpCard)
 
         // 3. Theme
         let themeCard = makeCardView()
@@ -359,47 +358,35 @@ class SettingsViewController: UIViewController {
         langCard.addArrangedSubview(langRow)
         contentView.addArrangedSubview(langCard)
 
-        // 5. Location Settings
-        let locCard = makeCardView()
-        locCard.addArrangedSubview(makeRow(icon: "location.fill", title: "Location Settings"))
-        locCard.addArrangedSubview(makeDivider())
-        locCard.addArrangedSubview(makeSwitchRow(title: "Improve Location Accuracy", key: "pref_location_accuracy", defaultValue: false))
-        contentView.addArrangedSubview(locCard)
-
-        // 6. Privacy & Security
+        // 5. Privacy & Security (App Lock & Privacy Preferences removed, only Privacy Policy & Terms kept)
         let privCard = makeCardView()
         privCard.addArrangedSubview(makeRow(icon: "shield.fill", title: "Privacy & Security"))
         privCard.addArrangedSubview(makeDivider())
-        privCard.addArrangedSubview(makeNavRow(title: "App Lock"))
+        privCard.addArrangedSubview(makeNavRow(title: "Privacy Policy", action: #selector(handlePrivacyPolicy)))
         privCard.addArrangedSubview(makeDivider())
-        privCard.addArrangedSubview(makeNavRow(title: "Privacy Preferences"))
-        privCard.addArrangedSubview(makeDivider())
-        privCard.addArrangedSubview(makeNavRow(title: "Privacy Policy"))
-        privCard.addArrangedSubview(makeDivider())
-        privCard.addArrangedSubview(makeNavRow(title: "Terms of Service"))
+        privCard.addArrangedSubview(makeNavRow(title: "Terms of Service", action: #selector(handleTermsOfService)))
         contentView.addArrangedSubview(privCard)
 
-        // 7. About
+        // 6. About (Dynamic version, Write Us, App Issues & Feedback)
         let aboutCard = makeCardView()
         aboutCard.addArrangedSubview(makeRow(icon: "info.circle.fill", title: "About"))
         aboutCard.addArrangedSubview(makeDivider())
 
-        let versionStr = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let versionRow = makeSimpleTextRow(title: "Version", rightText: versionStr)
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        let versionRow = makeSimpleTextRow(title: "App Version", rightText: "\(appVersion) (\(buildNumber))")
         aboutCard.addArrangedSubview(versionRow)
         aboutCard.addArrangedSubview(makeDivider())
-        aboutCard.addArrangedSubview(makeNavRow(title: "Take A Tour"))
+        aboutCard.addArrangedSubview(makeNavRow(title: "Write Us", action: #selector(handleWriteUs)))
         aboutCard.addArrangedSubview(makeDivider())
-        aboutCard.addArrangedSubview(makeNavRow(title: "Rate Us"))
-        aboutCard.addArrangedSubview(makeDivider())
-        aboutCard.addArrangedSubview(makeNavRow(title: "App Issues & Feedback"))
+        aboutCard.addArrangedSubview(makeNavRow(title: "App Issues & Feedback", action: #selector(handleHelpSupport)))
         contentView.addArrangedSubview(aboutCard)
 
-        // 8. Others
+        // 7. Others
         let othersCard = makeCardView()
         othersCard.addArrangedSubview(makeRow(icon: "gearshape.fill", title: "Others"))
         othersCard.addArrangedSubview(makeDivider())
-        othersCard.addArrangedSubview(makeNavRow(title: "Refresh", action: #selector(handleRefresh)))
+        othersCard.addArrangedSubview(makeNavRow(title: "Refresh App", action: #selector(handleRefresh)))
         othersCard.addArrangedSubview(makeDivider())
         othersCard.addArrangedSubview(makeSwitchRow(title: "Push Notification", key: "pref_push_notification", defaultValue: true))
         othersCard.addArrangedSubview(makeDivider())
@@ -509,13 +496,24 @@ class SettingsViewController: UIViewController {
             UserDefaults.standard.synchronize()
             if key == "pref_push_notification" {
                 AppNotificationManager.shared.setPushNotificationEnabled(sender.isOn)
+                if sender.isOn {
+                    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                        DispatchQueue.main.async {
+                            if !granted {
+                                sender.setOn(false, animated: true)
+                                UserDefaults.standard.set(false, forKey: key)
+                                AppNotificationManager.shared.setPushNotificationEnabled(false)
+                            }
+                        }
+                    }
+                }
             }
         }
         let feedback = UISelectionFeedbackGenerator()
         feedback.selectionChanged()
     }
 
-    private func makeNavRow(title: String, action: Selector? = nil) -> UIView {
+    private func makeNavRow(icon: String? = nil, title: String, action: Selector? = nil) -> UIView {
         let row = UIView()
         row.translatesAutoresizingMaskIntoConstraints = false
         if let action = action {
@@ -528,19 +526,46 @@ class SettingsViewController: UIViewController {
         label.font = .systemFont(ofSize: 13, weight: .regular)
         label.textColor = UIColor(red: 51/255, green: 65/255, blue: 85/255, alpha: 1.0)
         label.translatesAutoresizingMaskIntoConstraints = false
-        row.addSubview(label)
 
         let chevron = makeChevron()
         row.addSubview(chevron)
 
-        NSLayoutConstraint.activate([
-            row.heightAnchor.constraint(equalToConstant: 32),
-            label.leadingAnchor.constraint(equalTo: row.leadingAnchor),
-            label.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+        if let icon = icon {
+            let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+            let iconView = UIImageView(image: UIImage(systemName: icon, withConfiguration: config))
+            iconView.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            iconView.contentMode = .scaleAspectFit
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+            row.addSubview(iconView)
+            row.addSubview(label)
 
-            chevron.trailingAnchor.constraint(equalTo: row.trailingAnchor),
-            chevron.centerYAnchor.constraint(equalTo: row.centerYAnchor)
-        ])
+            label.font = .systemFont(ofSize: 15, weight: .bold)
+            label.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+
+            NSLayoutConstraint.activate([
+                row.heightAnchor.constraint(equalToConstant: 32),
+                iconView.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+                iconView.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+                iconView.widthAnchor.constraint(equalToConstant: 22),
+                iconView.heightAnchor.constraint(equalToConstant: 22),
+
+                label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+                label.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+
+                chevron.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+                chevron.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+            ])
+        } else {
+            row.addSubview(label)
+            NSLayoutConstraint.activate([
+                row.heightAnchor.constraint(equalToConstant: 32),
+                label.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+                label.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+
+                chevron.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+                chevron.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+            ])
+        }
         return row
     }
 
@@ -591,22 +616,129 @@ class SettingsViewController: UIViewController {
         return chevron
     }
 
-    // MARK: - Actions
+    // MARK: - Navigation Actions
     @objc private func handleBack() {
-        dismiss(animated: true)
+        if let nav = navigationController {
+            nav.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
+    }
+
+    @objc private func handleViewProfile() {
+        let accountVC = AccountSettingsViewController()
+        if let nav = navigationController {
+            nav.pushViewController(accountVC, animated: true)
+        } else {
+            accountVC.modalPresentationStyle = .fullScreen
+            present(accountVC, animated: true)
+        }
+    }
+
+    @objc private func handleHelpSupport() {
+        let helpVC = HelpSupportViewController()
+        if let nav = navigationController {
+            nav.pushViewController(helpVC, animated: true)
+        } else {
+            helpVC.modalPresentationStyle = .fullScreen
+            present(helpVC, animated: true)
+        }
+    }
+
+    @objc private func handlePrivacyPolicy() {
+        let alert = UIAlertController(title: "Privacy Policy", message: "GlobizHR prioritizes your personal data privacy and statutory security. Data is encrypted in transit and at rest in compliance with Indian IT and GDPR frameworks.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    @objc private func handleTermsOfService() {
+        let alert = UIAlertController(title: "Terms of Service", message: "By using GlobizHR mobile client, you agree to adhere to company organization workplace conduct, attendance accuracy policies, and authorized system usage.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    @objc private func handleWriteUs() {
+        if let url = URL(string: "mailto:support@globizhub.com?subject=GlobizHR%20Feedback") {
+            UIApplication.shared.open(url)
+        }
     }
 
     @objc private func handleManageAccount() {
         let deleteVC = DeleteAccountViewController()
-        deleteVC.modalPresentationStyle = .fullScreen
-        present(deleteVC, animated: true)
+        if let nav = navigationController {
+            nav.pushViewController(deleteVC, animated: true)
+        } else {
+            deleteVC.modalPresentationStyle = .fullScreen
+            present(deleteVC, animated: true)
+        }
     }
 
+    // Refresh App: 2-second loading HUD, reloads all data and redirects to Dashboard / Home
     @objc private func handleRefresh() {
-        loadProfileData()
-        let alert = UIAlertController(title: "Settings", message: "Refreshed successfully.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        let hud = UIView(frame: view.bounds)
+        hud.backgroundColor = UIColor(white: 0, alpha: 0.45)
+        hud.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        let box = UIView()
+        box.backgroundColor = .white
+        box.layer.cornerRadius = 16
+        box.layer.shadowColor = UIColor.black.cgColor
+        box.layer.shadowOpacity = 0.15
+        box.layer.shadowOffset = CGSize(width: 0, height: 4)
+        box.layer.shadowRadius = 12
+        box.translatesAutoresizingMaskIntoConstraints = false
+        hud.addSubview(box)
+
+        let spinner = UIActivityIndicatorView(style: .large)
+        spinner.color = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        spinner.startAnimating()
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(spinner)
+
+        let label = UILabel()
+        label.text = "Refreshing GlobizHR..."
+        label.font = .systemFont(ofSize: 14, weight: .bold)
+        label.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(label)
+
+        view.addSubview(hud)
+
+        NSLayoutConstraint.activate([
+            box.centerXAnchor.constraint(equalTo: hud.centerXAnchor),
+            box.centerYAnchor.constraint(equalTo: hud.centerYAnchor),
+            box.widthAnchor.constraint(equalToConstant: 210),
+            box.heightAnchor.constraint(equalToConstant: 116),
+
+            spinner.topAnchor.constraint(equalTo: box.topAnchor, constant: 22),
+            spinner.centerXAnchor.constraint(equalTo: box.centerXAnchor),
+
+            label.topAnchor.constraint(equalTo: spinner.bottomAnchor, constant: 14),
+            label.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 12),
+            label.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -12)
+        ])
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            hud.removeFromSuperview()
+            self?.loadProfileData()
+
+            // Navigate / Pop to HomeViewController
+            if let nav = self?.navigationController {
+                for vc in nav.viewControllers {
+                    if let homeVC = vc as? HomeViewController {
+                        nav.popToViewController(homeVC, animated: true)
+                        return
+                    }
+                }
+                let homeVC = HomeViewController()
+                nav.setViewControllers([homeVC], animated: true)
+            } else {
+                let homeVC = HomeViewController()
+                homeVC.modalPresentationStyle = .fullScreen
+                self?.present(homeVC, animated: true)
+            }
+        }
     }
 
     @objc private func confirmSignOut() {
@@ -635,9 +767,16 @@ class SettingsViewController: UIViewController {
     // MARK: - Data Loading
     private func loadProfileData() {
         let savedEmail = AuthService.shared.getEmail()
-        profileEmailLabel.text = savedEmail
-        let fallbackInitial = savedEmail.isEmpty ? "U" : String(savedEmail.prefix(1)).uppercased()
-        avatarInitialsLabel.text = fallbackInitial
+        let resolvedEmail = savedEmail.isEmpty ? "employee@globizhub.com" : savedEmail
+        profileEmailLabel.text = resolvedEmail
+
+        let savedFirst = AuthService.shared.getFirstName()
+        let resolvedName = savedFirst.isEmpty ? (savedEmail.contains("@") ? String(savedEmail.prefix(upTo: savedEmail.firstIndex(of: "@")!)) : "Alex Morgan") : savedFirst
+        profileNameLabel.text = resolvedName
+
+        let fallbackInitial = String(resolvedName.prefix(1)).uppercased()
+        avatarInitialsLabel.text = fallbackInitial.isEmpty ? "U" : fallbackInitial
+        updateRoleBadgeTitle()
 
         AuthService.shared.getProfile { [weak self] result in
             guard let self = self else { return }
@@ -646,7 +785,7 @@ class SettingsViewController: UIViewController {
                 let firstName = user["firstName"] as? String ?? ""
                 let lastName = user["lastName"] as? String ?? ""
                 let email = user["email"] as? String ?? savedEmail
-                let photoUrl = user["profilePhoto"] as? String ?? ""
+                let photoUrl = user["profilePhoto"] as? String ?? user["profileImage"] as? String ?? ""
 
                 var fullName = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
                 if fullName.isEmpty {
@@ -699,50 +838,5 @@ class SettingsViewController: UIViewController {
                 }
             }
         }.resume()
-    }
-
-    private func updateRoleButtonTitle() {
-        let role = AuthService.shared.getRole()
-        let userRole = UserRole.from(string: role)
-        roleButton.setTitle("\(userRole.displayName) ▾", for: .normal)
-    }
-
-    @objc private func handleSwitchRole() {
-        let sheet = UIAlertController(title: "Select Active Role", message: "Choose a role to test role-specific modules and navigation tabs.", preferredStyle: .actionSheet)
-
-        sheet.addAction(UIAlertAction(title: "Employee", style: .default, handler: { [weak self] _ in
-            AuthService.shared.saveRole("EMPLOYEE")
-            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
-            self?.updateRoleButtonTitle()
-            self?.showRoleSwitchedToast("Employee")
-        }))
-
-        sheet.addAction(UIAlertAction(title: "Admin", style: .default, handler: { [weak self] _ in
-            AuthService.shared.saveRole("ADMIN")
-            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
-            self?.updateRoleButtonTitle()
-            self?.showRoleSwitchedToast("Admin")
-        }))
-
-        sheet.addAction(UIAlertAction(title: "Super Admin", style: .default, handler: { [weak self] _ in
-            AuthService.shared.saveRole("SUPER_ADMIN")
-            UserDefaults.standard.set(true, forKey: "isUserManualRoleOverride")
-            self?.updateRoleButtonTitle()
-            self?.showRoleSwitchedToast("Super Admin")
-        }))
-
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = roleButton
-            popover.sourceRect = roleButton.bounds
-        }
-        present(sheet, animated: true)
-    }
-
-    private func showRoleSwitchedToast(_ roleName: String) {
-        let alert = UIAlertController(title: "Active Role Updated", message: "Switched to \(roleName). App navigation tabs and More modules have been synchronized.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
     }
 }

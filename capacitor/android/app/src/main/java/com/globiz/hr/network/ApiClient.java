@@ -575,6 +575,59 @@ public class ApiClient {
         });
     }
 
+    public void updateProfile(JSONObject payload, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            patchJson("/employees/me", payload, getToken(), new ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    if (payload.has("firstName")) {
+                        saveFirstName(payload.optString("firstName"));
+                    }
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    postError(callback, errorMessage, statusCode);
+                }
+            });
+        });
+    }
+
+    public void changePassword(String currentPassword, String newPassword, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("currentPassword", currentPassword);
+                payload.put("newPassword", newPassword);
+                patchJson("/auth/change-password", payload, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to encode password payload.", 0);
+            }
+        });
+    }
+
+    public void createSupportTicket(String title, String category, String priority, String description, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("title", title);
+                payload.put("category", category);
+                payload.put("priority", priority);
+                payload.put("description", description);
+                postJson("/support/tickets", payload, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to encode ticket payload.", 0);
+            }
+        });
+    }
+
+    public void getMySupportTickets(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/support/my-tickets", getToken(), callback);
+        });
+    }
+
     // 5. Attendance & Clock-in/out
     public void getAttendanceStats(String token, ApiCallback<JSONObject> callback) {
         executor.execute(() -> {
@@ -1274,6 +1327,57 @@ public class ApiClient {
 
 
     // Internal HTTP Helpers
+    private void patchJson(String endpoint, JSONObject payload, String bearerToken, ApiCallback<JSONObject> callback) {
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(BASE_URL + endpoint);
+            conn = (HttpURLConnection) url.openConnection();
+            try {
+                conn.setRequestMethod("PATCH");
+            } catch (Exception ignored) {
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+            }
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(15000);
+            conn.setDoOutput(true);
+
+            if (bearerToken != null && !bearerToken.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
+            }
+
+            byte[] input = payload.toString().getBytes(StandardCharsets.UTF_8);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(input, 0, input.length);
+            }
+
+            int statusCode = conn.getResponseCode();
+            InputStream stream = (statusCode >= 200 && statusCode < 300)
+                    ? conn.getInputStream()
+                    : conn.getErrorStream();
+
+            String responseString = readStream(stream);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                JSONObject json = responseString.isEmpty() ? new JSONObject() : new JSONObject(responseString);
+                postSuccess(callback, json);
+            } else {
+                String errorMsg = parseErrorMessage(responseString, statusCode);
+                postError(callback, errorMsg, statusCode);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "PATCH failed for " + endpoint, e);
+            postError(callback, "Network connection error.", 0);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
     private void postJson(String endpoint, JSONObject payload, String bearerToken, ApiCallback<JSONObject> callback) {
         HttpURLConnection conn = null;
         try {

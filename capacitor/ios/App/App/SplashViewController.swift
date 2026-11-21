@@ -19,7 +19,12 @@ class SplashViewController: UIViewController {
     }()
 
     private var hasNavigated = false
-    private let splashDuration: TimeInterval = 2.5
+    private var splashDuration: TimeInterval {
+        for arg in ProcessInfo.processInfo.arguments {
+            if arg.hasPrefix("-test") { return 0.05 }
+        }
+        return 2.5
+    }
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .darkContent
@@ -101,6 +106,12 @@ class SplashViewController: UIViewController {
             nextVC = CustomizeTabsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteSettings") {
             nextVC = SettingsViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteAccountSettings") {
+            nextVC = AccountSettingsViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteHelpSupport") {
+            nextVC = HelpSupportViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteDeleteAccount") {
+            nextVC = DeleteAccountViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteHome") || AuthService.shared.isLoggedIn {
             nextVC = HomeViewController()
         } else {
