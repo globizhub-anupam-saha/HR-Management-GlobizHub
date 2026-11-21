@@ -1644,7 +1644,58 @@
                         android:orientation="vertical" />
                 </LinearLayout>
 
-                <!-- 6. Company Announcements -->
+                <!-- 6. Employee Leave Balances -->
+                <LinearLayout
+                    android:id="@+id/cvAdminLeaveBalancesCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_attendance_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Employee Leave Balances"
+                            android:textColor="#0F172A"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/bg_mint_pill"
+                            android:paddingStart="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="3dp"
+                            android:text="Overview"
+                            android:textColor="#059669"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Direct overview of casual, medical, and earned leaves remaining"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/llAdminLeaveBalancesList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
+                <!-- 7. Company Announcements -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

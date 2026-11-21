@@ -8,9 +8,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -112,6 +114,35 @@ public class HelpSupportActivity extends AppCompatActivity {
         });
 
         btnSubmitTicket.setOnClickListener(v -> handleSubmitTicket());
+
+        setupFaqToggle(R.id.faqHeader1, R.id.faqAnswer1, R.id.faqChevron1);
+        setupFaqToggle(R.id.faqHeader2, R.id.faqAnswer2, R.id.faqChevron2);
+        setupFaqToggle(R.id.faqHeader3, R.id.faqAnswer3, R.id.faqChevron3);
+        setupFaqToggle(R.id.faqHeader4, R.id.faqAnswer4, R.id.faqChevron4);
+
+        View a1 = findViewById(R.id.faqAnswer1);
+        ImageView c1 = findViewById(R.id.faqChevron1);
+        if (a1 != null && c1 != null) {
+            a1.setVisibility(View.VISIBLE);
+            c1.setRotation(180f);
+        }
+    }
+
+    private void setupFaqToggle(int headerId, int answerId, int chevronId) {
+        View header = findViewById(headerId);
+        View answer = findViewById(answerId);
+        ImageView chevron = findViewById(chevronId);
+        if (header == null || answer == null || chevron == null) return;
+
+        header.setOnClickListener(v -> {
+            boolean isVisible = answer.getVisibility() == View.VISIBLE;
+            ViewGroup parent = (ViewGroup) header.getParent();
+            if (parent != null) {
+                android.transition.TransitionManager.beginDelayedTransition(parent);
+            }
+            answer.setVisibility(isVisible ? View.GONE : View.VISIBLE);
+            chevron.animate().rotation(isVisible ? 0f : 180f).setDuration(200).start();
+        });
     }
 
     private void handleSubmitTicket() {

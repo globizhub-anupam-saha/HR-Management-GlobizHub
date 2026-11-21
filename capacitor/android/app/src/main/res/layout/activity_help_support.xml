@@ -182,70 +182,192 @@
                     android:layout_marginBottom="12dp"
                     android:background="#F1F5F9" />
 
-                <!-- FAQ 1 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Q: How do I clock in / out?"
-                    android:textColor="#0F172A"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Go to Dashboard. When your assigned shift is active (with a 5-minute pre-shift window), the Clock In button activates. Tap to record attendance."
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
-
-                <View
+                <!-- FAQ 1 (Accordion) -->
+                <LinearLayout
+                    android:id="@+id/faqCard1"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="#F1F5F9" />
-
-                <!-- FAQ 2 -->
-                <TextView
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Q: How can I apply for paid leave?"
-                    android:textColor="#0F172A"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:background="@drawable/bg_faq_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Navigate to More > Leaves > Request Leave. Select Casual, Sick, or Privilege leave, pick dates, provide a note, and submit for Manager approval."
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
+                    <LinearLayout
+                        android:id="@+id/faqHeader1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                <View
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="How do I clock in / out?"
+                            android:textColor="#0F172A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/faqChevron1"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="#0056FD" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/faqAnswer1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Go to Dashboard. When your assigned shift is active (with a 5-minute pre-shift window), the Clock In button activates. Tap to record attendance."
+                        android:textColor="#475569"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- FAQ 2 (Accordion) -->
+                <LinearLayout
+                    android:id="@+id/faqCard2"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="#F1F5F9" />
-
-                <!-- FAQ 3 -->
-                <TextView
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Q: Where can I review my payslips?"
-                    android:textColor="#0F172A"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_faq_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:id="@+id/faqHeader2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="How can I apply for paid leave?"
+                            android:textColor="#0F172A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/faqChevron2"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="#0056FD" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/faqAnswer2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Navigate to More > Leaves > Request Leave. Select Casual, Sick, or Privilege leave, pick dates, provide a note, and submit for Manager approval."
+                        android:textColor="#475569"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- FAQ 3 (Accordion) -->
+                <LinearLayout
+                    android:id="@+id/faqCard3"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Navigate to More > Payslips. Review monthly gross pay, tax deductions, PF and ESIC contributions, and download PDF receipts."
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_faq_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/faqHeader3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Where can I review my payslips?"
+                            android:textColor="#0F172A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/faqChevron3"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="#0056FD" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/faqAnswer3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Navigate to More > Payslips. Review monthly gross pay, tax deductions, PF and ESIC contributions, and download PDF receipts."
+                        android:textColor="#475569"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- FAQ 4 (Accordion) -->
+                <LinearLayout
+                    android:id="@+id/faqCard4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_faq_card"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/faqHeader4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="How to request a shift swap?"
+                            android:textColor="#0F172A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/faqChevron4"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_chevron_down"
+                            app:tint="#0056FD" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/faqAnswer4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Open More > Shifts > Shift Swap. Pick the desired date and select an eligible team member to submit a swap request."
+                        android:textColor="#475569"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- SUBMIT TICKET CARD -->

@@ -221,32 +221,17 @@ class HelpSupportViewController: UIViewController, UITextFieldDelegate, UITextVi
             ("How to request a shift swap?", "Open More > Shifts > Shift Swap. Pick the desired date and select an eligible team member to submit a swap request.")
         ]
 
-        for (q, a) in faqs {
-            card.addArrangedSubview(makeFaqItem(question: q, answer: a))
+        for (index, item) in faqs.enumerated() {
+            let faqView = FaqAccordionItemView(question: item.0, answer: item.1, initiallyOpen: index == 0)
+            faqView.onToggle = { [weak self] in
+                UIView.animate(withDuration: 0.25) {
+                    self?.view.layoutIfNeeded()
+                }
+            }
+            card.addArrangedSubview(faqView)
         }
 
         contentView.addArrangedSubview(card)
-    }
-
-    private func makeFaqItem(question: String, answer: String) -> UIView {
-        let container = UIStackView()
-        container.axis = .vertical
-        container.spacing = 4
-
-        let qLabel = UILabel()
-        qLabel.text = "Q: " + question
-        qLabel.font = .systemFont(ofSize: 13, weight: .bold)
-        qLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        container.addArrangedSubview(qLabel)
-
-        let aLabel = UILabel()
-        aLabel.text = answer
-        aLabel.font = .systemFont(ofSize: 12, weight: .regular)
-        aLabel.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
-        aLabel.numberOfLines = 0
-        container.addArrangedSubview(aLabel)
-
-        return container
     }
 
     // MARK: - Ticket Form
@@ -605,5 +590,98 @@ class HelpSupportViewController: UIViewController, UITextFieldDelegate, UITextVi
                 self.ticketsStack.addArrangedSubview(emptyLbl)
             }
         }
+    }
+}
+
+// MARK: - Interactive FAQ Accordion Component
+private class FaqAccordionItemView: UIView {
+    private let aContainer = UIView()
+    private let chevron = UIImageView()
+    private var isOpen = false
+    var onToggle: (() -> Void)?
+
+    init(question: String, answer: String, initiallyOpen: Bool = false) {
+        super.init(frame: .zero)
+        backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        layer.cornerRadius = 14
+        layer.borderWidth = 1
+        layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+
+        let headerRow = UIStackView()
+        headerRow.axis = .horizontal
+        headerRow.alignment = .center
+        headerRow.spacing = 10
+
+        let qLabel = UILabel()
+        qLabel.text = question
+        qLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        qLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        qLabel.numberOfLines = 0
+        headerRow.addArrangedSubview(qLabel)
+
+        chevron.image = UIImage(systemName: "chevron.down")
+        chevron.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        chevron.contentMode = .scaleAspectFit
+        chevron.translatesAutoresizingMaskIntoConstraints = false
+        chevron.widthAnchor.constraint(equalToConstant: 14).isActive = true
+        chevron.heightAnchor.constraint(equalToConstant: 14).isActive = true
+        headerRow.addArrangedSubview(chevron)
+
+        stack.addArrangedSubview(headerRow)
+
+        aContainer.isHidden = !initiallyOpen
+        isOpen = initiallyOpen
+        if initiallyOpen {
+            chevron.transform = CGAffineTransform(rotationAngle: .pi)
+        }
+
+        let aLabel = UILabel()
+        aLabel.text = answer
+        aLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        aLabel.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+        aLabel.numberOfLines = 0
+        aLabel.translatesAutoresizingMaskIntoConstraints = false
+        aContainer.addSubview(aLabel)
+
+        NSLayoutConstraint.activate([
+            aLabel.topAnchor.constraint(equalTo: aContainer.topAnchor, constant: 4),
+            aLabel.bottomAnchor.constraint(equalTo: aContainer.bottomAnchor),
+            aLabel.leadingAnchor.constraint(equalTo: aContainer.leadingAnchor),
+            aLabel.trailingAnchor.constraint(equalTo: aContainer.trailingAnchor)
+        ])
+
+        stack.addArrangedSubview(aContainer)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14)
+        ])
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(didTap))
+        addGestureRecognizer(tap)
+        isUserInteractionEnabled = true
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc private func didTap() {
+        isOpen.toggle()
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
+            self.aContainer.isHidden = !self.isOpen
+            self.chevron.transform = self.isOpen ? CGAffineTransform(rotationAngle: .pi) : .identity
+            self.superview?.layoutIfNeeded()
+        }
+        onToggle?()
     }
 }

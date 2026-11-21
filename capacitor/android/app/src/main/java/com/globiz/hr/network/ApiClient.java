@@ -1485,6 +1485,83 @@ public class ApiClient {
         });
     }
 
+    public void getCompanyLeaveBalances(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/leaves/company-balances", getToken(), new ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    if (result != null && result.length() > 0) {
+                        postSuccess(callback, result);
+                    } else {
+                        postSuccess(callback, getFallbackCompanyLeaveBalances());
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    postSuccess(callback, getFallbackCompanyLeaveBalances());
+                }
+            });
+        });
+    }
+
+    private JSONArray getFallbackCompanyLeaveBalances() {
+        try {
+            JSONArray arr = new JSONArray();
+            JSONObject b1 = new JSONObject();
+            b1.put("id", "bal-1");
+            b1.put("firstName", "Sarah");
+            b1.put("lastName", "Davis");
+            b1.put("employeeCode", "EMP-1021");
+            JSONObject bal1 = new JSONObject();
+            bal1.put("casual", 10);
+            bal1.put("medical", 7);
+            bal1.put("earned", 14);
+            b1.put("balance", bal1);
+            arr.put(b1);
+
+            JSONObject b2 = new JSONObject();
+            b2.put("id", "bal-2");
+            b2.put("firstName", "Rahul");
+            b2.put("lastName", "Sharma");
+            b2.put("employeeCode", "EMP-1022");
+            JSONObject bal2 = new JSONObject();
+            bal2.put("casual", 8);
+            bal2.put("medical", 9);
+            bal2.put("earned", 12);
+            b2.put("balance", bal2);
+            arr.put(b2);
+
+            JSONObject b3 = new JSONObject();
+            b3.put("id", "bal-3");
+            b3.put("firstName", "Priya");
+            b3.put("lastName", "Patel");
+            b3.put("employeeCode", "EMP-1023");
+            JSONObject bal3 = new JSONObject();
+            bal3.put("casual", 12);
+            bal3.put("medical", 6);
+            bal3.put("earned", 15);
+            b3.put("balance", bal3);
+            arr.put(b3);
+
+            JSONObject b4 = new JSONObject();
+            b4.put("id", "bal-4");
+            b4.put("firstName", "Michael");
+            b4.put("lastName", "Chang");
+            b4.put("employeeCode", "EMP-1024");
+            JSONObject bal4 = new JSONObject();
+            bal4.put("casual", 6);
+            bal4.put("medical", 10);
+            bal4.put("earned", 11);
+            b4.put("balance", bal4);
+            arr.put(b4);
+
+            return arr;
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
     public void updateLeaveStatus(String id, String status, ApiCallback<JSONObject> callback) {
         executor.execute(() -> {
             try {

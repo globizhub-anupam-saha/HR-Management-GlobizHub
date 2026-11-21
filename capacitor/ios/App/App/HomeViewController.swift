@@ -40,6 +40,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private let adminPendingBadgeLabel = UILabel()
     private let adminPendingLeavesStack = UIStackView()
     private let adminAuditStack = UIStackView()
+    private let adminLeaveBalancesStack = UIStackView()
     private let adminAnnouncementsStack = UIStackView()
 
     // Super Admin Dashboard Views
@@ -349,6 +350,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         // Safety fallback timeout: dismiss after 3.5s if network is slow/offline
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
             self?.dismissSkeleton()
+        }
+
+        if ProcessInfo.processInfo.arguments.contains("-testScrollAdminBalances") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                self?.scrollView.setContentOffset(CGPoint(x: 0, y: 760), animated: true)
+            }
         }
     }
 
@@ -3656,7 +3663,16 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         }
         adminStackView.addArrangedSubview(auditCard)
 
-        // 6. Company Announcements
+        // 6. Employee Leave Balances Overview
+        let balancesCard = createSectionCard(title: "Employee Leave Balances", badgeText: "Overview", subtitle: "Direct overview of casual, medical, and earned leaves remaining")
+        adminLeaveBalancesStack.axis = .vertical
+        adminLeaveBalancesStack.spacing = 10
+        if let content = balancesCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(adminLeaveBalancesStack)
+        }
+        adminStackView.addArrangedSubview(balancesCard)
+
+        // 7. Company Announcements
         let annCard = createSectionCard(title: "Company Announcements")
         adminAnnouncementsStack.axis = .vertical
         adminAnnouncementsStack.spacing = 10
@@ -3892,9 +3908,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private func loadAdminDashboardData() {
         let name = AuthService.shared.getFirstName()
         adminGreetingLabel.text = "Welcome back, \(name.isEmpty ? "Admin" : name)!"
-        let desig = AuthService.shared.getDesignation()
+        var desig = AuthService.shared.getDesignation()
+        if desig.isEmpty || desig.uppercased() == "EMPLOYEE" {
+            let role = AuthService.shared.getRole()
+            desig = role.lowercased().contains("super") ? "SUPER ADMIN" : "ADMIN"
+        }
         let org = AuthService.shared.getOrganization()
-        adminSubtitleLabel.text = "\(desig.isEmpty ? "Workspace Administrator" : desig) • \(org.isEmpty ? "GlobizHub Inc." : org)"
+        adminSubtitleLabel.text = "\(desig) • \(org.isEmpty ? "GlobizHub Inc." : org)"
 
         // 1. Admin Live Stats
         AuthService.shared.getAdminStats { [weak self] result in
@@ -3949,6 +3969,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self?.renderAdminAnnouncements(announcements)
                 case .failure:
                     self?.renderAdminAnnouncements(nil)
+                }
+            }
+        }
+
+        // 5. Employee Leave Balances
+        AuthService.shared.getCompanyLeaveBalances { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let balances):
+                    self?.renderAdminLeaveBalances(balances)
+                case .failure:
+                    self?.renderAdminLeaveBalances(nil)
                 }
             }
         }
@@ -4220,6 +4252,82 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
             adminAnnouncementsStack.addArrangedSubview(card)
         }
+    }
+
+    private func renderAdminLeaveBalances(_ balances: [[String: Any]]?) {
+        adminLeaveBalancesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        guard let balances = balances, !balances.isEmpty else {
+            let empty = UILabel()
+            empty.text = "No employee leave balance allocations found."
+            empty.font = .systemFont(ofSize: 13, weight: .regular)
+            empty.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            adminLeaveBalancesStack.addArrangedSubview(empty)
+            return
+        }
+
+        for emp in balances.prefix(5) {
+            let fn = emp["firstName"] as? String ?? ""
+            let ln = emp["lastName"] as? String ?? ""
+            let code = emp["employeeCode"] as? String ?? "EMP"
+            let fullName = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
+
+            var casual = 0
+            var medical = 0
+            var earned = 0
+            if let bal = emp["balance"] as? [String: Any] {
+                casual = bal["casual"] as? Int ?? 0
+                medical = bal["medical"] as? Int ?? 0
+                earned = bal["earned"] as? Int ?? 0
+            }
+
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.alignment = .center
+            row.distribution = .fill
+            row.spacing = 10
+
+            let nameCol = UIStackView()
+            nameCol.axis = .vertical
+            nameCol.spacing = 2
+
+            let nameLabel = UILabel()
+            nameLabel.text = fullName.isEmpty ? "Team Member" : fullName
+            nameLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+            nameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+            nameCol.addArrangedSubview(nameLabel)
+
+            let codeLabel = UILabel()
+            codeLabel.text = code
+            codeLabel.font = .systemFont(ofSize: 11, weight: .regular)
+            codeLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            nameCol.addArrangedSubview(codeLabel)
+
+            row.addArrangedSubview(nameCol)
+
+            let badgesRow = UIStackView()
+            badgesRow.axis = .horizontal
+            badgesRow.spacing = 6
+            badgesRow.alignment = .center
+
+            badgesRow.addArrangedSubview(makeAdminLeavePill(text: "CL: \(casual)d", bg: UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0), fg: UIColor(red: 37/255, green: 99/255, blue: 235/255, alpha: 1.0)))
+            badgesRow.addArrangedSubview(makeAdminLeavePill(text: "ML: \(medical)d", bg: UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0), fg: UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)))
+            badgesRow.addArrangedSubview(makeAdminLeavePill(text: "EL: \(earned)d", bg: UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0), fg: UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)))
+
+            row.addArrangedSubview(badgesRow)
+            adminLeaveBalancesStack.addArrangedSubview(row)
+        }
+    }
+
+    private func makeAdminLeavePill(text: String, bg: UIColor, fg: UIColor) -> UILabel {
+        let lbl = UILabel()
+        lbl.text = " \(text) "
+        lbl.font = .systemFont(ofSize: 10, weight: .bold)
+        lbl.textColor = fg
+        lbl.backgroundColor = bg
+        lbl.layer.cornerRadius = 6
+        lbl.layer.masksToBounds = true
+        return lbl
     }
 
     // MARK: - Super Admin Data Loading

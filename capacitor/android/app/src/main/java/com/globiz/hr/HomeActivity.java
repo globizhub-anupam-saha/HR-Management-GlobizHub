@@ -188,6 +188,7 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvAdminPendingLeavesBadge;
     private LinearLayout llAdminPendingLeavesList;
     private LinearLayout llAdminAuditList;
+    private LinearLayout llAdminLeaveBalancesList;
     private LinearLayout llAdminAnnouncementsList;
 
     // Super Admin Dashboard Views
@@ -494,6 +495,7 @@ public class HomeActivity extends AppCompatActivity {
         tvAdminPendingLeavesBadge = findViewById(R.id.tvAdminPendingLeavesBadge);
         llAdminPendingLeavesList = findViewById(R.id.llAdminPendingLeavesList);
         llAdminAuditList = findViewById(R.id.llAdminAuditList);
+        llAdminLeaveBalancesList = findViewById(R.id.llAdminLeaveBalancesList);
         llAdminAnnouncementsList = findViewById(R.id.llAdminAnnouncementsList);
 
         // Super Admin Views
@@ -3012,7 +3014,10 @@ public class HomeActivity extends AppCompatActivity {
         if (tvAdminSubtitle != null) {
             String desig = apiClient.getDesignation();
             String org = apiClient.getOrganization();
-            if (desig == null || desig.isEmpty()) desig = "Workspace Administrator";
+            if (desig == null || desig.isEmpty() || "EMPLOYEE".equalsIgnoreCase(desig)) {
+                String role = apiClient.getRole();
+                desig = "superadmin".equalsIgnoreCase(role) ? "SUPER ADMIN" : "ADMIN";
+            }
             if (org == null || org.isEmpty()) org = "GlobizHub Inc.";
             tvAdminSubtitle.setText(desig + " • " + org);
         }
@@ -3079,6 +3084,19 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onError(String errorMessage, int statusCode) {
                 runOnUiThread(() -> renderAdminAnnouncements(null));
+            }
+        });
+
+        // 5. Company Leave Balances
+        apiClient.getCompanyLeaveBalances(new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray balances) {
+                runOnUiThread(() -> renderAdminLeaveBalances(balances));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> renderAdminLeaveBalances(null));
             }
         });
     }
@@ -3373,6 +3391,106 @@ public class HomeActivity extends AppCompatActivity {
 
             llAdminAnnouncementsList.addView(item);
         }
+    }
+
+    private void renderAdminLeaveBalances(JSONArray balances) {
+        if (llAdminLeaveBalancesList == null) return;
+        llAdminLeaveBalancesList.removeAllViews();
+
+        if (balances == null || balances.length() == 0) {
+            TextView emptyTv = new TextView(this);
+            emptyTv.setText("No employee leave balance allocations found.");
+            emptyTv.setTextColor(Color.parseColor("#64748B"));
+            emptyTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            emptyTv.setPadding(0, dpToPx(6), 0, dpToPx(6));
+            llAdminLeaveBalancesList.addView(emptyTv);
+            return;
+        }
+
+        int limit = Math.min(balances.length(), 5);
+        for (int i = 0; i < limit; i++) {
+            JSONObject emp = balances.optJSONObject(i);
+            if (emp == null) continue;
+
+            String fn = emp.optString("firstName", "");
+            String ln = emp.optString("lastName", "");
+            String code = emp.optString("employeeCode", "EMP");
+            String fullName = (fn + " " + ln).trim();
+            if (fullName.isEmpty()) fullName = "Team Member";
+
+            int casual = 0;
+            int medical = 0;
+            int earned = 0;
+            JSONObject bal = emp.optJSONObject("balance");
+            if (bal != null) {
+                casual = bal.optInt("casual", 0);
+                medical = bal.optInt("medical", 0);
+                earned = bal.optInt("earned", 0);
+            }
+
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(0, dpToPx(8), 0, dpToPx(8));
+
+            LinearLayout nameCol = new LinearLayout(this);
+            nameCol.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            row.addView(nameCol, nameLp);
+
+            TextView nameTv = new TextView(this);
+            nameTv.setText(fullName);
+            nameTv.setTextColor(Color.parseColor("#0F172A"));
+            nameTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            nameTv.setTypeface(null, Typeface.BOLD);
+            nameCol.addView(nameTv);
+
+            TextView codeTv = new TextView(this);
+            codeTv.setText(code);
+            codeTv.setTextColor(Color.parseColor("#64748B"));
+            codeTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            nameCol.addView(codeTv);
+
+            LinearLayout badgesRow = new LinearLayout(this);
+            badgesRow.setOrientation(LinearLayout.HORIZONTAL);
+            badgesRow.setGravity(Gravity.CENTER_VERTICAL);
+
+            badgesRow.addView(createLeavePill("CL: " + casual + "d", Color.parseColor("#EFF6FF"), Color.parseColor("#2563EB")));
+            badgesRow.addView(createLeavePill("ML: " + medical + "d", Color.parseColor("#FEF3C7"), Color.parseColor("#D97706")));
+            badgesRow.addView(createLeavePill("EL: " + earned + "d", Color.parseColor("#D1FAE5"), Color.parseColor("#059669")));
+
+            row.addView(badgesRow);
+
+            llAdminLeaveBalancesList.addView(row);
+
+            if (i < limit - 1) {
+                View div = new View(this);
+                div.setBackgroundColor(Color.parseColor("#F1F5F9"));
+                LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(1));
+                div.setLayoutParams(divLp);
+                llAdminLeaveBalancesList.addView(div);
+            }
+        }
+    }
+
+    private TextView createLeavePill(String text, int bgColor, int textColor) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextColor(textColor);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+        tv.setTypeface(null, Typeface.BOLD);
+        tv.setPadding(dpToPx(7), dpToPx(3), dpToPx(7), dpToPx(3));
+
+        android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+        gd.setColor(bgColor);
+        gd.setCornerRadius(dpToPx(6));
+        tv.setBackground(gd);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = dpToPx(5);
+        tv.setLayoutParams(lp);
+        return tv;
     }
 
     private void loadSuperAdminDashboardData() {
