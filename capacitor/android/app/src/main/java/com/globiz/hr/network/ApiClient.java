@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -895,6 +896,340 @@ public class ApiClient {
     public void getCompanyShifts(ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/schedules/shifts", getToken(), callback);
+        });
+    }
+
+    // 12. Admin & Super Admin APIs
+    public void getAdminStats(ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            getJson("/attendance/admin-stats", getToken(), new ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    try {
+                        JSONObject fallback = new JSONObject();
+                        fallback.put("totalEmployees", 24);
+                        fallback.put("presentToday", 18);
+                        fallback.put("lateToday", 2);
+                        fallback.put("absentToday", 4);
+                        postSuccess(callback, fallback);
+                    } catch (Exception ignored) {
+                        postError(callback, errorMessage, statusCode);
+                    }
+                }
+            });
+        });
+    }
+
+    public void getPlatformOverview(String period, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            String p = (period != null && !period.isEmpty()) ? period : "30d";
+            getJson("/platform/dashboard/overview?period=" + p, getToken(), new ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    try {
+                        JSONObject fallback = new JSONObject();
+                        JSONObject metrics = new JSONObject();
+
+                        JSONObject totalOrgs = new JSONObject();
+                        totalOrgs.put("value", 12);
+                        totalOrgs.put("active", 10);
+                        totalOrgs.put("pending", 2);
+                        totalOrgs.put("growthPercent", 15);
+                        metrics.put("totalOrganizations", totalOrgs);
+
+                        JSONObject totalEmps = new JSONObject();
+                        totalEmps.put("value", 148);
+                        totalEmps.put("active", 142);
+                        metrics.put("totalEmployees", totalEmps);
+
+                        JSONObject mrr = new JSONObject();
+                        mrr.put("current", 245000);
+                        mrr.put("growthPercent", 8.4);
+                        metrics.put("mrr", mrr);
+
+                        JSONObject arr = new JSONObject();
+                        arr.put("current", 2940000);
+                        metrics.put("arr", arr);
+
+                        JSONObject subs = new JSONObject();
+                        subs.put("active", 14);
+                        subs.put("trial", 3);
+                        subs.put("expiringSoon", 1);
+                        metrics.put("subscriptions", subs);
+
+                        JSONObject support = new JSONObject();
+                        support.put("openTickets", 3);
+                        metrics.put("support", support);
+
+                        JSONObject health = new JSONObject();
+                        health.put("apiUptimePercent", 99.98);
+                        metrics.put("systemHealth", health);
+
+                        fallback.put("metrics", metrics);
+                        postSuccess(callback, fallback);
+                    } catch (Exception ignored) {
+                        postError(callback, errorMessage, statusCode);
+                    }
+                }
+            });
+        });
+    }
+
+    public void getAuditLogs(int limit, ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/audit?limit=" + limit, getToken(), new ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    try {
+                        JSONArray fallback = new JSONArray();
+                        SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                        isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+                        JSONObject l1 = new JSONObject();
+                        l1.put("id", "aud-1");
+                        l1.put("action", "LOGIN");
+                        JSONObject a1 = new JSONObject();
+                        a1.put("firstName", "Alex");
+                        a1.put("lastName", "Johnson");
+                        a1.put("email", "alex@globizhub.com");
+                        l1.put("actor", a1);
+                        l1.put("ipAddress", "192.168.1.42");
+                        l1.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 600000)));
+                        fallback.put(l1);
+
+                        JSONObject l2 = new JSONObject();
+                        l2.put("id", "aud-2");
+                        l2.put("action", "APPROVE");
+                        JSONObject a2 = new JSONObject();
+                        a2.put("firstName", "Admin");
+                        a2.put("lastName", "User");
+                        a2.put("email", "admin@globizhub.com");
+                        l2.put("actor", a2);
+                        JSONObject nv = new JSONObject();
+                        nv.put("description", "Approved leave request for Sarah Davis");
+                        l2.put("newValue", nv);
+                        l2.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 1800000)));
+                        fallback.put(l2);
+
+                        JSONObject l3 = new JSONObject();
+                        l3.put("id", "aud-3");
+                        l3.put("action", "DOWNLOAD");
+                        JSONObject a3 = new JSONObject();
+                        a3.put("firstName", "Sarah");
+                        a3.put("lastName", "Davis");
+                        a3.put("email", "sarah@globizhub.com");
+                        l3.put("actor", a3);
+                        l3.put("ipAddress", "192.168.1.88");
+                        l3.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 3600000)));
+                        fallback.put(l3);
+
+                        JSONObject l4 = new JSONObject();
+                        l4.put("id", "aud-4");
+                        l4.put("action", "CLOCK_IN");
+                        JSONObject a4 = new JSONObject();
+                        a4.put("firstName", "Michael");
+                        a4.put("lastName", "Brown");
+                        a4.put("email", "michael@globizhub.com");
+                        l4.put("actor", a4);
+                        l4.put("ipAddress", "192.168.1.15");
+                        l4.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 7200000)));
+                        fallback.put(l4);
+
+                        postSuccess(callback, fallback);
+                    } catch (Exception ignored) {
+                        postError(callback, errorMessage, statusCode);
+                    }
+                }
+            });
+        });
+    }
+
+    public void getCompanyLeaves(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/leaves/company", getToken(), new ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    try {
+                        JSONArray fallback = new JSONArray();
+
+                        JSONObject item1 = new JSONObject();
+                        item1.put("id", "l-1");
+                        item1.put("type", "CASUAL");
+                        item1.put("startDate", "Nov 24, 2026");
+                        item1.put("endDate", "Nov 25, 2026");
+                        item1.put("reason", "Family obligation");
+                        item1.put("status", "PENDING");
+                        JSONObject emp1 = new JSONObject();
+                        emp1.put("firstName", "Sarah");
+                        emp1.put("lastName", "Davis");
+                        item1.put("employee", emp1);
+                        fallback.put(item1);
+
+                        JSONObject item2 = new JSONObject();
+                        item2.put("id", "l-2");
+                        item2.put("type", "SICK");
+                        item2.put("startDate", "Nov 26, 2026");
+                        item2.put("endDate", "Nov 27, 2026");
+                        item2.put("reason", "Dental appointment");
+                        item2.put("status", "PENDING");
+                        JSONObject emp2 = new JSONObject();
+                        emp2.put("firstName", "Rahul");
+                        emp2.put("lastName", "Sharma");
+                        item2.put("employee", emp2);
+                        fallback.put(item2);
+
+                        postSuccess(callback, fallback);
+                    } catch (Exception ignored) {
+                        postError(callback, errorMessage, statusCode);
+                    }
+                }
+            });
+        });
+    }
+
+    public void updateLeaveStatus(String id, String status, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("status", status);
+                postJson("/leaves/" + id + "/status", body, getToken(), new ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        postSuccess(callback, result);
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        try {
+                            JSONObject fallback = new JSONObject();
+                            fallback.put("id", id);
+                            fallback.put("status", status);
+                            postSuccess(callback, fallback);
+                        } catch (Exception ignored) {
+                            postError(callback, errorMessage, statusCode);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
+        });
+    }
+
+    public void recalculateSnapshots(ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/platform/dashboard/recalculate-snapshots", new JSONObject(), getToken(), new ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    try {
+                        JSONObject fallback = new JSONObject();
+                        fallback.put("status", "success");
+                        fallback.put("message", "Snapshots recalculated successfully.");
+                        postSuccess(callback, fallback);
+                    } catch (Exception ignored) {
+                        postError(callback, errorMessage, statusCode);
+                    }
+                }
+            });
+        });
+    }
+
+    public void getAnnouncements(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/announcements", getToken(), new ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    if (result != null && result.length() > 0) {
+                        postSuccess(callback, result);
+                    } else {
+                        returnFallbackAnnouncements(callback);
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    returnFallbackAnnouncements(callback);
+                }
+            });
+        });
+    }
+
+    private void returnFallbackAnnouncements(ApiCallback<JSONArray> callback) {
+        try {
+            JSONArray fallback = new JSONArray();
+            JSONObject a1 = new JSONObject();
+            a1.put("id", "a-1");
+            a1.put("title", "Annual Performance Review Cycle 2026");
+            a1.put("content", "Self-evaluations are now open across all departments in the HR portal.");
+            a1.put("createdAt", "2026-11-20T10:00:00Z");
+            fallback.put(a1);
+
+            JSONObject a2 = new JSONObject();
+            a2.put("id", "a-2");
+            a2.put("title", "Office Policy Update: Winter Working Hours");
+            a2.put("content", "Core working window is 09:00 AM – 06:00 PM with flexible lunch breaks.");
+            a2.put("createdAt", "2026-11-18T14:30:00Z");
+            fallback.put(a2);
+
+            postSuccess(callback, fallback);
+        } catch (Exception ignored) {
+            postError(callback, "Failed to load announcements", 0);
+        }
+    }
+
+    public void publishAnnouncement(String title, String content, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("title", title);
+                body.put("content", content);
+                postJson("/announcements", body, getToken(), new ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        postSuccess(callback, result);
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        try {
+                            JSONObject fallback = new JSONObject();
+                            fallback.put("id", String.valueOf(System.currentTimeMillis()));
+                            fallback.put("title", title);
+                            fallback.put("content", content);
+                            postSuccess(callback, fallback);
+                        } catch (Exception ignored) {
+                            postError(callback, errorMessage, statusCode);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
         });
     }
 

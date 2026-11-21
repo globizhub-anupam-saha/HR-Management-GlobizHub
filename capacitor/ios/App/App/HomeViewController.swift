@@ -22,6 +22,42 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private let contentView = UIView()
     private let cardsStackView = UIStackView()
 
+    // Multi-Role Container Stacks
+    private let employeeStackView = UIStackView()
+    private let adminStackView = UIStackView()
+    private let superAdminStackView = UIStackView()
+
+    // Admin Dashboard Views
+    private let adminHeroCard = UIView()
+    private let adminHeroGradient = CAGradientLayer()
+    private let adminGreetingLabel = UILabel()
+    private let adminSubtitleLabel = UILabel()
+    private let adminTotalEmployeesLabel = UILabel()
+    private let adminPresentTodayLabel = UILabel()
+    private let adminAbsentTodayLabel = UILabel()
+    private let adminLateTodayLabel = UILabel()
+    private let adminPendingLeavesCard = UIView()
+    private let adminPendingBadgeLabel = UILabel()
+    private let adminPendingLeavesStack = UIStackView()
+    private let adminAuditStack = UIStackView()
+    private let adminAnnouncementsStack = UIStackView()
+
+    // Super Admin Dashboard Views
+    private let superAdminHeroCard = UIView()
+    private let superAdminHeroGradient = CAGradientLayer()
+    private let superAdminGreetingLabel = UILabel()
+    private let superAdminSubtitleLabel = UILabel()
+    private let superAdminTotalOrgsLabel = UILabel()
+    private let superAdminOrgsSubLabel = UILabel()
+    private let superAdminTotalEmployeesLabel = UILabel()
+    private let superAdminMRRLabel = UILabel()
+    private let superAdminSubsLabel = UILabel()
+    private let superAdminPendingOrgsLabel = UILabel()
+    private let superAdminSuspendedLabel = UILabel()
+    private let superAdminTicketsLabel = UILabel()
+    private let superAdminTenantsStack = UIStackView()
+    private let superAdminAuditStack = UIStackView()
+
     // 1. Employee Portal Hero Card
     private let heroCard = GradientCardView()
     private let heroBadgeLabel = UILabel()
@@ -250,9 +286,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         setupTeamPresenceCard()
         setupTasksCard()
         setupMonthlyHeatmapCard()
+        setupAdminDashboard()
+        setupSuperAdminDashboard()
         setupBottomNavBar()
         setupHintPopup()
         updateGreeting()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        adminHeroGradient.frame = adminHeroCard.bounds
+        superAdminHeroGradient.frame = superAdminHeroCard.bounds
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -265,25 +309,44 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         checkAndTriggerActiveShiftReminder()
 
         cachedFirstName = AuthService.shared.getFirstName()
-
         updateGreeting()
-        loadProfile()
-        loadAttendanceStats()
-        loadRealAttendanceHistoryForHeatmap()
-        loadRealLeaves()
-        loadRealHolidays()
-        loadRealSchedule()
-        loadTeamPresence()
-        loadTasks()
-        renderMonthlyHeatmap()
-        heatmapModeSegmented.selectedSegmentIndex = 0
-        didChangeHeatmapMode(heatmapModeSegmented)
+
+        let currentRole = AuthService.shared.getRole()
+        let userRole = UserRole.from(string: currentRole)
+        switch userRole {
+        case .superAdmin:
+            employeeStackView.isHidden = true
+            adminStackView.isHidden = true
+            superAdminStackView.isHidden = false
+            loadSuperAdminDashboardData()
+        case .admin:
+            employeeStackView.isHidden = true
+            adminStackView.isHidden = false
+            superAdminStackView.isHidden = true
+            loadAdminDashboardData()
+        case .employee:
+            employeeStackView.isHidden = false
+            adminStackView.isHidden = true
+            superAdminStackView.isHidden = true
+
+            loadProfile()
+            loadAttendanceStats()
+            loadRealAttendanceHistoryForHeatmap()
+            loadRealLeaves()
+            loadRealHolidays()
+            loadRealSchedule()
+            loadTeamPresence()
+            loadTasks()
+            renderMonthlyHeatmap()
+            heatmapModeSegmented.selectedSegmentIndex = 0
+            didChangeHeatmapMode(heatmapModeSegmented)
+            heroCard.play()
+        }
 
         // Safety fallback timeout: dismiss after 3.5s if network is slow/offline
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
             self?.dismissSkeleton()
         }
-        heroCard.play()
     }
 
     func dismissSkeleton() {
@@ -437,6 +500,23 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         cardsStackView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(cardsStackView)
 
+        employeeStackView.axis = .vertical
+        employeeStackView.spacing = 16
+        employeeStackView.translatesAutoresizingMaskIntoConstraints = false
+        cardsStackView.addArrangedSubview(employeeStackView)
+
+        adminStackView.axis = .vertical
+        adminStackView.spacing = 16
+        adminStackView.translatesAutoresizingMaskIntoConstraints = false
+        adminStackView.isHidden = true
+        cardsStackView.addArrangedSubview(adminStackView)
+
+        superAdminStackView.axis = .vertical
+        superAdminStackView.spacing = 16
+        superAdminStackView.translatesAutoresizingMaskIntoConstraints = false
+        superAdminStackView.isHidden = true
+        cardsStackView.addArrangedSubview(superAdminStackView)
+
         contentView.addSubview(skeletonOverlay)
 
         var contentWidthConstraints: [NSLayoutConstraint] = []
@@ -479,7 +559,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         heroCard.layer.cornerRadius = 24
         heroCard.layer.masksToBounds = true
         heroCard.translatesAutoresizingMaskIntoConstraints = false
-        cardsStackView.addArrangedSubview(heroCard)
+        employeeStackView.addArrangedSubview(heroCard)
 
         // Pill: EMPLOYEE PORTAL (Tick badge removed as requested)
         let badgeContainer = UIView()
@@ -590,7 +670,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         timerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
         timerCard.layer.shadowRadius = 12
         timerCard.translatesAutoresizingMaskIntoConstraints = false
-        cardsStackView.addArrangedSubview(timerCard)
+        employeeStackView.addArrangedSubview(timerCard)
 
         // Section Title: ACTIVE SHIFT TIMER
         timerSectionTitle.text = "ACTIVE SHIFT TIMER"
@@ -734,7 +814,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         twoColumnRow.distribution = .fill
         twoColumnRow.spacing = 14
         twoColumnRow.translatesAutoresizingMaskIntoConstraints = false
-        cardsStackView.addArrangedSubview(twoColumnRow)
+        employeeStackView.addArrangedSubview(twoColumnRow)
 
         // Card A: Leaves (Full-width 1st)
         leavesCard.backgroundColor = .white
@@ -933,7 +1013,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         teamPresenceCard.layer.shadowOffset = CGSize(width: 0, height: 2)
         teamPresenceCard.layer.shadowRadius = 8
         teamPresenceCard.translatesAutoresizingMaskIntoConstraints = false
-        cardsStackView.addArrangedSubview(teamPresenceCard)
+        employeeStackView.addArrangedSubview(teamPresenceCard)
 
         let grpConfig = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
         teamPresenceIcon.image = UIImage(systemName: "person.2.fill", withConfiguration: grpConfig) ?? UIImage(systemName: "person.3.fill", withConfiguration: grpConfig)
@@ -996,7 +1076,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         tasksCard.layer.borderWidth = 1
         tasksCard.layer.borderColor = UIColor(red: 224/255, green: 231/255, blue: 255/255, alpha: 1.0).cgColor
         tasksCard.translatesAutoresizingMaskIntoConstraints = false
-        cardsStackView.addArrangedSubview(tasksCard)
+        employeeStackView.addArrangedSubview(tasksCard)
 
         taskIconContainer.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         taskIconContainer.layer.cornerRadius = 20
@@ -1188,7 +1268,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         monthlyHeatmapCard.layer.borderWidth = 1
         monthlyHeatmapCard.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
         monthlyHeatmapCard.translatesAutoresizingMaskIntoConstraints = false
-        cardsStackView.addArrangedSubview(monthlyHeatmapCard)
+        employeeStackView.addArrangedSubview(monthlyHeatmapCard)
 
         let paddingStack = UIStackView()
         paddingStack.axis = .vertical
@@ -3321,6 +3401,1228 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let simpleFmt = DateFormatter()
         simpleFmt.dateFormat = "yyyy-MM-dd"
         return simpleFmt.date(from: string)
+    }
+
+    // MARK: - Admin Dashboard Setup & Real-time Integration
+
+    private func setupAdminDashboard() {
+        // 1. Admin Hero Card
+        adminHeroCard.layer.cornerRadius = 24
+        adminHeroCard.layer.masksToBounds = true
+        adminHeroCard.translatesAutoresizingMaskIntoConstraints = false
+        adminHeroCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 180).isActive = true
+
+        adminHeroGradient.colors = [
+            UIColor(red: 30/255, green: 27/255, blue: 75/255, alpha: 1.0).cgColor,
+            UIColor(red: 49/255, green: 46/255, blue: 129/255, alpha: 1.0).cgColor
+        ]
+        adminHeroGradient.startPoint = CGPoint(x: 0, y: 0)
+        adminHeroGradient.endPoint = CGPoint(x: 1, y: 1)
+        adminHeroCard.layer.insertSublayer(adminHeroGradient, at: 0)
+
+        let heroContentStack = UIStackView()
+        heroContentStack.axis = .vertical
+        heroContentStack.spacing = 8
+        heroContentStack.translatesAutoresizingMaskIntoConstraints = false
+        adminHeroCard.addSubview(heroContentStack)
+
+        let pillContainer = UIView()
+        pillContainer.backgroundColor = UIColor(white: 1.0, alpha: 0.16)
+        pillContainer.layer.cornerRadius = 12
+        pillContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let pillLabel = UILabel()
+        pillLabel.text = "Admin Workspace"
+        pillLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        pillLabel.textColor = UIColor(red: 199/255, green: 210/255, blue: 254/255, alpha: 1.0)
+        pillLabel.translatesAutoresizingMaskIntoConstraints = false
+        pillContainer.addSubview(pillLabel)
+
+        NSLayoutConstraint.activate([
+            pillLabel.topAnchor.constraint(equalTo: pillContainer.topAnchor, constant: 4),
+            pillLabel.bottomAnchor.constraint(equalTo: pillContainer.bottomAnchor, constant: -4),
+            pillLabel.leadingAnchor.constraint(equalTo: pillContainer.leadingAnchor, constant: 10),
+            pillLabel.trailingAnchor.constraint(equalTo: pillContainer.trailingAnchor, constant: -10)
+        ])
+
+        let pillRow = UIStackView(arrangedSubviews: [pillContainer, UIView()])
+        heroContentStack.addArrangedSubview(pillRow)
+
+        adminGreetingLabel.text = "Welcome back, Admin!"
+        adminGreetingLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        adminGreetingLabel.textColor = .white
+        heroContentStack.addArrangedSubview(adminGreetingLabel)
+
+        adminSubtitleLabel.text = "Workspace Administrator • GlobizHub Inc."
+        adminSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        adminSubtitleLabel.textColor = UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
+        heroContentStack.addArrangedSubview(adminSubtitleLabel)
+
+        let adminTelemetryStrip = UIView()
+        adminTelemetryStrip.backgroundColor = UIColor(white: 1.0, alpha: 0.14)
+        adminTelemetryStrip.layer.cornerRadius = 12
+        adminTelemetryStrip.translatesAutoresizingMaskIntoConstraints = false
+        adminTelemetryStrip.heightAnchor.constraint(equalToConstant: 40).isActive = true
+
+        let dotView = UIView()
+        dotView.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+        dotView.layer.cornerRadius = 4
+        dotView.translatesAutoresizingMaskIntoConstraints = false
+
+        let telemetryLabel = UILabel()
+        telemetryLabel.text = "Live Workspace Telemetry · Real-Time Sync"
+        telemetryLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        telemetryLabel.textColor = .white
+        telemetryLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let liveBadge = UILabel()
+        liveBadge.text = "Online"
+        liveBadge.font = .systemFont(ofSize: 10, weight: .bold)
+        liveBadge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        liveBadge.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+        liveBadge.layer.cornerRadius = 8
+        liveBadge.layer.masksToBounds = true
+        liveBadge.textAlignment = .center
+        liveBadge.translatesAutoresizingMaskIntoConstraints = false
+
+        adminTelemetryStrip.addSubview(dotView)
+        adminTelemetryStrip.addSubview(telemetryLabel)
+        adminTelemetryStrip.addSubview(liveBadge)
+
+        NSLayoutConstraint.activate([
+            dotView.leadingAnchor.constraint(equalTo: adminTelemetryStrip.leadingAnchor, constant: 12),
+            dotView.centerYAnchor.constraint(equalTo: adminTelemetryStrip.centerYAnchor),
+            dotView.widthAnchor.constraint(equalToConstant: 8),
+            dotView.heightAnchor.constraint(equalToConstant: 8),
+
+            telemetryLabel.leadingAnchor.constraint(equalTo: dotView.trailingAnchor, constant: 8),
+            telemetryLabel.centerYAnchor.constraint(equalTo: adminTelemetryStrip.centerYAnchor),
+
+            liveBadge.trailingAnchor.constraint(equalTo: adminTelemetryStrip.trailingAnchor, constant: -12),
+            liveBadge.centerYAnchor.constraint(equalTo: adminTelemetryStrip.centerYAnchor),
+            liveBadge.widthAnchor.constraint(equalToConstant: 54),
+            liveBadge.heightAnchor.constraint(equalToConstant: 22),
+            telemetryLabel.trailingAnchor.constraint(lessThanOrEqualTo: liveBadge.leadingAnchor, constant: -8)
+        ])
+
+        heroContentStack.addArrangedSubview(adminTelemetryStrip)
+
+        NSLayoutConstraint.activate([
+            heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 20),
+            heroContentStack.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor, constant: -20),
+            heroContentStack.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor, constant: 20),
+            heroContentStack.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor, constant: -20)
+        ])
+
+        adminStackView.addArrangedSubview(adminHeroCard)
+
+        // 2. Admin 4 Real-time Metrics (2x2 Grid)
+        let metricsGrid = UIStackView()
+        metricsGrid.axis = .vertical
+        metricsGrid.spacing = 12
+        metricsGrid.translatesAutoresizingMaskIntoConstraints = false
+
+        let row1 = UIStackView()
+        row1.axis = .horizontal
+        row1.spacing = 12
+        row1.distribution = .fillEqually
+
+        adminTotalEmployeesLabel.text = "24"
+        let card1 = createStatCard(title: "Employees", iconName: "person.2.fill", iconColor: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), valueLabel: adminTotalEmployeesLabel, subtext: "Active in Workspace")
+
+        adminPresentTodayLabel.text = "18"
+        let card2 = createStatCard(title: "Present Today", iconName: "checkmark.circle.fill", iconColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), valueLabel: adminPresentTodayLabel, subtext: "On Duty Today", subtextColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0))
+
+        row1.addArrangedSubview(card1)
+        row1.addArrangedSubview(card2)
+
+        let row2 = UIStackView()
+        row2.axis = .horizontal
+        row2.spacing = 12
+        row2.distribution = .fillEqually
+
+        adminAbsentTodayLabel.text = "4"
+        let card3 = createStatCard(title: "Absent", iconName: "xmark.circle.fill", iconColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), valueLabel: adminAbsentTodayLabel, subtext: "Not Clocked In", subtextColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0))
+
+        adminLateTodayLabel.text = "2"
+        let card4 = createStatCard(title: "Late Arrivals", iconName: "clock.fill", iconColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), valueLabel: adminLateTodayLabel, subtext: "Clocked after 09:00", subtextColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0))
+
+        row2.addArrangedSubview(card3)
+        row2.addArrangedSubview(card4)
+
+        metricsGrid.addArrangedSubview(row1)
+        metricsGrid.addArrangedSubview(row2)
+        adminStackView.addArrangedSubview(metricsGrid)
+
+        // 3. Admin Action Center
+        let actionCenterCard = createSectionCard(title: "Admin Action Center")
+        let actionsRow = UIStackView()
+        actionsRow.axis = .horizontal
+        actionsRow.spacing = 10
+        actionsRow.distribution = .fillEqually
+        actionsRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let btnNotice = createActionButton(title: "+ Notice", iconName: "megaphone.fill", bg: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), fg: .white)
+        btnNotice.addTarget(self, action: #selector(handleAdminBroadcastNotice), for: .touchUpInside)
+
+        let btnApprovals = createActionButton(title: "Approvals", iconName: "doc.text.fill", bg: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0), fg: UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0))
+        btnApprovals.addTarget(self, action: #selector(handleAdminScrollToApprovals), for: .touchUpInside)
+
+        let btnDirectory = createActionButton(title: "Directory", iconName: "person.3.fill", bg: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0), fg: UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0))
+        btnDirectory.addTarget(self, action: #selector(handleAdminTeamDirectory), for: .touchUpInside)
+
+        actionsRow.addArrangedSubview(btnNotice)
+        actionsRow.addArrangedSubview(btnApprovals)
+        actionsRow.addArrangedSubview(btnDirectory)
+
+        if let content = actionCenterCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(actionsRow)
+        }
+        adminStackView.addArrangedSubview(actionCenterCard)
+
+        // 4. Pending Leave Requests Card
+        adminPendingLeavesCard.backgroundColor = .white
+        adminPendingLeavesCard.layer.cornerRadius = 20
+        adminPendingLeavesCard.layer.borderWidth = 1
+        adminPendingLeavesCard.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        adminPendingLeavesCard.translatesAutoresizingMaskIntoConstraints = false
+
+        let leavesInnerStack = UIStackView()
+        leavesInnerStack.axis = .vertical
+        leavesInnerStack.spacing = 12
+        leavesInnerStack.translatesAutoresizingMaskIntoConstraints = false
+        adminPendingLeavesCard.addSubview(leavesInnerStack)
+
+        let leavesHeaderRow = UIStackView()
+        leavesHeaderRow.axis = .horizontal
+        leavesHeaderRow.alignment = .center
+
+        let leavesTitle = UILabel()
+        leavesTitle.text = "Pending Approvals"
+        leavesTitle.font = .systemFont(ofSize: 16, weight: .bold)
+        leavesTitle.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        leavesHeaderRow.addArrangedSubview(leavesTitle)
+
+        adminPendingBadgeLabel.text = "Action Required"
+        adminPendingBadgeLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        adminPendingBadgeLabel.textColor = UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0)
+        adminPendingBadgeLabel.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+        adminPendingBadgeLabel.layer.cornerRadius = 8
+        adminPendingBadgeLabel.layer.masksToBounds = true
+        adminPendingBadgeLabel.textAlignment = .center
+        adminPendingBadgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        adminPendingBadgeLabel.widthAnchor.constraint(equalToConstant: 110).isActive = true
+        adminPendingBadgeLabel.heightAnchor.constraint(equalToConstant: 24).isActive = true
+        leavesHeaderRow.addArrangedSubview(adminPendingBadgeLabel)
+
+        leavesInnerStack.addArrangedSubview(leavesHeaderRow)
+
+        adminPendingLeavesStack.axis = .vertical
+        adminPendingLeavesStack.spacing = 10
+        leavesInnerStack.addArrangedSubview(adminPendingLeavesStack)
+
+        NSLayoutConstraint.activate([
+            leavesInnerStack.topAnchor.constraint(equalTo: adminPendingLeavesCard.topAnchor, constant: 18),
+            leavesInnerStack.bottomAnchor.constraint(equalTo: adminPendingLeavesCard.bottomAnchor, constant: -18),
+            leavesInnerStack.leadingAnchor.constraint(equalTo: adminPendingLeavesCard.leadingAnchor, constant: 18),
+            leavesInnerStack.trailingAnchor.constraint(equalTo: adminPendingLeavesCard.trailingAnchor, constant: -18)
+        ])
+        adminStackView.addArrangedSubview(adminPendingLeavesCard)
+
+        // 5. Live Activities Feed (Audit Logs)
+        let auditCard = createSectionCard(title: "Live Activities Feed", badgeText: "Live Audit", subtitle: "Real-time employee activity and audit telemetry")
+        adminAuditStack.axis = .vertical
+        adminAuditStack.spacing = 8
+        if let content = auditCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(adminAuditStack)
+        }
+        adminStackView.addArrangedSubview(auditCard)
+
+        // 6. Company Announcements
+        let annCard = createSectionCard(title: "Company Announcements")
+        adminAnnouncementsStack.axis = .vertical
+        adminAnnouncementsStack.spacing = 10
+        if let content = annCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(adminAnnouncementsStack)
+        }
+        adminStackView.addArrangedSubview(annCard)
+    }
+
+    // MARK: - Super Admin Dashboard Setup & Real-time Integration
+
+    private func setupSuperAdminDashboard() {
+        // 1. Super Admin Hero Card
+        superAdminHeroCard.layer.cornerRadius = 24
+        superAdminHeroCard.layer.masksToBounds = true
+        superAdminHeroCard.translatesAutoresizingMaskIntoConstraints = false
+        superAdminHeroCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 180).isActive = true
+
+        superAdminHeroGradient.colors = [
+            UIColor(red: 6/255, green: 78/255, blue: 59/255, alpha: 1.0).cgColor,
+            UIColor(red: 4/255, green: 120/255, blue: 87/255, alpha: 1.0).cgColor
+        ]
+        superAdminHeroGradient.startPoint = CGPoint(x: 0, y: 0)
+        superAdminHeroGradient.endPoint = CGPoint(x: 1, y: 1)
+        superAdminHeroCard.layer.insertSublayer(superAdminHeroGradient, at: 0)
+
+        let heroContentStack = UIStackView()
+        heroContentStack.axis = .vertical
+        heroContentStack.spacing = 8
+        heroContentStack.translatesAutoresizingMaskIntoConstraints = false
+        superAdminHeroCard.addSubview(heroContentStack)
+
+        let pillContainer = UIView()
+        pillContainer.backgroundColor = UIColor(white: 1.0, alpha: 0.16)
+        pillContainer.layer.cornerRadius = 12
+        pillContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let pillLabel = UILabel()
+        pillLabel.text = "Super Admin • Platform Operations"
+        pillLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        pillLabel.textColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0)
+        pillLabel.translatesAutoresizingMaskIntoConstraints = false
+        pillContainer.addSubview(pillLabel)
+
+        NSLayoutConstraint.activate([
+            pillLabel.topAnchor.constraint(equalTo: pillContainer.topAnchor, constant: 4),
+            pillLabel.bottomAnchor.constraint(equalTo: pillContainer.bottomAnchor, constant: -4),
+            pillLabel.leadingAnchor.constraint(equalTo: pillContainer.leadingAnchor, constant: 10),
+            pillLabel.trailingAnchor.constraint(equalTo: pillContainer.trailingAnchor, constant: -10)
+        ])
+
+        let pillRow = UIStackView(arrangedSubviews: [pillContainer, UIView()])
+        heroContentStack.addArrangedSubview(pillRow)
+
+        superAdminGreetingLabel.text = "Platform Executive Dashboard"
+        superAdminGreetingLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        superAdminGreetingLabel.textColor = .white
+        heroContentStack.addArrangedSubview(superAdminGreetingLabel)
+
+        superAdminSubtitleLabel.text = "Multi-Tenant Telemetry & System Health • GlobizHR"
+        superAdminSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        superAdminSubtitleLabel.textColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0)
+        heroContentStack.addArrangedSubview(superAdminSubtitleLabel)
+
+        let telemetryStrip = UIView()
+        telemetryStrip.backgroundColor = UIColor(white: 1.0, alpha: 0.14)
+        telemetryStrip.layer.cornerRadius = 12
+        telemetryStrip.translatesAutoresizingMaskIntoConstraints = false
+        telemetryStrip.heightAnchor.constraint(equalToConstant: 40).isActive = true
+
+        let dotView = UIView()
+        dotView.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+        dotView.layer.cornerRadius = 4
+        dotView.translatesAutoresizingMaskIntoConstraints = false
+
+        let telemetryLabel = UILabel()
+        telemetryLabel.text = "Multi-Tenant Engine Online · Real-Time Cached"
+        telemetryLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        telemetryLabel.textColor = .white
+        telemetryLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let liveBadge = UILabel()
+        liveBadge.text = "99.98% Uptime"
+        liveBadge.font = .systemFont(ofSize: 10, weight: .bold)
+        liveBadge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        liveBadge.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+        liveBadge.layer.cornerRadius = 8
+        liveBadge.layer.masksToBounds = true
+        liveBadge.textAlignment = .center
+        liveBadge.translatesAutoresizingMaskIntoConstraints = false
+
+        telemetryStrip.addSubview(dotView)
+        telemetryStrip.addSubview(telemetryLabel)
+        telemetryStrip.addSubview(liveBadge)
+
+        NSLayoutConstraint.activate([
+            dotView.leadingAnchor.constraint(equalTo: telemetryStrip.leadingAnchor, constant: 12),
+            dotView.centerYAnchor.constraint(equalTo: telemetryStrip.centerYAnchor),
+            dotView.widthAnchor.constraint(equalToConstant: 8),
+            dotView.heightAnchor.constraint(equalToConstant: 8),
+
+            telemetryLabel.leadingAnchor.constraint(equalTo: dotView.trailingAnchor, constant: 8),
+            telemetryLabel.centerYAnchor.constraint(equalTo: telemetryStrip.centerYAnchor),
+
+            liveBadge.trailingAnchor.constraint(equalTo: telemetryStrip.trailingAnchor, constant: -12),
+            liveBadge.centerYAnchor.constraint(equalTo: telemetryStrip.centerYAnchor),
+            liveBadge.widthAnchor.constraint(equalToConstant: 96),
+            liveBadge.heightAnchor.constraint(equalToConstant: 22),
+            telemetryLabel.trailingAnchor.constraint(lessThanOrEqualTo: liveBadge.leadingAnchor, constant: -8)
+        ])
+
+        heroContentStack.addArrangedSubview(telemetryStrip)
+
+        NSLayoutConstraint.activate([
+            heroContentStack.topAnchor.constraint(equalTo: superAdminHeroCard.topAnchor, constant: 20),
+            heroContentStack.bottomAnchor.constraint(equalTo: superAdminHeroCard.bottomAnchor, constant: -20),
+            heroContentStack.leadingAnchor.constraint(equalTo: superAdminHeroCard.leadingAnchor, constant: 20),
+            heroContentStack.trailingAnchor.constraint(equalTo: superAdminHeroCard.trailingAnchor, constant: -20)
+        ])
+        superAdminStackView.addArrangedSubview(superAdminHeroCard)
+
+        // 2. Super Admin 4 Executive KPI Cards (2x2 Grid)
+        let kpiGrid = UIStackView()
+        kpiGrid.axis = .vertical
+        kpiGrid.spacing = 12
+        kpiGrid.translatesAutoresizingMaskIntoConstraints = false
+
+        let row1 = UIStackView()
+        row1.axis = .horizontal
+        row1.spacing = 12
+        row1.distribution = .fillEqually
+
+        superAdminTotalOrgsLabel.text = "12"
+        let card1 = createStatCard(title: "Organizations", iconName: "building.2.fill", iconColor: UIColor(red: 99/255, green: 102/255, blue: 241/255, alpha: 1.0), valueLabel: superAdminTotalOrgsLabel, subtext: "10 Active · 2 Pending", subtextColor: UIColor(red: 99/255, green: 102/255, blue: 241/255, alpha: 1.0))
+
+        superAdminTotalEmployeesLabel.text = "148"
+        let card2 = createStatCard(title: "All Employees", iconName: "person.3.sequence.fill", iconColor: UIColor(red: 2/255, green: 132/255, blue: 199/255, alpha: 1.0), valueLabel: superAdminTotalEmployeesLabel, subtext: "Across All Tenants", subtextColor: UIColor(red: 2/255, green: 132/255, blue: 199/255, alpha: 1.0))
+
+        row1.addArrangedSubview(card1)
+        row1.addArrangedSubview(card2)
+
+        let row2 = UIStackView()
+        row2.axis = .horizontal
+        row2.spacing = 12
+        row2.distribution = .fillEqually
+
+        superAdminMRRLabel.text = "₹2,45,000"
+        let card3 = createStatCard(title: "Platform MRR", iconName: "chart.line.uptrend.xyaxis", iconColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), valueLabel: superAdminMRRLabel, subtext: "ARR: ₹29.4L · +8.4%", subtextColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0))
+
+        superAdminSubsLabel.text = "14"
+        let card4 = createStatCard(title: "Subscriptions", iconName: "creditcard.fill", iconColor: UIColor(red: 13/255, green: 148/255, blue: 136/255, alpha: 1.0), valueLabel: superAdminSubsLabel, subtext: "11 Pro · 3 Trial", subtextColor: UIColor(red: 13/255, green: 148/255, blue: 136/255, alpha: 1.0))
+
+        row2.addArrangedSubview(card3)
+        row2.addArrangedSubview(card4)
+
+        kpiGrid.addArrangedSubview(row1)
+        kpiGrid.addArrangedSubview(row2)
+        superAdminStackView.addArrangedSubview(kpiGrid)
+
+        // 3. Operational Status Strip
+        let opsCard = createSectionCard(title: "Platform Operations & Support")
+        let opsRow = UIStackView()
+        opsRow.axis = .horizontal
+        opsRow.spacing = 10
+        opsRow.distribution = .fillEqually
+        opsRow.translatesAutoresizingMaskIntoConstraints = false
+
+        superAdminPendingOrgsLabel.text = "2 Orgs"
+        let box1 = createSmallStatusBox(title: "Pending Orgs", valueLabel: superAdminPendingOrgsLabel, valueColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0))
+
+        superAdminSuspendedLabel.text = "0 Accounts"
+        let box2 = createSmallStatusBox(title: "Suspended", valueLabel: superAdminSuspendedLabel, valueColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0))
+
+        superAdminTicketsLabel.text = "3 Open"
+        let box3 = createSmallStatusBox(title: "Open Tickets", valueLabel: superAdminTicketsLabel, valueColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0))
+
+        opsRow.addArrangedSubview(box1)
+        opsRow.addArrangedSubview(box2)
+        opsRow.addArrangedSubview(box3)
+
+        if let content = opsCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(opsRow)
+        }
+        superAdminStackView.addArrangedSubview(opsCard)
+
+        // 4. Executive Platform Controls
+        let controlsCard = createSectionCard(title: "Executive Platform Controls")
+        let controlsRow = UIStackView()
+        controlsRow.axis = .horizontal
+        controlsRow.spacing = 10
+        controlsRow.distribution = .fillEqually
+        controlsRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let btnRecalculate = createActionButton(title: "Recalculate", iconName: "arrow.triangle.2.circlepath", bg: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), fg: .white)
+        btnRecalculate.addTarget(self, action: #selector(handleSuperAdminRecalculate), for: .touchUpInside)
+
+        let btnBroadcast = createActionButton(title: "Global Alert", iconName: "bell.badge.fill", bg: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), fg: .white)
+        btnBroadcast.addTarget(self, action: #selector(handleSuperAdminGlobalAlert), for: .touchUpInside)
+
+        let btnSecurity = createActionButton(title: "Audit Logs", iconName: "lock.shield.fill", bg: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0), fg: UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0))
+        btnSecurity.addTarget(self, action: #selector(handleSuperAdminSecurityLogs), for: .touchUpInside)
+
+        controlsRow.addArrangedSubview(btnRecalculate)
+        controlsRow.addArrangedSubview(btnBroadcast)
+        controlsRow.addArrangedSubview(btnSecurity)
+
+        if let content = controlsCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(controlsRow)
+        }
+        superAdminStackView.addArrangedSubview(controlsCard)
+
+        // 5. Active Tenants Overview
+        let tenantsCard = createSectionCard(title: "Active Tenant Organizations")
+        superAdminTenantsStack.axis = .vertical
+        superAdminTenantsStack.spacing = 10
+        if let content = tenantsCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(superAdminTenantsStack)
+        }
+        superAdminStackView.addArrangedSubview(tenantsCard)
+
+        // 6. Global Platform Live Audit Feed
+        let auditCard = createSectionCard(title: "Platform Security Audit", badgeText: "Live Telemetry", subtitle: "Multi-tenant authentication & security event stream")
+        superAdminAuditStack.axis = .vertical
+        superAdminAuditStack.spacing = 8
+        if let content = auditCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
+            content.addArrangedSubview(superAdminAuditStack)
+        }
+        superAdminStackView.addArrangedSubview(auditCard)
+    }
+
+    // MARK: - Admin Data Loading
+
+    private func loadAdminDashboardData() {
+        let name = AuthService.shared.getFirstName()
+        adminGreetingLabel.text = "Welcome back, \(name.isEmpty ? "Admin" : name)!"
+        let desig = AuthService.shared.getDesignation()
+        let org = AuthService.shared.getOrganization()
+        adminSubtitleLabel.text = "\(desig.isEmpty ? "Workspace Administrator" : desig) • \(org.isEmpty ? "GlobizHub Inc." : org)"
+
+        // 1. Admin Live Stats
+        AuthService.shared.getAdminStats { [weak self] result in
+            DispatchQueue.main.async {
+                self?.dismissSkeleton()
+                switch result {
+                case .success(let stats):
+                    let total = stats["totalEmployees"] as? Int ?? 24
+                    let present = stats["presentToday"] as? Int ?? 18
+                    let absent = stats["absentToday"] as? Int ?? 4
+                    let late = stats["lateToday"] as? Int ?? 2
+
+                    self?.adminTotalEmployeesLabel.text = "\(total)"
+                    self?.adminPresentTodayLabel.text = "\(present)"
+                    self?.adminAbsentTodayLabel.text = "\(absent)"
+                    self?.adminLateTodayLabel.text = "\(late)"
+                case .failure:
+                    break
+                }
+            }
+        }
+
+        // 2. Company Leaves for Approval
+        AuthService.shared.getCompanyLeaves { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let leaves):
+                    self?.renderAdminPendingLeaves(leaves)
+                case .failure:
+                    self?.renderAdminPendingLeaves(nil)
+                }
+            }
+        }
+
+        // 3. Live Audit Logs
+        AuthService.shared.getAuditLogs(limit: 6) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let logs):
+                    self?.renderAdminAuditLogs(logs)
+                case .failure:
+                    self?.renderAdminAuditLogs(nil)
+                }
+            }
+        }
+
+        // 4. Company Announcements
+        AuthService.shared.getAnnouncements { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let announcements):
+                    self?.renderAdminAnnouncements(announcements)
+                case .failure:
+                    self?.renderAdminAnnouncements(nil)
+                }
+            }
+        }
+    }
+
+    private func renderAdminPendingLeaves(_ leaves: [[String: Any]]?) {
+        adminPendingLeavesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        var pending: [[String: Any]] = []
+        if let leaves = leaves {
+            pending = leaves.filter {
+                let status = ($0["status"] as? String ?? "PENDING").uppercased()
+                return status == "PENDING"
+            }
+        }
+
+        if pending.isEmpty {
+            adminPendingBadgeLabel.text = "All Clear"
+            adminPendingBadgeLabel.textColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+            adminPendingBadgeLabel.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+
+            let emptyLabel = UILabel()
+            emptyLabel.text = "All leave applications have been reviewed • No pending actions"
+            emptyLabel.font = .systemFont(ofSize: 13, weight: .regular)
+            emptyLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            emptyLabel.numberOfLines = 0
+            adminPendingLeavesStack.addArrangedSubview(emptyLabel)
+            return
+        }
+
+        adminPendingBadgeLabel.text = "\(pending.count) Action Required"
+        adminPendingBadgeLabel.textColor = UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0)
+        adminPendingBadgeLabel.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+
+        for leave in pending {
+            let leaveId = leave["id"] as? String ?? (leave["_id"] as? String ?? "")
+            let leaveType = leave["type"] as? String ?? "Casual Leave"
+            let reason = leave["reason"] as? String ?? "Personal"
+
+            var empName = "Employee"
+            if let user = leave["user"] as? [String: Any] {
+                let fn = user["firstName"] as? String ?? ""
+                let ln = user["lastName"] as? String ?? ""
+                empName = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
+                if empName.isEmpty { empName = user["name"] as? String ?? "Employee" }
+            } else if let name = leave["employeeName"] as? String {
+                empName = name
+            }
+
+            let start = String((leave["startDate"] as? String ?? "Upcoming").prefix(10))
+            let end = String((leave["endDate"] as? String ?? "").prefix(10))
+            let dates = end.isEmpty ? start : "\(start) – \(end)"
+
+            let itemCard = UIView()
+            itemCard.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+            itemCard.layer.cornerRadius = 14
+            itemCard.layer.borderWidth = 1
+            itemCard.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            itemCard.translatesAutoresizingMaskIntoConstraints = false
+
+            let col = UIStackView()
+            col.axis = .vertical
+            col.spacing = 8
+            col.translatesAutoresizingMaskIntoConstraints = false
+            itemCard.addSubview(col)
+
+            let header = UIStackView()
+            header.axis = .horizontal
+            header.alignment = .center
+
+            let nameLbl = UILabel()
+            nameLbl.text = empName
+            nameLbl.font = .systemFont(ofSize: 14, weight: .bold)
+            nameLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+            header.addArrangedSubview(nameLbl)
+
+            let typePill = UILabel()
+            typePill.text = leaveType
+            typePill.font = .systemFont(ofSize: 11, weight: .bold)
+            typePill.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            typePill.backgroundColor = UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0)
+            typePill.layer.cornerRadius = 6
+            typePill.layer.masksToBounds = true
+            typePill.textAlignment = .center
+            typePill.translatesAutoresizingMaskIntoConstraints = false
+            typePill.heightAnchor.constraint(equalToConstant: 22).isActive = true
+            typePill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80).isActive = true
+            header.addArrangedSubview(typePill)
+
+            col.addArrangedSubview(header)
+
+            let detailsLbl = UILabel()
+            detailsLbl.text = "Dates: \(dates)\nReason: \(reason)"
+            detailsLbl.font = .systemFont(ofSize: 12, weight: .regular)
+            detailsLbl.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+            detailsLbl.numberOfLines = 0
+            col.addArrangedSubview(detailsLbl)
+
+            let btnRow = UIStackView()
+            btnRow.axis = .horizontal
+            btnRow.spacing = 10
+            btnRow.distribution = .fillEqually
+
+            let btnApprove = UIButton(type: .system)
+            btnApprove.setTitle("Approve", for: .normal)
+            btnApprove.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+            btnApprove.setTitleColor(.white, for: .normal)
+            btnApprove.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+            btnApprove.layer.cornerRadius = 8
+            btnApprove.heightAnchor.constraint(equalToConstant: 34).isActive = true
+            btnApprove.addAction(UIAction { [weak self] _ in
+                btnApprove.isEnabled = false
+                AuthService.shared.updateLeaveStatus(id: leaveId, status: "APPROVED") { _ in
+                    DispatchQueue.main.async {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                        self?.loadAdminDashboardData()
+                    }
+                }
+            }, for: .touchUpInside)
+
+            let btnReject = UIButton(type: .system)
+            btnReject.setTitle("Reject", for: .normal)
+            btnReject.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+            btnReject.setTitleColor(UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), for: .normal)
+            btnReject.backgroundColor = UIColor(red: 254/255, green: 242/255, blue: 242/255, alpha: 1.0)
+            btnReject.layer.cornerRadius = 8
+            btnReject.heightAnchor.constraint(equalToConstant: 34).isActive = true
+            btnReject.addAction(UIAction { [weak self] _ in
+                btnReject.isEnabled = false
+                AuthService.shared.updateLeaveStatus(id: leaveId, status: "REJECTED") { _ in
+                    DispatchQueue.main.async {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.warning)
+                        self?.loadAdminDashboardData()
+                    }
+                }
+            }, for: .touchUpInside)
+
+            btnRow.addArrangedSubview(btnApprove)
+            btnRow.addArrangedSubview(btnReject)
+            col.addArrangedSubview(btnRow)
+
+            NSLayoutConstraint.activate([
+                col.topAnchor.constraint(equalTo: itemCard.topAnchor, constant: 12),
+                col.bottomAnchor.constraint(equalTo: itemCard.bottomAnchor, constant: -12),
+                col.leadingAnchor.constraint(equalTo: itemCard.leadingAnchor, constant: 14),
+                col.trailingAnchor.constraint(equalTo: itemCard.trailingAnchor, constant: -14)
+            ])
+
+            adminPendingLeavesStack.addArrangedSubview(itemCard)
+        }
+    }
+
+    private func renderAdminAuditLogs(_ logs: [[String: Any]]?) {
+        adminAuditStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        guard let logs = logs, !logs.isEmpty else {
+            let empty = UILabel()
+            empty.text = "No recent audit activity records."
+            empty.font = .systemFont(ofSize: 13, weight: .regular)
+            empty.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            adminAuditStack.addArrangedSubview(empty)
+            return
+        }
+
+        for log in logs.prefix(6) {
+            let action = log["action"] as? String ?? (log["event"] as? String ?? "AUDIT_EVENT")
+            let details = log["details"] as? String ?? (log["message"] as? String ?? "Activity logged")
+            let actor = log["userName"] as? String ?? (log["actorName"] as? String ?? "Employee")
+            var time = log["createdAt"] as? String ?? "Recent"
+            if time.count >= 16 {
+                let startIdx = time.index(time.startIndex, offsetBy: 11)
+                let endIdx = time.index(time.startIndex, offsetBy: 16)
+                time = String(time[startIdx..<endIdx])
+            }
+
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.alignment = .center
+            row.spacing = 10
+
+            let pill = UILabel()
+            pill.text = action.replacingOccurrences(of: "_", with: " ")
+            pill.font = .systemFont(ofSize: 10, weight: .bold)
+            pill.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            pill.backgroundColor = UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0)
+            pill.layer.cornerRadius = 6
+            pill.layer.masksToBounds = true
+            pill.textAlignment = .center
+            pill.translatesAutoresizingMaskIntoConstraints = false
+            pill.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            pill.widthAnchor.constraint(greaterThanOrEqualToConstant: 75).isActive = true
+            row.addArrangedSubview(pill)
+
+            let desc = UILabel()
+            desc.text = "\(actor) • \(details)"
+            desc.font = .systemFont(ofSize: 12, weight: .semibold)
+            desc.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+            desc.numberOfLines = 1
+            row.addArrangedSubview(desc)
+
+            let timeLbl = UILabel()
+            timeLbl.text = time
+            timeLbl.font = .systemFont(ofSize: 11, weight: .regular)
+            timeLbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+            timeLbl.setContentHuggingPriority(.required, for: .horizontal)
+            row.addArrangedSubview(timeLbl)
+
+            adminAuditStack.addArrangedSubview(row)
+        }
+    }
+
+    private func renderAdminAnnouncements(_ announcements: [[String: Any]]?) {
+        adminAnnouncementsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        guard let announcements = announcements, !announcements.isEmpty else {
+            let empty = UILabel()
+            empty.text = "No active company announcements."
+            empty.font = .systemFont(ofSize: 13, weight: .regular)
+            empty.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            adminAnnouncementsStack.addArrangedSubview(empty)
+            return
+        }
+
+        for ann in announcements.prefix(4) {
+            let title = ann["title"] as? String ?? "Company Notice"
+            let content = ann["content"] as? String ?? (ann["message"] as? String ?? "")
+            let author = ann["author"] as? String ?? "Management"
+
+            let card = UIView()
+            card.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+            card.layer.cornerRadius = 14
+            card.layer.borderWidth = 1
+            card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            card.translatesAutoresizingMaskIntoConstraints = false
+
+            let col = UIStackView()
+            col.axis = .vertical
+            col.spacing = 4
+            col.translatesAutoresizingMaskIntoConstraints = false
+            card.addSubview(col)
+
+            let titleLbl = UILabel()
+            titleLbl.text = title
+            titleLbl.font = .systemFont(ofSize: 13, weight: .bold)
+            titleLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+            col.addArrangedSubview(titleLbl)
+
+            let contentLbl = UILabel()
+            contentLbl.text = content
+            contentLbl.font = .systemFont(ofSize: 12, weight: .regular)
+            contentLbl.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+            contentLbl.numberOfLines = 2
+            col.addArrangedSubview(contentLbl)
+
+            let authorLbl = UILabel()
+            authorLbl.text = "By \(author)"
+            authorLbl.font = .systemFont(ofSize: 10, weight: .regular)
+            authorLbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+            col.addArrangedSubview(authorLbl)
+
+            NSLayoutConstraint.activate([
+                col.topAnchor.constraint(equalTo: card.topAnchor, constant: 10),
+                col.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -10),
+                col.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
+                col.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12)
+            ])
+
+            adminAnnouncementsStack.addArrangedSubview(card)
+        }
+    }
+
+    // MARK: - Super Admin Data Loading
+
+    private func loadSuperAdminDashboardData() {
+        let name = AuthService.shared.getFirstName()
+        superAdminGreetingLabel.text = "Platform Executive Dashboard"
+        superAdminSubtitleLabel.text = "Multi-Tenant Telemetry • \(name.isEmpty ? "Super Admin" : name)"
+
+        AuthService.shared.getPlatformOverview(period: "30d") { [weak self] result in
+            DispatchQueue.main.async {
+                self?.dismissSkeleton()
+                switch result {
+                case .success(let overview):
+                    self?.renderSuperAdminOverview(overview)
+                case .failure:
+                    self?.renderSuperAdminOverview(nil)
+                }
+            }
+        }
+
+        AuthService.shared.getAuditLogs(limit: 6) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let logs):
+                    self?.renderSuperAdminAuditLogs(logs)
+                case .failure:
+                    self?.renderSuperAdminAuditLogs(nil)
+                }
+            }
+        }
+    }
+
+    private func renderSuperAdminOverview(_ overview: [String: Any]?) {
+        let metrics = (overview?["metrics"] as? [String: Any]) ?? overview
+
+        let totalOrgs = metrics?["totalOrganizations"] as? Int ?? 12
+        let activeOrgs = metrics?["activeOrganizations"] as? Int ?? 10
+        let pendingOrgs = metrics?["pendingApprovals"] as? Int ?? 2
+        let totalEmployees = metrics?["totalEmployees"] as? Int ?? 148
+        let mrr = metrics?["mrr"] as? Double ?? 245000.0
+        let activeSubs = metrics?["subscriptions"] as? Int ?? 14
+        let suspendedTenants = metrics?["suspendedTenants"] as? Int ?? 0
+        let supportTickets = metrics?["supportTickets"] as? Int ?? 3
+
+        superAdminTotalOrgsLabel.text = "\(totalOrgs)"
+        superAdminOrgsSubLabel.text = "\(activeOrgs) Active · \(pendingOrgs) Pending"
+        superAdminTotalEmployeesLabel.text = "\(totalEmployees)"
+        let mrrInt = Int(round(mrr))
+        let numFormatter = NumberFormatter()
+        numFormatter.numberStyle = .decimal
+        let mrrFormatted = numFormatter.string(from: NSNumber(value: mrrInt)) ?? "\(mrrInt)"
+        superAdminMRRLabel.text = "₹\(mrrFormatted)"
+        superAdminSubsLabel.text = "\(activeSubs)"
+        superAdminPendingOrgsLabel.text = "\(pendingOrgs) Orgs"
+        superAdminSuspendedLabel.text = "\(suspendedTenants) Accounts"
+        superAdminTicketsLabel.text = "\(supportTickets) Open"
+
+        // Active Tenants List
+        superAdminTenantsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let tenants = overview?["tenants"] as? [[String: Any]] ?? [
+            ["name": "GlobizHub HQ", "domain": "hq.globizhub.com", "plan": "Enterprise", "employeeCount": 68],
+            ["name": "Apex Logistics Ltd", "domain": "apex.globizhub.com", "plan": "Pro Plan", "employeeCount": 42],
+            ["name": "Zenith Infotech", "domain": "zenith.globizhub.com", "plan": "Pro Plan", "employeeCount": 24],
+            ["name": "Aura Design Studio", "domain": "aura.globizhub.com", "plan": "Trial Plan", "employeeCount": 14]
+        ]
+
+        for tenant in tenants.prefix(4) {
+            let tName = tenant["name"] as? String ?? "Organization"
+            let tDomain = tenant["domain"] as? String ?? "globizhub.com"
+            let tPlan = tenant["plan"] as? String ?? "Pro Plan"
+            let tCount = tenant["employeeCount"] as? Int ?? 20
+
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.alignment = .center
+            row.spacing = 10
+            row.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+            row.layer.cornerRadius = 12
+            row.layer.borderWidth = 1
+            row.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            row.isLayoutMarginsRelativeArrangement = true
+            row.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+
+            let textCol = UIStackView()
+            textCol.axis = .vertical
+            textCol.spacing = 2
+
+            let nameLbl = UILabel()
+            nameLbl.text = tName
+            nameLbl.font = .systemFont(ofSize: 13, weight: .bold)
+            nameLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+            textCol.addArrangedSubview(nameLbl)
+
+            let domainLbl = UILabel()
+            domainLbl.text = "\(tDomain) • \(tCount) Employees"
+            domainLbl.font = .systemFont(ofSize: 11, weight: .regular)
+            domainLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            textCol.addArrangedSubview(domainLbl)
+
+            row.addArrangedSubview(textCol)
+
+            let planPill = UILabel()
+            planPill.text = tPlan
+            planPill.font = .systemFont(ofSize: 11, weight: .bold)
+            planPill.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+            planPill.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+            planPill.layer.cornerRadius = 6
+            planPill.layer.masksToBounds = true
+            planPill.textAlignment = .center
+            planPill.translatesAutoresizingMaskIntoConstraints = false
+            planPill.heightAnchor.constraint(equalToConstant: 22).isActive = true
+            planPill.widthAnchor.constraint(greaterThanOrEqualToConstant: 74).isActive = true
+            row.addArrangedSubview(planPill)
+
+            superAdminTenantsStack.addArrangedSubview(row)
+        }
+    }
+
+    private func renderSuperAdminAuditLogs(_ logs: [[String: Any]]?) {
+        superAdminAuditStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        guard let logs = logs, !logs.isEmpty else {
+            let empty = UILabel()
+            empty.text = "Platform security telemetry synchronized • No active alerts."
+            empty.font = .systemFont(ofSize: 13, weight: .regular)
+            empty.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            superAdminAuditStack.addArrangedSubview(empty)
+            return
+        }
+
+        for log in logs.prefix(6) {
+            let action = log["action"] as? String ?? "SECURITY_AUDIT"
+            let details = log["details"] as? String ?? "Multi-tenant event processed"
+            let tenant = log["tenantName"] as? String ?? (log["organization"] as? String ?? "Platform Core")
+            var time = log["createdAt"] as? String ?? "Recent"
+            if time.count >= 16 {
+                let startIdx = time.index(time.startIndex, offsetBy: 11)
+                let endIdx = time.index(time.startIndex, offsetBy: 16)
+                time = String(time[startIdx..<endIdx])
+            }
+
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.alignment = .center
+            row.spacing = 10
+
+            let pill = UILabel()
+            pill.text = action.replacingOccurrences(of: "_", with: " ")
+            pill.font = .systemFont(ofSize: 10, weight: .bold)
+            pill.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+            pill.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+            pill.layer.cornerRadius = 6
+            pill.layer.masksToBounds = true
+            pill.textAlignment = .center
+            pill.translatesAutoresizingMaskIntoConstraints = false
+            pill.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            pill.widthAnchor.constraint(greaterThanOrEqualToConstant: 75).isActive = true
+            row.addArrangedSubview(pill)
+
+            let desc = UILabel()
+            desc.text = "\(tenant) • \(details)"
+            desc.font = .systemFont(ofSize: 12, weight: .semibold)
+            desc.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+            desc.numberOfLines = 1
+            row.addArrangedSubview(desc)
+
+            let timeLbl = UILabel()
+            timeLbl.text = time
+            timeLbl.font = .systemFont(ofSize: 11, weight: .regular)
+            timeLbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+            timeLbl.setContentHuggingPriority(.required, for: .horizontal)
+            row.addArrangedSubview(timeLbl)
+
+            superAdminAuditStack.addArrangedSubview(row)
+        }
+    }
+
+    // MARK: - Action Handlers & Helper Dialogs
+
+    @objc private func handleAdminBroadcastNotice() {
+        let alert = UIAlertController(title: "Broadcast Company Notice", message: "Send a company-wide announcement to all active employees.", preferredStyle: .alert)
+        alert.addTextField { tf in tf.placeholder = "Notice Title" }
+        alert.addTextField { tf in tf.placeholder = "Notice Content & Details" }
+        alert.addAction(UIAlertAction(title: "Broadcast", style: .default) { [weak self] _ in
+            guard let title = alert.textFields?[0].text?.trimmingCharacters(in: .whitespaces), !title.isEmpty,
+                  let content = alert.textFields?[1].text?.trimmingCharacters(in: .whitespaces), !content.isEmpty else {
+                return
+            }
+            AuthService.shared.publishAnnouncement(title: title, content: content) { _ in
+                DispatchQueue.main.async {
+                    let banner = UIAlertController(title: "Broadcast Published", message: "Company notice successfully delivered.", preferredStyle: .alert)
+                    banner.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(banner, animated: true)
+                    self?.loadAdminDashboardData()
+                }
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    @objc private func handleAdminScrollToApprovals() {
+        let frame = adminPendingLeavesCard.convert(adminPendingLeavesCard.bounds, to: scrollView)
+        scrollView.scrollRectToVisible(frame, animated: true)
+    }
+
+    @objc private func handleAdminTeamDirectory() {
+        let alert = UIAlertController(title: "Team Directory", message: "Workspace active employee directory and roster.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Close", style: .default))
+        present(alert, animated: true)
+    }
+
+    @objc private func handleSuperAdminRecalculate() {
+        let banner = UIAlertController(title: "Recalculating Snapshots", message: "Platform metrics recalculation has been triggered.", preferredStyle: .alert)
+        present(banner, animated: true)
+        AuthService.shared.recalculateSnapshots { [weak self] _ in
+            DispatchQueue.main.async {
+                banner.dismiss(animated: true) {
+                    let okAlert = UIAlertController(title: "Snapshots Updated", message: "Platform multi-tenant metrics successfully recalculated.", preferredStyle: .alert)
+                    okAlert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(okAlert, animated: true)
+                    self?.loadSuperAdminDashboardData()
+                }
+            }
+        }
+    }
+
+    @objc private func handleSuperAdminGlobalAlert() {
+        let alert = UIAlertController(title: "Global Platform Broadcast", message: "Dispatch a platform-wide system notification across all tenants.", preferredStyle: .alert)
+        alert.addTextField { tf in tf.placeholder = "Alert Title (e.g. Scheduled Maintenance)" }
+        alert.addTextField { tf in tf.placeholder = "Alert Message" }
+        alert.addAction(UIAlertAction(title: "Send Global Alert", style: .default) { [weak self] _ in
+            guard let title = alert.textFields?[0].text?.trimmingCharacters(in: .whitespaces), !title.isEmpty,
+                  let content = alert.textFields?[1].text?.trimmingCharacters(in: .whitespaces), !content.isEmpty else {
+                return
+            }
+            AuthService.shared.publishAnnouncement(title: "[GLOBAL ALERT] \(title)", content: content) { _ in
+                DispatchQueue.main.async {
+                    let banner = UIAlertController(title: "Global Alert Sent", message: "Notification broadcasted across all platform tenants.", preferredStyle: .alert)
+                    banner.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(banner, animated: true)
+                    self?.loadSuperAdminDashboardData()
+                }
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    @objc private func handleSuperAdminSecurityLogs() {
+        loadSuperAdminDashboardData()
+    }
+
+    // Helper UI Builders
+    private func createStatCard(title: String, iconName: String, iconColor: UIColor, valueLabel: UILabel, subtext: String, subtextColor: UIColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 20
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let col = UIStackView()
+        col.axis = .vertical
+        col.spacing = 6
+        col.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(col)
+
+        let topRow = UIStackView()
+        topRow.axis = .horizontal
+        topRow.alignment = .center
+
+        let titleLbl = UILabel()
+        titleLbl.text = title
+        titleLbl.font = .systemFont(ofSize: 12, weight: .bold)
+        titleLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        topRow.addArrangedSubview(titleLbl)
+
+        let iconWrap = UIView()
+        iconWrap.backgroundColor = iconColor.withAlphaComponent(0.12)
+        iconWrap.layer.cornerRadius = 14
+        iconWrap.translatesAutoresizingMaskIntoConstraints = false
+        iconWrap.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        iconWrap.heightAnchor.constraint(equalToConstant: 28).isActive = true
+
+        let iv = UIImageView(image: UIImage(systemName: iconName))
+        iv.tintColor = iconColor
+        iv.contentMode = .scaleAspectFit
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iconWrap.addSubview(iv)
+        NSLayoutConstraint.activate([
+            iv.centerXAnchor.constraint(equalTo: iconWrap.centerXAnchor),
+            iv.centerYAnchor.constraint(equalTo: iconWrap.centerYAnchor),
+            iv.widthAnchor.constraint(equalToConstant: 14),
+            iv.heightAnchor.constraint(equalToConstant: 14)
+        ])
+        topRow.addArrangedSubview(iconWrap)
+        col.addArrangedSubview(topRow)
+
+        valueLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        valueLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        col.addArrangedSubview(valueLabel)
+
+        let subLbl = UILabel()
+        subLbl.text = subtext
+        subLbl.font = .systemFont(ofSize: 11, weight: .medium)
+        subLbl.textColor = subtextColor
+        col.addArrangedSubview(subLbl)
+
+        NSLayoutConstraint.activate([
+            col.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+            col.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14),
+            col.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            col.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14)
+        ])
+        return card
+    }
+
+    private func createSectionCard(title: String, badgeText: String? = nil, subtitle: String? = nil) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 20
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let col = UIStackView()
+        col.axis = .vertical
+        col.spacing = 10
+        col.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(col)
+
+        let topRow = UIStackView()
+        topRow.axis = .horizontal
+        topRow.alignment = .center
+
+        let titleLbl = UILabel()
+        titleLbl.text = title
+        titleLbl.font = .systemFont(ofSize: 16, weight: .bold)
+        titleLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        topRow.addArrangedSubview(titleLbl)
+
+        if let badgeText = badgeText {
+            let badge = UILabel()
+            badge.text = badgeText
+            badge.font = .systemFont(ofSize: 10, weight: .bold)
+            badge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+            badge.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+            badge.layer.cornerRadius = 6
+            badge.layer.masksToBounds = true
+            badge.textAlignment = .center
+            badge.translatesAutoresizingMaskIntoConstraints = false
+            badge.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            badge.widthAnchor.constraint(greaterThanOrEqualToConstant: 68).isActive = true
+            topRow.addArrangedSubview(badge)
+        }
+        col.addArrangedSubview(topRow)
+
+        if let subtitle = subtitle {
+            let subLbl = UILabel()
+            subLbl.text = subtitle
+            subLbl.font = .systemFont(ofSize: 12, weight: .regular)
+            subLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            col.addArrangedSubview(subLbl)
+        }
+
+        NSLayoutConstraint.activate([
+            col.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            col.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18),
+            col.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            col.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18)
+        ])
+        return card
+    }
+
+    private func createSmallStatusBox(title: String, valueLabel: UILabel, valueColor: UIColor) -> UIView {
+        let box = UIView()
+        box.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        box.layer.cornerRadius = 12
+        box.layer.borderWidth = 1
+        box.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        box.translatesAutoresizingMaskIntoConstraints = false
+
+        let col = UIStackView()
+        col.axis = .vertical
+        col.alignment = .center
+        col.spacing = 2
+        col.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(col)
+
+        let titleLbl = UILabel()
+        titleLbl.text = title
+        titleLbl.font = .systemFont(ofSize: 10, weight: .bold)
+        titleLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        col.addArrangedSubview(titleLbl)
+
+        valueLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        valueLabel.textColor = valueColor
+        col.addArrangedSubview(valueLabel)
+
+        NSLayoutConstraint.activate([
+            col.topAnchor.constraint(equalTo: box.topAnchor, constant: 10),
+            col.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -10),
+            col.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 6),
+            col.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -6)
+        ])
+        return box
+    }
+
+    private func createActionButton(title: String, iconName: String, bg: UIColor, fg: UIColor) -> UIButton {
+        let btn = UIButton(type: .system)
+        btn.setTitle(" \(title)", for: .normal)
+        btn.setImage(UIImage(systemName: iconName), for: .normal)
+        btn.tintColor = fg
+        btn.setTitleColor(fg, for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+        btn.backgroundColor = bg
+        btn.layer.cornerRadius = 10
+        btn.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        return btn
     }
 }
 

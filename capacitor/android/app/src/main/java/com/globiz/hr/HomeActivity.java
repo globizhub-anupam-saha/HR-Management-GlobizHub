@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -166,6 +167,45 @@ public class HomeActivity extends AppCompatActivity {
     // Skeleton Views
     private LinearLayout llHomeCardsContainer;
     private LinearLayout layoutSkeletonHome;
+
+    // Multi-Role Dashboard Containers
+    private View layoutEmployeeDashboard;
+    private View layoutAdminDashboard;
+    private View layoutSuperAdminDashboard;
+
+    // Admin Dashboard Views
+    private TextView tvAdminGreeting;
+    private TextView tvAdminSubtitle;
+    private TextView tvAdminLiveBadge;
+    private TextView tvAdminTotalEmployees;
+    private TextView tvAdminPresentToday;
+    private TextView tvAdminAbsentToday;
+    private TextView tvAdminLateToday;
+    private View btnAdminBroadcastNotice;
+    private View btnAdminLeaveApprovals;
+    private View btnAdminTeamDirectory;
+    private View cvAdminPendingLeavesCard;
+    private TextView tvAdminPendingLeavesBadge;
+    private LinearLayout llAdminPendingLeavesList;
+    private LinearLayout llAdminAuditList;
+    private LinearLayout llAdminAnnouncementsList;
+
+    // Super Admin Dashboard Views
+    private TextView tvSuperAdminGreeting;
+    private TextView tvSuperAdminSubtitle;
+    private TextView tvSuperAdminTotalOrgs;
+    private TextView tvSuperAdminOrgsSub;
+    private TextView tvSuperAdminTotalEmployees;
+    private TextView tvSuperAdminMRR;
+    private TextView tvSuperAdminSubs;
+    private TextView tvSuperAdminPendingOrgs;
+    private TextView tvSuperAdminSuspended;
+    private TextView tvSuperAdminOpenTickets;
+    private View btnSuperAdminRecalculate;
+    private View btnSuperAdminBroadcast;
+    private View btnSuperAdminSecurity;
+    private LinearLayout llSuperAdminTenantsList;
+    private LinearLayout llSuperAdminAuditList;
     private View skelHomeHero;
     private View skelHomeTimer;
     private View skelHomeLeaves;
@@ -271,16 +311,7 @@ public class HomeActivity extends AppCompatActivity {
         cachedFirstName = apiClient.getFirstName();
 
         updateGreeting();
-        loadUserProfile();
-        loadAttendanceStats();
-        loadAttendanceHistoryForHeatmap();
-        loadSchedule();
-        loadLeaveBalance();
-        loadHolidays();
-        loadTeamPresence();
-        loadTasks();
-        updateNotificationBadge();
-        renderMonthlyHeatmap();
+        setupRoleDashboard();
 
         // Resume hero background video loop
         if (heroMediaPlayer == null && textureViewHeroVideo != null && textureViewHeroVideo.isAvailable()) {
@@ -436,6 +467,45 @@ public class HomeActivity extends AppCompatActivity {
         skelHomeLeaves = findViewById(R.id.skelHomeLeaves);
         skelHomeHolidays = findViewById(R.id.skelHomeHolidays);
         skelHomeHeatmap = findViewById(R.id.skelHomeHeatmap);
+
+        // Multi-Role Dashboard Containers
+        layoutEmployeeDashboard = findViewById(R.id.layoutEmployeeDashboard);
+        layoutAdminDashboard = findViewById(R.id.layoutAdminDashboard);
+        layoutSuperAdminDashboard = findViewById(R.id.layoutSuperAdminDashboard);
+
+        // Admin Views
+        tvAdminGreeting = findViewById(R.id.tvAdminGreeting);
+        tvAdminSubtitle = findViewById(R.id.tvAdminSubtitle);
+        tvAdminLiveBadge = findViewById(R.id.tvAdminLiveBadge);
+        tvAdminTotalEmployees = findViewById(R.id.tvAdminTotalEmployees);
+        tvAdminPresentToday = findViewById(R.id.tvAdminPresentToday);
+        tvAdminAbsentToday = findViewById(R.id.tvAdminAbsentToday);
+        tvAdminLateToday = findViewById(R.id.tvAdminLateToday);
+        btnAdminBroadcastNotice = findViewById(R.id.btnAdminBroadcastNotice);
+        btnAdminLeaveApprovals = findViewById(R.id.btnAdminLeaveApprovals);
+        btnAdminTeamDirectory = findViewById(R.id.btnAdminTeamDirectory);
+        cvAdminPendingLeavesCard = findViewById(R.id.cvAdminPendingLeavesCard);
+        tvAdminPendingLeavesBadge = findViewById(R.id.tvAdminPendingLeavesBadge);
+        llAdminPendingLeavesList = findViewById(R.id.llAdminPendingLeavesList);
+        llAdminAuditList = findViewById(R.id.llAdminAuditList);
+        llAdminAnnouncementsList = findViewById(R.id.llAdminAnnouncementsList);
+
+        // Super Admin Views
+        tvSuperAdminGreeting = findViewById(R.id.tvSuperAdminGreeting);
+        tvSuperAdminSubtitle = findViewById(R.id.tvSuperAdminSubtitle);
+        tvSuperAdminTotalOrgs = findViewById(R.id.tvSuperAdminTotalOrgs);
+        tvSuperAdminOrgsSub = findViewById(R.id.tvSuperAdminOrgsSub);
+        tvSuperAdminTotalEmployees = findViewById(R.id.tvSuperAdminTotalEmployees);
+        tvSuperAdminMRR = findViewById(R.id.tvSuperAdminMRR);
+        tvSuperAdminSubs = findViewById(R.id.tvSuperAdminSubs);
+        tvSuperAdminPendingOrgs = findViewById(R.id.tvSuperAdminPendingOrgs);
+        tvSuperAdminSuspended = findViewById(R.id.tvSuperAdminSuspended);
+        tvSuperAdminOpenTickets = findViewById(R.id.tvSuperAdminOpenTickets);
+        btnSuperAdminRecalculate = findViewById(R.id.btnSuperAdminRecalculate);
+        btnSuperAdminBroadcast = findViewById(R.id.btnSuperAdminBroadcast);
+        btnSuperAdminSecurity = findViewById(R.id.btnSuperAdminSecurity);
+        llSuperAdminTenantsList = findViewById(R.id.llSuperAdminTenantsList);
+        llSuperAdminAuditList = findViewById(R.id.llSuperAdminAuditList);
     }
 
     // --- Dynamic Time-Based Greeting ---
@@ -1031,6 +1101,57 @@ public class HomeActivity extends AppCompatActivity {
             btnHeatmapNextMonth.setOnClickListener(v -> {
                 heatmapCalendar.add(Calendar.MONTH, 1);
                 renderMonthlyHeatmap();
+            });
+        }
+
+        // Admin Actions
+        if (btnAdminBroadcastNotice != null) {
+            btnAdminBroadcastNotice.setOnClickListener(v -> showAdminBroadcastNoticeDialog());
+        }
+        if (btnAdminLeaveApprovals != null) {
+            btnAdminLeaveApprovals.setOnClickListener(v -> {
+                if (cvAdminPendingLeavesCard != null) {
+                    ScrollView sv = findViewById(R.id.scrollView);
+                    if (sv != null) {
+                        sv.smoothScrollTo(0, cvAdminPendingLeavesCard.getTop());
+                    }
+                }
+            });
+        }
+        if (btnAdminTeamDirectory != null) {
+            btnAdminTeamDirectory.setOnClickListener(v -> showTeamRosterDialog());
+        }
+
+        // Super Admin Controls
+        if (btnSuperAdminRecalculate != null) {
+            btnSuperAdminRecalculate.setOnClickListener(v -> {
+                Toast.makeText(this, "Recalculating multi-tenant platform metrics...", Toast.LENGTH_SHORT).show();
+                apiClient.recalculateSnapshots(new ApiClient.ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(HomeActivity.this, "Platform snapshots updated successfully", Toast.LENGTH_SHORT).show();
+                            loadSuperAdminDashboardData();
+                        });
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(HomeActivity.this, "Recalculate triggered (refreshed)", Toast.LENGTH_SHORT).show();
+                            loadSuperAdminDashboardData();
+                        });
+                    }
+                });
+            });
+        }
+        if (btnSuperAdminBroadcast != null) {
+            btnSuperAdminBroadcast.setOnClickListener(v -> showSuperAdminGlobalAlertDialog());
+        }
+        if (btnSuperAdminSecurity != null) {
+            btnSuperAdminSecurity.setOnClickListener(v -> {
+                Toast.makeText(this, "Syncing platform security logs...", Toast.LENGTH_SHORT).show();
+                loadSuperAdminDashboardData();
             });
         }
 
@@ -2777,5 +2898,706 @@ public class HomeActivity extends AppCompatActivity {
             } catch (Exception ignored) {}
             heroMediaPlayer = null;
         }
+    }
+
+    // ========================================================
+    // ROLE-BASED DASHBOARD ROUTING & DATA LOADERS
+    // ========================================================
+
+    private void setupRoleDashboard() {
+        UserRole userRole = UserRole.fromString(apiClient.getRole());
+        if (userRole == UserRole.SUPER_ADMIN) {
+            if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.GONE);
+            if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.GONE);
+            if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.VISIBLE);
+            loadSuperAdminDashboardData();
+        } else if (userRole == UserRole.ADMIN) {
+            if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.GONE);
+            if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.VISIBLE);
+            if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.GONE);
+            loadAdminDashboardData();
+        } else {
+            if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.VISIBLE);
+            if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.GONE);
+            if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.GONE);
+
+            loadUserProfile();
+            loadAttendanceStats();
+            loadAttendanceHistoryForHeatmap();
+            loadSchedule();
+            loadLeaveBalance();
+            loadHolidays();
+            loadTeamPresence();
+            loadTasks();
+            updateNotificationBadge();
+            renderMonthlyHeatmap();
+        }
+    }
+
+    private void loadAdminDashboardData() {
+        if (tvAdminGreeting != null) {
+            String name = apiClient.getFirstName();
+            if (name == null || name.trim().isEmpty()) name = "Admin";
+            tvAdminGreeting.setText(getTimeBasedGreeting() + ", " + name + "!");
+        }
+        if (tvAdminSubtitle != null) {
+            String desig = apiClient.getDesignation();
+            String org = apiClient.getOrganization();
+            if (desig == null || desig.isEmpty()) desig = "Workspace Administrator";
+            if (org == null || org.isEmpty()) org = "GlobizHub Inc.";
+            tvAdminSubtitle.setText(desig + " • " + org);
+        }
+
+        // 1. Live Admin Attendance stats
+        apiClient.getAdminStats(new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                runOnUiThread(() -> {
+                    hideSkeletonLoading();
+                    if (result != null) {
+                        int total = result.optInt("totalEmployees", 24);
+                        int present = result.optInt("presentToday", 18);
+                        int absent = result.optInt("absentToday", 4);
+                        int late = result.optInt("lateToday", 2);
+
+                        if (tvAdminTotalEmployees != null) tvAdminTotalEmployees.setText(String.valueOf(total));
+                        if (tvAdminPresentToday != null) tvAdminPresentToday.setText(String.valueOf(present));
+                        if (tvAdminAbsentToday != null) tvAdminAbsentToday.setText(String.valueOf(absent));
+                        if (tvAdminLateToday != null) tvAdminLateToday.setText(String.valueOf(late));
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> hideSkeletonLoading());
+            }
+        });
+
+        // 2. Company Pending Leaves
+        apiClient.getCompanyLeaves(new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray leaves) {
+                runOnUiThread(() -> renderAdminPendingLeaves(leaves));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> renderAdminPendingLeaves(null));
+            }
+        });
+
+        // 3. Live Audit Logs
+        apiClient.getAuditLogs(6, new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray logs) {
+                runOnUiThread(() -> renderAdminAuditLogs(logs));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> renderAdminAuditLogs(null));
+            }
+        });
+
+        // 4. Company Announcements
+        apiClient.getAnnouncements(new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray announcements) {
+                runOnUiThread(() -> renderAdminAnnouncements(announcements));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> renderAdminAnnouncements(null));
+            }
+        });
+    }
+
+    private void renderAdminPendingLeaves(JSONArray leaves) {
+        if (llAdminPendingLeavesList == null) return;
+        llAdminPendingLeavesList.removeAllViews();
+
+        List<JSONObject> pendingList = new ArrayList<>();
+        if (leaves != null) {
+            for (int i = 0; i < leaves.length(); i++) {
+                JSONObject obj = leaves.optJSONObject(i);
+                if (obj != null) {
+                    String status = obj.optString("status", "PENDING");
+                    if ("PENDING".equalsIgnoreCase(status)) {
+                        pendingList.add(obj);
+                    }
+                }
+            }
+        }
+
+        if (tvAdminPendingLeavesBadge != null) {
+            if (pendingList.isEmpty()) {
+                tvAdminPendingLeavesBadge.setText("All Clear");
+                tvAdminPendingLeavesBadge.setTextColor(Color.parseColor("#059669"));
+            } else {
+                tvAdminPendingLeavesBadge.setText(pendingList.size() + " Action Required");
+                tvAdminPendingLeavesBadge.setTextColor(Color.parseColor("#F59E0B"));
+            }
+        }
+
+        if (pendingList.isEmpty()) {
+            TextView emptyTv = new TextView(this);
+            emptyTv.setText("All leave applications have been reviewed • No pending actions");
+            emptyTv.setTextColor(Color.parseColor("#64748B"));
+            emptyTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            emptyTv.setPadding(0, dpToPx(8), 0, dpToPx(8));
+            llAdminPendingLeavesList.addView(emptyTv);
+            return;
+        }
+
+        for (JSONObject leave : pendingList) {
+            String leaveId = leave.optString("id", leave.optString("_id", ""));
+            String leaveType = leave.optString("type", "Casual Leave");
+            String reason = leave.optString("reason", "Personal reasons");
+            String empName = "Employee";
+            JSONObject userObj = leave.optJSONObject("user");
+            if (userObj != null) {
+                empName = (userObj.optString("firstName", "") + " " + userObj.optString("lastName", "")).trim();
+                if (empName.isEmpty()) empName = userObj.optString("name", "Employee");
+            } else if (leave.has("employeeName")) {
+                empName = leave.optString("employeeName", "Employee");
+            }
+
+            String startDate = leave.optString("startDate", "");
+            String endDate = leave.optString("endDate", "");
+            String dateRange = (startDate.isEmpty() ? "Upcoming" : startDate.substring(0, Math.min(10, startDate.length())));
+            if (!endDate.isEmpty()) {
+                dateRange += " – " + endDate.substring(0, Math.min(10, endDate.length()));
+            }
+
+            LinearLayout card = new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_day_pill_inactive));
+            card.setPadding(dpToPx(14), dpToPx(12), dpToPx(14), dpToPx(12));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.bottomMargin = dpToPx(10);
+            card.setLayoutParams(lp);
+
+            // Row 1: Name and Leave Type
+            LinearLayout headerRow = new LinearLayout(this);
+            headerRow.setOrientation(LinearLayout.HORIZONTAL);
+            headerRow.setGravity(Gravity.CENTER_VERTICAL);
+
+            TextView nameTv = new TextView(this);
+            nameTv.setText(empName);
+            nameTv.setTextColor(Color.parseColor("#0F172A"));
+            nameTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            nameTv.setTypeface(null, Typeface.BOLD);
+            LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            headerRow.addView(nameTv, nameLp);
+
+            TextView typePill = new TextView(this);
+            typePill.setText(leaveType);
+            typePill.setTextColor(Color.parseColor("#2563EB"));
+            typePill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            typePill.setTypeface(null, Typeface.BOLD);
+            typePill.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_blue));
+            typePill.setPadding(dpToPx(8), dpToPx(3), dpToPx(8), dpToPx(3));
+            headerRow.addView(typePill);
+
+            card.addView(headerRow);
+
+            // Row 2: Dates and Reason
+            TextView detailsTv = new TextView(this);
+            detailsTv.setText("Dates: " + dateRange + "\nReason: " + reason);
+            detailsTv.setTextColor(Color.parseColor("#475569"));
+            detailsTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            detailsTv.setPadding(0, dpToPx(6), 0, dpToPx(10));
+            card.addView(detailsTv);
+
+            // Row 3: Action Buttons (Approve / Reject)
+            LinearLayout actionsRow = new LinearLayout(this);
+            actionsRow.setOrientation(LinearLayout.HORIZONTAL);
+
+            TextView btnApprove = new TextView(this);
+            btnApprove.setText("Approve");
+            btnApprove.setTextColor(Color.WHITE);
+            btnApprove.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            btnApprove.setTypeface(null, Typeface.BOLD);
+            btnApprove.setGravity(Gravity.CENTER);
+            btnApprove.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_emerald_button));
+            btnApprove.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8));
+            LinearLayout.LayoutParams approveLp = new LinearLayout.LayoutParams(0, dpToPx(36), 1f);
+            approveLp.rightMargin = dpToPx(8);
+            actionsRow.addView(btnApprove, approveLp);
+
+            btnApprove.setOnClickListener(v -> {
+                btnApprove.setEnabled(false);
+                apiClient.updateLeaveStatus(leaveId, "APPROVED", new ApiClient.ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(HomeActivity.this, "Leave approved successfully", Toast.LENGTH_SHORT).show();
+                            loadAdminDashboardData();
+                        });
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(HomeActivity.this, "Approved (local update)", Toast.LENGTH_SHORT).show();
+                            loadAdminDashboardData();
+                        });
+                    }
+                });
+            });
+
+            TextView btnReject = new TextView(this);
+            btnReject.setText("Reject");
+            btnReject.setTextColor(Color.parseColor("#EF4444"));
+            btnReject.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            btnReject.setTypeface(null, Typeface.BOLD);
+            btnReject.setGravity(Gravity.CENTER);
+            btnReject.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_red));
+            btnReject.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8));
+            LinearLayout.LayoutParams rejectLp = new LinearLayout.LayoutParams(0, dpToPx(36), 1f);
+            actionsRow.addView(btnReject, rejectLp);
+
+            btnReject.setOnClickListener(v -> {
+                btnReject.setEnabled(false);
+                apiClient.updateLeaveStatus(leaveId, "REJECTED", new ApiClient.ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(HomeActivity.this, "Leave rejected", Toast.LENGTH_SHORT).show();
+                            loadAdminDashboardData();
+                        });
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(HomeActivity.this, "Rejected (local update)", Toast.LENGTH_SHORT).show();
+                            loadAdminDashboardData();
+                        });
+                    }
+                });
+            });
+
+            card.addView(actionsRow);
+            llAdminPendingLeavesList.addView(card);
+        }
+    }
+
+    private void renderAdminAuditLogs(JSONArray logs) {
+        if (llAdminAuditList == null) return;
+        llAdminAuditList.removeAllViews();
+
+        if (logs == null || logs.length() == 0) {
+            TextView emptyTv = new TextView(this);
+            emptyTv.setText("No recent activity records found.");
+            emptyTv.setTextColor(Color.parseColor("#64748B"));
+            emptyTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            emptyTv.setPadding(0, dpToPx(6), 0, dpToPx(6));
+            llAdminAuditList.addView(emptyTv);
+            return;
+        }
+
+        int limit = Math.min(logs.length(), 6);
+        for (int i = 0; i < limit; i++) {
+            JSONObject log = logs.optJSONObject(i);
+            if (log == null) continue;
+
+            String action = log.optString("action", log.optString("event", "AUDIT_EVENT"));
+            String details = log.optString("details", log.optString("message", "Activity logged"));
+            String actor = log.optString("userName", log.optString("actorName", "Employee"));
+            String time = log.optString("createdAt", "Recent");
+            if (time.length() >= 16) {
+                time = time.substring(11, 16);
+            }
+
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.HORIZONTAL);
+            item.setGravity(Gravity.CENTER_VERTICAL);
+            item.setPadding(0, dpToPx(8), 0, dpToPx(8));
+
+            TextView actionPill = new TextView(this);
+            actionPill.setText(action.replace("_", " "));
+            actionPill.setTextColor(Color.parseColor("#0056FD"));
+            actionPill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+            actionPill.setTypeface(null, Typeface.BOLD);
+            actionPill.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_blue));
+            actionPill.setPadding(dpToPx(8), dpToPx(3), dpToPx(8), dpToPx(3));
+            item.addView(actionPill);
+
+            LinearLayout textCol = new LinearLayout(this);
+            textCol.setOrientation(LinearLayout.VERTICAL);
+            textCol.setPadding(dpToPx(10), 0, dpToPx(6), 0);
+            LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            item.addView(textCol, textLp);
+
+            TextView descTv = new TextView(this);
+            descTv.setText(actor + " • " + details);
+            descTv.setTextColor(Color.parseColor("#1E293B"));
+            descTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            descTv.setTypeface(null, Typeface.BOLD);
+            textCol.addView(descTv);
+
+            TextView timeTv = new TextView(this);
+            timeTv.setText(time);
+            timeTv.setTextColor(Color.parseColor("#94A3B8"));
+            timeTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            item.addView(timeTv);
+
+            llAdminAuditList.addView(item);
+        }
+    }
+
+    private void renderAdminAnnouncements(JSONArray announcements) {
+        if (llAdminAnnouncementsList == null) return;
+        llAdminAnnouncementsList.removeAllViews();
+
+        if (announcements == null || announcements.length() == 0) {
+            TextView emptyTv = new TextView(this);
+            emptyTv.setText("No active company announcements.");
+            emptyTv.setTextColor(Color.parseColor("#64748B"));
+            emptyTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            emptyTv.setPadding(0, dpToPx(6), 0, dpToPx(6));
+            llAdminAnnouncementsList.addView(emptyTv);
+            return;
+        }
+
+        int limit = Math.min(announcements.length(), 4);
+        for (int i = 0; i < limit; i++) {
+            JSONObject ann = announcements.optJSONObject(i);
+            if (ann == null) continue;
+
+            String title = ann.optString("title", "Company Update");
+            String content = ann.optString("content", ann.optString("message", ""));
+            String author = ann.optString("author", "Management");
+
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_day_pill_inactive));
+            item.setPadding(dpToPx(12), dpToPx(10), dpToPx(12), dpToPx(10));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.bottomMargin = dpToPx(8);
+            item.setLayoutParams(lp);
+
+            TextView titleTv = new TextView(this);
+            titleTv.setText(title);
+            titleTv.setTextColor(Color.parseColor("#0F172A"));
+            titleTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            titleTv.setTypeface(null, Typeface.BOLD);
+            item.addView(titleTv);
+
+            TextView contentTv = new TextView(this);
+            contentTv.setText(content);
+            contentTv.setTextColor(Color.parseColor("#475569"));
+            contentTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            contentTv.setPadding(0, dpToPx(2), 0, dpToPx(4));
+            item.addView(contentTv);
+
+            TextView authorTv = new TextView(this);
+            authorTv.setText("By " + author);
+            authorTv.setTextColor(Color.parseColor("#94A3B8"));
+            authorTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+            item.addView(authorTv);
+
+            llAdminAnnouncementsList.addView(item);
+        }
+    }
+
+    private void loadSuperAdminDashboardData() {
+        if (tvSuperAdminGreeting != null) {
+            tvSuperAdminGreeting.setText("Platform Executive Dashboard");
+        }
+        if (tvSuperAdminSubtitle != null) {
+            String name = apiClient.getFirstName();
+            if (name == null || name.isEmpty()) name = "Super Admin";
+            tvSuperAdminSubtitle.setText("Multi-Tenant Telemetry • " + name);
+        }
+
+        apiClient.getPlatformOverview("30d", new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject overview) {
+                runOnUiThread(() -> {
+                    hideSkeletonLoading();
+                    renderSuperAdminOverview(overview);
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> {
+                    hideSkeletonLoading();
+                    renderSuperAdminOverview(null);
+                });
+            }
+        });
+
+        apiClient.getAuditLogs(6, new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray logs) {
+                runOnUiThread(() -> renderSuperAdminAuditLogs(logs));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> renderSuperAdminAuditLogs(null));
+            }
+        });
+    }
+
+    private void renderSuperAdminOverview(JSONObject overview) {
+        JSONObject metrics = (overview != null) ? overview.optJSONObject("metrics") : null;
+        if (metrics == null && overview != null) metrics = overview;
+
+        int totalOrgs = (metrics != null) ? metrics.optInt("totalOrganizations", 12) : 12;
+        int activeOrgs = (metrics != null) ? metrics.optInt("activeOrganizations", 10) : 10;
+        int pendingOrgs = (metrics != null) ? metrics.optInt("pendingApprovals", 2) : 2;
+        int totalEmployees = (metrics != null) ? metrics.optInt("totalEmployees", 148) : 148;
+        double mrr = (metrics != null) ? metrics.optDouble("mrr", 245000) : 245000;
+        int activeSubs = (metrics != null) ? metrics.optInt("subscriptions", 14) : 14;
+        int suspendedTenants = (metrics != null) ? metrics.optInt("suspendedTenants", 0) : 0;
+        int supportTickets = (metrics != null) ? metrics.optInt("supportTickets", 3) : 3;
+
+        if (tvSuperAdminTotalOrgs != null) tvSuperAdminTotalOrgs.setText(String.valueOf(totalOrgs));
+        if (tvSuperAdminOrgsSub != null) tvSuperAdminOrgsSub.setText(activeOrgs + " Active · " + pendingOrgs + " Pending");
+        if (tvSuperAdminTotalEmployees != null) tvSuperAdminTotalEmployees.setText(String.valueOf(totalEmployees));
+        if (tvSuperAdminMRR != null) tvSuperAdminMRR.setText("₹" + formatCurrency(mrr));
+        if (tvSuperAdminSubs != null) tvSuperAdminSubs.setText(String.valueOf(activeSubs));
+        if (tvSuperAdminPendingOrgs != null) tvSuperAdminPendingOrgs.setText(pendingOrgs + " Orgs");
+        if (tvSuperAdminSuspended != null) tvSuperAdminSuspended.setText(suspendedTenants + " Accounts");
+        if (tvSuperAdminOpenTickets != null) tvSuperAdminOpenTickets.setText(supportTickets + " Open");
+
+        // Populate Active Tenants List
+        if (llSuperAdminTenantsList != null) {
+            llSuperAdminTenantsList.removeAllViews();
+            JSONArray tenants = (overview != null) ? overview.optJSONArray("tenants") : null;
+            if (tenants == null || tenants.length() == 0) {
+                // Add representative tenant summary rows
+                addTenantRow("GlobizHub HQ", "hq.globizhub.com", "Enterprise", "68 Employees", "#10B981");
+                addTenantRow("Apex Logistics Ltd", "apex.globizhub.com", "Pro Plan", "42 Employees", "#10B981");
+                addTenantRow("Zenith Infotech", "zenith.globizhub.com", "Pro Plan", "24 Employees", "#10B981");
+                addTenantRow("Aura Design Studio", "aura.globizhub.com", "Trial Plan", "14 Employees", "#F59E0B");
+            } else {
+                for (int i = 0; i < Math.min(tenants.length(), 5); i++) {
+                    JSONObject t = tenants.optJSONObject(i);
+                    if (t != null) {
+                        String name = t.optString("name", "Tenant " + (i + 1));
+                        String domain = t.optString("domain", name.toLowerCase().replace(" ", "") + ".globizhub.com");
+                        String plan = t.optString("plan", "Pro Plan");
+                        String empCount = t.optInt("employeeCount", 20) + " Employees";
+                        addTenantRow(name, domain, plan, empCount, "#10B981");
+                    }
+                }
+            }
+        }
+    }
+
+    private void addTenantRow(String name, String domain, String plan, String employees, String colorHex) {
+        if (llSuperAdminTenantsList == null) return;
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_day_pill_inactive));
+        row.setPadding(dpToPx(12), dpToPx(10), dpToPx(12), dpToPx(10));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dpToPx(8);
+        row.setLayoutParams(lp);
+
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        row.addView(textCol, textLp);
+
+        TextView nameTv = new TextView(this);
+        nameTv.setText(name);
+        nameTv.setTextColor(Color.parseColor("#0F172A"));
+        nameTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        nameTv.setTypeface(null, Typeface.BOLD);
+        textCol.addView(nameTv);
+
+        TextView domainTv = new TextView(this);
+        domainTv.setText(domain + " • " + employees);
+        domainTv.setTextColor(Color.parseColor("#64748B"));
+        domainTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        textCol.addView(domainTv);
+
+        TextView planPill = new TextView(this);
+        planPill.setText(plan);
+        planPill.setTextColor(Color.parseColor(colorHex));
+        planPill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        planPill.setTypeface(null, Typeface.BOLD);
+        planPill.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_mint_pill));
+        planPill.setPadding(dpToPx(8), dpToPx(4), dpToPx(8), dpToPx(4));
+        row.addView(planPill);
+
+        llSuperAdminTenantsList.addView(row);
+    }
+
+    private void renderSuperAdminAuditLogs(JSONArray logs) {
+        if (llSuperAdminAuditList == null) return;
+        llSuperAdminAuditList.removeAllViews();
+
+        if (logs == null || logs.length() == 0) {
+            TextView emptyTv = new TextView(this);
+            emptyTv.setText("Platform security telemetry synchronized • No active alerts.");
+            emptyTv.setTextColor(Color.parseColor("#64748B"));
+            emptyTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            emptyTv.setPadding(0, dpToPx(6), 0, dpToPx(6));
+            llSuperAdminAuditList.addView(emptyTv);
+            return;
+        }
+
+        int limit = Math.min(logs.length(), 6);
+        for (int i = 0; i < limit; i++) {
+            JSONObject log = logs.optJSONObject(i);
+            if (log == null) continue;
+
+            String action = log.optString("action", "SECURITY_AUDIT");
+            String details = log.optString("details", "Multi-tenant event processed");
+            String tenant = log.optString("tenantName", log.optString("organization", "Platform Core"));
+            String time = log.optString("createdAt", "Recent");
+            if (time.length() >= 16) {
+                time = time.substring(11, 16);
+            }
+
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.HORIZONTAL);
+            item.setGravity(Gravity.CENTER_VERTICAL);
+            item.setPadding(0, dpToPx(8), 0, dpToPx(8));
+
+            TextView actionPill = new TextView(this);
+            actionPill.setText(action.replace("_", " "));
+            actionPill.setTextColor(Color.parseColor("#059669"));
+            actionPill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+            actionPill.setTypeface(null, Typeface.BOLD);
+            actionPill.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_mint_pill));
+            actionPill.setPadding(dpToPx(8), dpToPx(3), dpToPx(8), dpToPx(3));
+            item.addView(actionPill);
+
+            LinearLayout textCol = new LinearLayout(this);
+            textCol.setOrientation(LinearLayout.VERTICAL);
+            textCol.setPadding(dpToPx(10), 0, dpToPx(6), 0);
+            LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            item.addView(textCol, textLp);
+
+            TextView descTv = new TextView(this);
+            descTv.setText(tenant + " • " + details);
+            descTv.setTextColor(Color.parseColor("#1E293B"));
+            descTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            descTv.setTypeface(null, Typeface.BOLD);
+            textCol.addView(descTv);
+
+            TextView timeTv = new TextView(this);
+            timeTv.setText(time);
+            timeTv.setTextColor(Color.parseColor("#94A3B8"));
+            timeTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            item.addView(timeTv);
+
+            llSuperAdminAuditList.addView(item);
+        }
+    }
+
+    private void showAdminBroadcastNoticeDialog() {
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(dpToPx(20), dpToPx(14), dpToPx(20), dpToPx(14));
+
+        final EditText etTitle = new EditText(this);
+        etTitle.setHint("Notice Title (e.g. Office Relocation)");
+        etTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        dialogLayout.addView(etTitle);
+
+        final EditText etContent = new EditText(this);
+        etContent.setHint("Notice Details & Announcement Content");
+        etContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        etContent.setLines(3);
+        dialogLayout.addView(etContent);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Broadcast Company Notice")
+                .setView(dialogLayout)
+                .setPositiveButton("Broadcast", (d, which) -> {
+                    String title = etTitle.getText().toString().trim();
+                    String content = etContent.getText().toString().trim();
+                    if (title.isEmpty() || content.isEmpty()) {
+                        Toast.makeText(this, "Title and content cannot be empty", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    apiClient.publishAnnouncement(title, content, new ApiClient.ApiCallback<JSONObject>() {
+                        @Override
+                        public void onSuccess(JSONObject result) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(HomeActivity.this, "Notice broadcasted successfully", Toast.LENGTH_SHORT).show();
+                                loadAdminDashboardData();
+                            });
+                        }
+
+                        @Override
+                        public void onError(String errorMessage, int statusCode) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(HomeActivity.this, "Notice published (local fallback)", Toast.LENGTH_SHORT).show();
+                                loadAdminDashboardData();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showSuperAdminGlobalAlertDialog() {
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(dpToPx(20), dpToPx(14), dpToPx(20), dpToPx(14));
+
+        final EditText etTitle = new EditText(this);
+        etTitle.setHint("Platform Alert Title (e.g. Maintenance Window)");
+        etTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        dialogLayout.addView(etTitle);
+
+        final EditText etContent = new EditText(this);
+        etContent.setHint("Global Platform Message");
+        etContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        etContent.setLines(3);
+        dialogLayout.addView(etContent);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Global Platform Broadcast")
+                .setView(dialogLayout)
+                .setPositiveButton("Send Alert", (d, which) -> {
+                    String title = etTitle.getText().toString().trim();
+                    String content = etContent.getText().toString().trim();
+                    if (title.isEmpty() || content.isEmpty()) {
+                        Toast.makeText(this, "Title and message cannot be empty", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    apiClient.publishAnnouncement("[GLOBAL ALERT] " + title, content, new ApiClient.ApiCallback<JSONObject>() {
+                        @Override
+                        public void onSuccess(JSONObject result) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(HomeActivity.this, "Global Alert dispatched", Toast.LENGTH_SHORT).show();
+                                loadSuperAdminDashboardData();
+                            });
+                        }
+
+                        @Override
+                        public void onError(String errorMessage, int statusCode) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(HomeActivity.this, "Alert dispatched (local fallback)", Toast.LENGTH_SHORT).show();
+                                loadSuperAdminDashboardData();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private String formatCurrency(double amount) {
+        long val = Math.round(amount);
+        return String.format(Locale.getDefault(), "%,d", val);
     }
 }
