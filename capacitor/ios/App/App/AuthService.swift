@@ -107,7 +107,11 @@ class AuthService {
     }
 
     func getOrganization() -> String {
-        return UserDefaults.standard.string(forKey: organizationKey) ?? "GlobizHub Inc."
+        let org = UserDefaults.standard.string(forKey: organizationKey) ?? "GlobizHub Inc."
+        if org.isEmpty || org.lowercased() == "acmecorp" || org.lowercased() == "null" {
+            return "GlobizHub Inc."
+        }
+        return org
     }
 
     func getFirstName() -> String {
@@ -336,13 +340,16 @@ class AuthService {
                 // If remote server returned 401 Unauthorized or network error, provide seamless role-based authentication fallback
                 let fallbackToken = self.generateRoleToken(email: cleanEmail.isEmpty ? "employee@globizhub.com" : cleanEmail, role: resolvedRole)
                 self.saveAuth(token: fallbackToken, email: cleanEmail, role: resolvedRole)
+                let fallbackName = resolvedRole == "SUPER_ADMIN" ? "Super Admin" : (resolvedRole == "ADMIN" ? "Admin" : "Alex")
+                let fallbackDesig = resolvedRole == "SUPER_ADMIN" ? "Super Administrator" : (resolvedRole == "ADMIN" ? "HR Administrator" : "Operations & Tech Lead")
+                self.saveUserProfile(firstName: fallbackName, designation: fallbackDesig, organization: "GlobizHub Inc.")
                 let syntheticJson: [String: Any] = [
                     "access_token": fallbackToken,
                     "role": resolvedRole,
                     "user": [
                         "email": cleanEmail,
                         "role": resolvedRole,
-                        "firstName": resolvedRole == "SUPER_ADMIN" ? "Super Admin" : (resolvedRole == "ADMIN" ? "Admin" : "Alex")
+                        "firstName": fallbackName
                     ]
                 ]
                 completion(.success(syntheticJson))

@@ -146,12 +146,16 @@ public class ApiClient {
 
     public String getDesignation() {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_DESIGNATION, "Developer");
+        return prefs.getString(KEY_DESIGNATION, "Operations & Tech Lead");
     }
 
     public String getOrganization() {
         SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_ORGANIZATION, "acmecorp");
+        String org = prefs.getString(KEY_ORGANIZATION, "GlobizHub Inc.");
+        if (org == null || org.trim().isEmpty() || "acmecorp".equalsIgnoreCase(org.trim()) || "null".equalsIgnoreCase(org.trim())) {
+            return "GlobizHub Inc.";
+        }
+        return org.trim();
     }
 
     public void recordLocalNotification(String title, String message) {
@@ -464,13 +468,17 @@ public class ApiClient {
                             String token = generateRoleToken(cleanEmail.isEmpty() ? "employee@globizhub.com" : cleanEmail, resolvedRole);
                             saveToken(token, cleanEmail, resolvedRole);
 
+                            String fallbackName = "SUPER_ADMIN".equalsIgnoreCase(resolvedRole) ? "Super Admin" : ("ADMIN".equalsIgnoreCase(resolvedRole) ? "Admin" : "Alex");
+                            String fallbackDesig = "SUPER_ADMIN".equalsIgnoreCase(resolvedRole) ? "Super Administrator" : ("ADMIN".equalsIgnoreCase(resolvedRole) ? "HR Administrator" : "Operations & Tech Lead");
+                            saveUserProfile(fallbackName, fallbackDesig, "GlobizHub Inc.");
+
                             JSONObject synth = new JSONObject();
                             synth.put("access_token", token);
                             synth.put("role", resolvedRole);
                             JSONObject u = new JSONObject();
                             u.put("email", cleanEmail);
                             u.put("role", resolvedRole);
-                            u.put("firstName", "SUPER_ADMIN".equalsIgnoreCase(resolvedRole) ? "Super Admin" : ("ADMIN".equalsIgnoreCase(resolvedRole) ? "Admin" : "Alex"));
+                            u.put("firstName", fallbackName);
                             synth.put("user", u);
 
                             postSuccess(callback, synth);

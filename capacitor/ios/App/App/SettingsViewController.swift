@@ -666,7 +666,7 @@ class SettingsViewController: UIViewController {
                     self.avatarInitialsLabel.isHidden = false
                 }
 
-                var resolvedOrg = "GlobizHub"
+                var resolvedOrg = AuthService.shared.getOrganization()
                 if let company = user["company"] as? [String: Any], let cName = company["name"] as? String, !cName.isEmpty {
                     resolvedOrg = cName
                 } else if let cName = user["companyName"] as? String, !cName.isEmpty {
@@ -677,6 +677,9 @@ class SettingsViewController: UIViewController {
                     resolvedOrg = oName
                 } else if let oName = user["organizationName"] as? String, !oName.isEmpty {
                     resolvedOrg = oName
+                }
+                if resolvedOrg.isEmpty || resolvedOrg.lowercased() == "acmecorp" || resolvedOrg.lowercased() == "null" {
+                    resolvedOrg = "GlobizHub Inc."
                 }
                 self.companyNameLabel.text = resolvedOrg
             case .failure:
@@ -701,7 +704,7 @@ class SettingsViewController: UIViewController {
     private func updateRoleButtonTitle() {
         let role = AuthService.shared.getRole()
         let userRole = UserRole.from(string: role)
-        roleButton.setTitle("Role: \(userRole.displayName) ▾", for: .normal)
+        roleButton.setTitle("\(userRole.displayName) ▾", for: .normal)
     }
 
     @objc private func handleSwitchRole() {

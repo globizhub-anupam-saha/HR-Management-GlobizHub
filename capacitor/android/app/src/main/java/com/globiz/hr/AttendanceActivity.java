@@ -602,12 +602,12 @@ public class AttendanceActivity extends AppCompatActivity {
 
     private String getSystemLocation() {
         String org = ApiClient.getInstance(this).getOrganization();
-        if (org == null || org.trim().isEmpty() || "null".equalsIgnoreCase(org)) {
+        if (org == null || org.trim().isEmpty() || "null".equalsIgnoreCase(org) || "acmecorp".equalsIgnoreCase(org)) {
             return "GlobizHub HQ";
         }
         String clean = org.trim();
         if ("acmecorp".equalsIgnoreCase(clean)) {
-            return "Acme Corp • HQ";
+            return "GlobizHub HQ";
         }
         if (clean.toLowerCase().contains("globizhub")) {
             return "GlobizHub HQ";

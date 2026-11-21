@@ -239,65 +239,6 @@ class SignInViewController: UIViewController {
         return aiv
     }()
 
-    // MARK: - Quick Role Demo Login Chips
-    private let roleDemoLabel: UILabel = {
-        let lbl = UILabel()
-        lbl.translatesAutoresizingMaskIntoConstraints = false
-        lbl.text = "QUICK ROLE DEMO LOGIN"
-        lbl.font = UIFont.systemFont(ofSize: 11, weight: .bold)
-        lbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
-        lbl.textAlignment = .center
-        return lbl
-    }()
-
-    private let roleChipsStack: UIStackView = {
-        let sv = UIStackView()
-        sv.translatesAutoresizingMaskIntoConstraints = false
-        sv.axis = .horizontal
-        sv.distribution = .fillEqually
-        sv.spacing = 8
-        return sv
-    }()
-
-    private let employeeRoleBtn: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("Employee", for: .normal)
-        btn.setTitleColor(UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .bold)
-        btn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.08)
-        btn.layer.cornerRadius = 16
-        btn.layer.borderWidth = 1
-        btn.layer.borderColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.25).cgColor
-        btn.heightAnchor.constraint(equalToConstant: 38).isActive = true
-        return btn
-    }()
-
-    private let adminRoleBtn: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("Admin", for: .normal)
-        btn.setTitleColor(UIColor(red: 124/255, green: 58/255, blue: 237/255, alpha: 1.0), for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .bold)
-        btn.backgroundColor = UIColor(red: 124/255, green: 58/255, blue: 237/255, alpha: 0.08)
-        btn.layer.cornerRadius = 16
-        btn.layer.borderWidth = 1
-        btn.layer.borderColor = UIColor(red: 124/255, green: 58/255, blue: 237/255, alpha: 0.25).cgColor
-        btn.heightAnchor.constraint(equalToConstant: 38).isActive = true
-        return btn
-    }()
-
-    private let superAdminRoleBtn: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("Super Admin", for: .normal)
-        btn.setTitleColor(UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0), for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .bold)
-        btn.backgroundColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 0.08)
-        btn.layer.cornerRadius = 16
-        btn.layer.borderWidth = 1
-        btn.layer.borderColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 0.25).cgColor
-        btn.heightAnchor.constraint(equalToConstant: 38).isActive = true
-        return btn
-    }()
-
     private let footerLabel: UILabel = {
         let lbl = UILabel()
         lbl.translatesAutoresizingMaskIntoConstraints = false
@@ -346,10 +287,6 @@ class SignInViewController: UIViewController {
         signInButton.addTarget(self, action: #selector(didTapSignIn), for: .touchUpInside)
         forgotPasswordButton.addTarget(self, action: #selector(didTapForgotPassword), for: .touchUpInside)
         passwordToggleBtn.addTarget(self, action: #selector(didTapPasswordToggle), for: .touchUpInside)
-
-        employeeRoleBtn.addTarget(self, action: #selector(didTapEmployeeDemo), for: .touchUpInside)
-        adminRoleBtn.addTarget(self, action: #selector(didTapAdminDemo), for: .touchUpInside)
-        superAdminRoleBtn.addTarget(self, action: #selector(didTapSuperAdminDemo), for: .touchUpInside)
 
         rememberCheckboxBtn.addTarget(self, action: #selector(didTapRememberDevice), for: .touchUpInside)
         let rememberTap = UITapGestureRecognizer(target: self, action: #selector(didTapRememberDevice))
@@ -444,13 +381,6 @@ class SignInViewController: UIViewController {
         signInButtonStack.addArrangedSubview(signInButtonLabel)
         signInButtonStack.addArrangedSubview(signInButtonArrow)
         signInButton.addSubview(signInSpinner)
-
-        // Quick Role Demo Chips
-        formWrapperView.addSubview(roleDemoLabel)
-        formWrapperView.addSubview(roleChipsStack)
-        roleChipsStack.addArrangedSubview(employeeRoleBtn)
-        roleChipsStack.addArrangedSubview(adminRoleBtn)
-        roleChipsStack.addArrangedSubview(superAdminRoleBtn)
 
         formWrapperView.addSubview(footerLabel)
 
@@ -569,17 +499,8 @@ class SignInViewController: UIViewController {
             signInSpinner.centerXAnchor.constraint(equalTo: signInButton.centerXAnchor),
             signInSpinner.centerYAnchor.constraint(equalTo: signInButton.centerYAnchor),
 
-            // Quick Role Demo Chips
-            roleDemoLabel.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 22),
-            roleDemoLabel.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
-            roleDemoLabel.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
-
-            roleChipsStack.topAnchor.constraint(equalTo: roleDemoLabel.bottomAnchor, constant: 10),
-            roleChipsStack.leadingAnchor.constraint(equalTo: formWrapperView.leadingAnchor),
-            roleChipsStack.trailingAnchor.constraint(equalTo: formWrapperView.trailingAnchor),
-
             // Footer
-            footerLabel.topAnchor.constraint(equalTo: roleChipsStack.bottomAnchor, constant: 24),
+            footerLabel.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 28),
             footerLabel.centerXAnchor.constraint(equalTo: formWrapperView.centerXAnchor),
             footerLabel.bottomAnchor.constraint(equalTo: formWrapperView.bottomAnchor)
         ])
@@ -603,24 +524,6 @@ class SignInViewController: UIViewController {
         let formWidthFill = formWrapperView.widthAnchor.constraint(equalTo: contentView.widthAnchor, constant: -48)
         formWidthFill.priority = UILayoutPriority(900)
         formWidthFill.isActive = true
-    }
-
-    @objc private func didTapEmployeeDemo() {
-        emailTextField.text = "employee@globizhub.com"
-        passwordTextField.text = "password123"
-        didTapSignIn()
-    }
-
-    @objc private func didTapAdminDemo() {
-        emailTextField.text = "admin@globizhub.com"
-        passwordTextField.text = "password123"
-        didTapSignIn()
-    }
-
-    @objc private func didTapSuperAdminDemo() {
-        emailTextField.text = "superadmin@globizhub.com"
-        passwordTextField.text = "password123"
-        didTapSignIn()
     }
 
     @objc private func didTapSignIn() {

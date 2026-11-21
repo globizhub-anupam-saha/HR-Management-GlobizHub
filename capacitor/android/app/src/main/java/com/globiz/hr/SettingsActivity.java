@@ -225,8 +225,11 @@ public class SettingsActivity extends AppCompatActivity {
                 if ((resolvedOrgName == null || resolvedOrgName.isEmpty()) && user.has("organizationName")) {
                     resolvedOrgName = user.optString("organizationName", "");
                 }
-                if (resolvedOrgName == null || resolvedOrgName.isEmpty()) {
-                    resolvedOrgName = "GlobizHub";
+                if (resolvedOrgName == null || resolvedOrgName.isEmpty() || "acmecorp".equalsIgnoreCase(resolvedOrgName)) {
+                    resolvedOrgName = apiClient.getOrganization();
+                }
+                if (resolvedOrgName == null || resolvedOrgName.isEmpty() || "acmecorp".equalsIgnoreCase(resolvedOrgName)) {
+                    resolvedOrgName = "GlobizHub Inc.";
                 }
                 tvCompanyName.setText(resolvedOrgName);
             }

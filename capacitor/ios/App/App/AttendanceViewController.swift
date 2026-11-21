@@ -1142,12 +1142,12 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
 
     private func getSystemLocation() -> String {
         let org = AuthService.shared.getOrganization()
-        if org.isEmpty || org.lowercased() == "null" {
+        if org.isEmpty || org.lowercased() == "null" || org.lowercased() == "acmecorp" {
             return "GlobizHub HQ"
         }
         let clean = org.trimmingCharacters(in: .whitespacesAndNewlines)
         if clean.lowercased() == "acmecorp" {
-            return "Acme Corp • HQ"
+            return "GlobizHub HQ"
         }
         if clean.lowercased().contains("globizhub") {
             return "GlobizHub HQ"
