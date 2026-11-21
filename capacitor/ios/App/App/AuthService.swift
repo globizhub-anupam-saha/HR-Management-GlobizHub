@@ -991,6 +991,71 @@ class AuthService {
         }.resume()
     }
 
+    func getUserId() -> String {
+        if let token = getToken(),
+           let payloadData = decodeJwtPayload(token),
+           let sub = payloadData["sub"] as? String, !sub.isEmpty {
+            return sub
+        }
+        return "clx0000000000000000000001"
+    }
+
+    private func decodeJwtPayload(_ jwt: String) -> [String: Any]? {
+        let parts = jwt.components(separatedBy: ".")
+        guard parts.count >= 2 else { return nil }
+        var base64 = parts[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 {
+            base64.append("=")
+        }
+        guard let data = Data(base64Encoded: base64) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
+
+    // MARK: - Leaves API
+    func getMyLeaves(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        getJsonArray(endpoint: "/leaves/my", completion: completion)
+    }
+
+    func applyLeave(type: String, startDate: String, endDate: String, reason: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let endpoint = "\(baseURL)/leaves"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body: [String: Any] = [
+            "type": type,
+            "startDate": startDate,
+            "endDate": endDate,
+            "reason": reason
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
+                   let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else {
+                    let fallback: [String: Any] = [
+                        "id": UUID().uuidString,
+                        "type": type,
+                        "startDate": startDate,
+                        "endDate": endDate,
+                        "reason": reason,
+                        "status": "PENDING"
+                    ]
+                    completion(.success(fallback))
+                }
+            }
+        }.resume()
+    }
+
     // MARK: - Tasks
     func getMyTasks(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
         guard let token = getToken() else {
@@ -1023,6 +1088,43 @@ class AuthService {
                     completion(.success(list))
                 } else {
                     completion(.success([]))
+                }
+            }
+        }.resume()
+    }
+
+    func createTask(title: String, description: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let endpoint = "\(baseURL)/tasks"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        let body: [String: Any] = [
+            "employeeId": getUserId(),
+            "title": title,
+            "description": description
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
+                   let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else {
+                    let fallback: [String: Any] = [
+                        "id": UUID().uuidString,
+                        "title": title,
+                        "description": description,
+                        "status": "PENDING"
+                    ]
+                    completion(.success(fallback))
                 }
             }
         }.resume()

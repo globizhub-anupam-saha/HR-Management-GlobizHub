@@ -17,6 +17,11 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
     private let bottomNavBar = UIView()
     private let bottomNavContainer = UIView()
 
+    private let casualCountLabel = UILabel()
+    private let sickCountLabel = UILabel()
+    private let earnedCountLabel = UILabel()
+    private let recentLeavesStack = UIStackView()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
@@ -27,12 +32,14 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         setupBalancesCard()
         setupRecentLeavesCard()
         setupBottomNavBar()
+        loadLeaveData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setupBottomNavBar()
         updateHeaderState()
+        loadLeaveData()
     }
 
     private func updateHeaderState() {
@@ -225,9 +232,9 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         pillarsStack.distribution = .fillEqually
         pillarsStack.spacing = 10
 
-        pillarsStack.addArrangedSubview(makeBalancePillar(title: "Casual", count: "10 / 12", color: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)))
-        pillarsStack.addArrangedSubview(makeBalancePillar(title: "Sick", count: "6 / 7", color: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)))
-        pillarsStack.addArrangedSubview(makeBalancePillar(title: "Earned", count: "15 / 18", color: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0)))
+        pillarsStack.addArrangedSubview(makeBalancePillar(title: "Casual", countLabel: casualCountLabel, initialCount: "10 / 12", color: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)))
+        pillarsStack.addArrangedSubview(makeBalancePillar(title: "Sick", countLabel: sickCountLabel, initialCount: "6 / 7", color: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)))
+        pillarsStack.addArrangedSubview(makeBalancePillar(title: "Earned", countLabel: earnedCountLabel, initialCount: "15 / 18", color: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0)))
         stack.addArrangedSubview(pillarsStack)
 
         // Apply Button
@@ -249,7 +256,7 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         ])
     }
 
-    private func makeBalancePillar(title: String, count: String, color: UIColor) -> UIView {
+    private func makeBalancePillar(title: String, countLabel: UILabel, initialCount: String, color: UIColor) -> UIView {
         let pill = UIView()
         pill.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
         pill.layer.cornerRadius = 14
@@ -269,11 +276,10 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         tLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         vStack.addArrangedSubview(tLbl)
 
-        let cLbl = UILabel()
-        cLbl.text = count
-        cLbl.font = .systemFont(ofSize: 18, weight: .bold)
-        cLbl.textColor = color
-        vStack.addArrangedSubview(cLbl)
+        countLabel.text = initialCount
+        countLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        countLabel.textColor = color
+        vStack.addArrangedSubview(countLabel)
 
         let subLbl = UILabel()
         subLbl.text = "days left"
@@ -312,6 +318,11 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         stack.addArrangedSubview(titleLabel)
 
+        recentLeavesStack.axis = .vertical
+        recentLeavesStack.spacing = 10
+        recentLeavesStack.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(recentLeavesStack)
+
         let items = [
             ("Casual Leave • 1 Day", "Approved", "Oct 15, 2026 • Family Function", UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)),
             ("Sick Leave • 2 Days", "Approved", "Sep 28 - Sep 29, 2026 • Medical Checkup", UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)),
@@ -319,7 +330,7 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         ]
 
         for item in items {
-            stack.addArrangedSubview(makeRecentLeaveRow(title: item.0, status: item.1, sub: item.2, badgeColor: item.3))
+            recentLeavesStack.addArrangedSubview(makeRecentLeaveRow(title: item.0, status: item.1, sub: item.2, badgeColor: item.3))
         }
 
         NSLayoutConstraint.activate([
@@ -518,17 +529,67 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
+    private func loadLeaveData() {
+        AuthService.shared.getLeaveBalance { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let arr) = result {
+                for item in arr {
+                    let type = (item["leaveType"] as? String ?? item["type"] as? String ?? "").uppercased()
+                    let remaining = item["remainingDays"] as? Int ?? item["balance"] as? Int ?? -1
+                    let total = item["allocatedDays"] as? Int ?? item["total"] as? Int ?? -1
+                    if remaining >= 0 && total >= 0 {
+                        let text = "\(remaining) / \(total)"
+                        if type.contains("CASUAL") {
+                            self.casualCountLabel.text = text
+                        } else if type.contains("SICK") {
+                            self.sickCountLabel.text = text
+                        } else if type.contains("EARNED") || type.contains("ANNUAL") {
+                            self.earnedCountLabel.text = text
+                        }
+                    }
+                }
+            }
+        }
+
+        AuthService.shared.getMyLeaves { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let arr) = result, !arr.isEmpty {
+                self.recentLeavesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+                for item in arr {
+                    let type = (item["type"] as? String ?? "Leave").capitalized
+                    let status = (item["status"] as? String ?? "PENDING").capitalized
+                    let start = item["startDate"] as? String ?? ""
+                    let end = item["endDate"] as? String ?? ""
+                    let reason = item["reason"] as? String ?? "Personal"
+                    let sub = "\(start) - \(end) • \(reason)"
+                    let color = (status.uppercased() == "APPROVED") ? UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0) : UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0)
+                    self.recentLeavesStack.addArrangedSubview(self.makeRecentLeaveRow(title: "\(type) Leave", status: status, sub: sub, badgeColor: color))
+                }
+            }
+        }
+    }
+
     @objc private func didTapApplyLeave() {
         let alert = UIAlertController(title: "Apply for Leave", message: "Select leave category:", preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Casual Leave (10 days left)", style: .default, handler: { _ in
-            self.showSuccessAlert()
-        }))
-        alert.addAction(UIAlertAction(title: "Sick Leave (6 days left)", style: .default, handler: { _ in
-            self.showSuccessAlert()
-        }))
-        alert.addAction(UIAlertAction(title: "Earned Leave (15 days left)", style: .default, handler: { _ in
-            self.showSuccessAlert()
-        }))
+        let categories = [
+            ("Casual Leave", "CASUAL"),
+            ("Sick Leave", "SICK"),
+            ("Earned Leave", "EARNED")
+        ]
+
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let start = fmt.string(from: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
+        let end = fmt.string(from: Calendar.current.date(byAdding: .day, value: 2, to: Date()) ?? Date())
+
+        for cat in categories {
+            alert.addAction(UIAlertAction(title: cat.0, style: .default, handler: { [weak self] _ in
+                AuthService.shared.applyLeave(type: cat.1, startDate: start, endDate: end, reason: "Leave applied from mobile app") { [weak self] _ in
+                    self?.showSuccessAlert()
+                    self?.loadLeaveData()
+                }
+            }))
+        }
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alert, animated: true)
     }

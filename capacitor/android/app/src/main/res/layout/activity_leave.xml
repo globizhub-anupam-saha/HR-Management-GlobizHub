@@ -358,6 +358,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvCasualCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -396,6 +397,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvSickCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -433,6 +435,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvEarnedCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -483,6 +486,12 @@
                     android:textColor="#0F172A"
                     android:textSize="16sp"
                     android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/llRecentLeavesList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                 <!-- Request Item 1 -->
                 <LinearLayout
@@ -617,6 +626,7 @@
                         android:text="Nov 12 - Nov 14, 2026 • Vacation"
                         android:textColor="#64748B"
                         android:textSize="12sp" />
+                </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

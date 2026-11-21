@@ -17,6 +17,9 @@ class TasksViewController: UIViewController, UIScrollViewDelegate {
     private let bottomNavBar = UIView()
     private let bottomNavContainer = UIView()
 
+    private let tasksSubLabel = UILabel()
+    private let tasksListStackView = UIStackView()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
@@ -27,12 +30,14 @@ class TasksViewController: UIViewController, UIScrollViewDelegate {
         setupOverviewHeader()
         setupTasksList()
         setupBottomNavBar()
+        loadTasksData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setupBottomNavBar()
         updateHeaderState()
+        loadTasksData()
     }
 
     private func updateHeaderState() {
@@ -203,11 +208,10 @@ class TasksViewController: UIViewController, UIScrollViewDelegate {
         titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         textStack.addArrangedSubview(titleLabel)
 
-        let subLabel = UILabel()
-        subLabel.text = "3 pending items requiring action"
-        subLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        subLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        textStack.addArrangedSubview(subLabel)
+        tasksSubLabel.text = "3 pending items requiring action"
+        tasksSubLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        tasksSubLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        textStack.addArrangedSubview(tasksSubLabel)
         container.addArrangedSubview(textStack)
 
         let addBtn = UIButton(type: .system)
@@ -225,14 +229,41 @@ class TasksViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Tasks List
     private func setupTasksList() {
-        let tasks = [
+        tasksListStackView.axis = .vertical
+        tasksListStackView.spacing = 12
+        tasksListStackView.translatesAutoresizingMaskIntoConstraints = false
+        contentStackView.addArrangedSubview(tasksListStackView)
+
+        let initialTasks = [
             ("Review Q4 HR Payroll Reports", "Verify employee overtime approvals and deductions before salary disbursement.", "High Priority", "Due today at 05:00 PM • HR Dept", UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), false),
             ("Conduct 1-on-1 Performance Sync", "Bi-weekly review discussion for design system alignment and milestones.", "Medium", "Due today at 02:30 PM • Team Room 3", UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), false),
             ("Update Biometric Geofence Guidelines", "Finalize updated office radius coordinates in capacitor config.", "Completed", "Completed at 11:20 AM", UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), true)
         ]
 
-        for task in tasks {
-            contentStackView.addArrangedSubview(makeTaskCard(title: task.0, desc: task.1, priority: task.2, due: task.3, tagColor: task.4, isCompleted: task.5))
+        for task in initialTasks {
+            tasksListStackView.addArrangedSubview(makeTaskCard(title: task.0, desc: task.1, priority: task.2, due: task.3, tagColor: task.4, isCompleted: task.5))
+        }
+    }
+
+    private func loadTasksData() {
+        AuthService.shared.getMyTasks { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let tasks) = result, !tasks.isEmpty {
+                self.tasksListStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+                var pendingCount = 0
+                for item in tasks {
+                    let title = item["title"] as? String ?? "Task"
+                    let desc = item["description"] as? String ?? ""
+                    let status = (item["status"] as? String ?? "PENDING").uppercased()
+                    let isCompleted = status.contains("COMPLETED") || status.contains("DONE")
+                    if !isCompleted { pendingCount += 1 }
+                    let color = isCompleted ? UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0) : UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
+                    let due = isCompleted ? "Completed" : "Due today • High Priority"
+                    let card = self.makeTaskCard(title: title, desc: desc, priority: isCompleted ? "Completed" : "High Priority", due: due, tagColor: color, isCompleted: isCompleted)
+                    self.tasksListStackView.addArrangedSubview(card)
+                }
+                self.tasksSubLabel.text = "\(pendingCount) pending items requiring action"
+            }
         }
     }
 
@@ -436,10 +467,14 @@ class TasksViewController: UIViewController, UIScrollViewDelegate {
         alert.addTextField { tf in
             tf.placeholder = "e.g. Prepare client onboarding checklist"
         }
-        alert.addAction(UIAlertAction(title: "Create", style: .default, handler: { _ in
-            let ok = UIAlertController(title: "Task Created", message: "Task has been added to your board.", preferredStyle: .alert)
-            ok.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-            self.present(ok, animated: true)
+        alert.addAction(UIAlertAction(title: "Create", style: .default, handler: { [weak self] _ in
+            guard let title = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return }
+            AuthService.shared.createTask(title: title, description: "Created via mobile app") { [weak self] _ in
+                let ok = UIAlertController(title: "Task Created", message: "Task has been added to your board.", preferredStyle: .alert)
+                ok.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                self?.present(ok, animated: true)
+                self?.loadTasksData()
+            }
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alert, animated: true)

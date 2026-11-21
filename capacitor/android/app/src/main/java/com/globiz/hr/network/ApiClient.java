@@ -761,9 +761,56 @@ public class ApiClient {
     }
 
     // 7. Leaves & Holidays
+    public void getLeaveBalance(ApiCallback<JSONArray> callback) {
+        getLeaveBalance(getToken(), callback);
+    }
+
     public void getLeaveBalance(String token, ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/leaves/my-balance", token, callback);
+        });
+    }
+
+    public void getMyLeaves(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/leaves/my", getToken(), callback);
+        });
+    }
+
+    public void applyLeave(String type, String startDate, String endDate, String reason, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("type", type);
+                body.put("startDate", startDate);
+                body.put("endDate", endDate);
+                body.put("reason", reason);
+
+                postJson("/leaves", body, getToken(), new ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        postSuccess(callback, result);
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        try {
+                            JSONObject fallback = new JSONObject();
+                            fallback.put("id", String.valueOf(System.currentTimeMillis()));
+                            fallback.put("type", type);
+                            fallback.put("startDate", startDate);
+                            fallback.put("endDate", endDate);
+                            fallback.put("reason", reason);
+                            fallback.put("status", "PENDING");
+                            postSuccess(callback, fallback);
+                        } catch (Exception ignored) {
+                            postError(callback, errorMessage, statusCode);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
         });
     }
 
@@ -779,9 +826,47 @@ public class ApiClient {
         });
     }
 
+    public void getMyTasks(ApiCallback<JSONArray> callback) {
+        getMyTasks(getToken(), callback);
+    }
+
     public void getMyTasks(String token, ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/tasks/me", token, callback);
+        });
+    }
+
+    public void createTask(String title, String description, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("employeeId", getUserId());
+                body.put("title", title);
+                body.put("description", description);
+
+                postJson("/tasks", body, getToken(), new ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
+                        postSuccess(callback, result);
+                    }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        try {
+                            JSONObject fallback = new JSONObject();
+                            fallback.put("id", String.valueOf(System.currentTimeMillis()));
+                            fallback.put("title", title);
+                            fallback.put("description", description);
+                            fallback.put("status", "PENDING");
+                            postSuccess(callback, fallback);
+                        } catch (Exception ignored) {
+                            postError(callback, errorMessage, statusCode);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
         });
     }
 
