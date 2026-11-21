@@ -169,6 +169,8 @@ public class HomeActivity extends AppCompatActivity {
     private View skelHomeHero;
     private View skelHomeTimer;
     private View skelHomeLeaves;
+    private View skelHomeHolidays;
+    private View skelHomeHeatmap;
     private boolean isInitialLoad = true;
 
     // Bottom Animated Popup
@@ -432,6 +434,8 @@ public class HomeActivity extends AppCompatActivity {
         skelHomeHero = findViewById(R.id.skelHomeHero);
         skelHomeTimer = findViewById(R.id.skelHomeTimer);
         skelHomeLeaves = findViewById(R.id.skelHomeLeaves);
+        skelHomeHolidays = findViewById(R.id.skelHomeHolidays);
+        skelHomeHeatmap = findViewById(R.id.skelHomeHeatmap);
     }
 
     // --- Dynamic Time-Based Greeting ---
@@ -1620,31 +1624,24 @@ public class HomeActivity extends AppCompatActivity {
     private void showSkeletonLoading() {
         if (layoutSkeletonHome != null) {
             layoutSkeletonHome.setVisibility(View.VISIBLE);
+            layoutSkeletonHome.setAlpha(1.0f);
             if (llHomeCardsContainer != null) {
                 llHomeCardsContainer.setVisibility(View.GONE);
             }
 
-            if (skelHomeHero != null) {
-                ObjectAnimator a1 = ObjectAnimator.ofFloat(skelHomeHero, "alpha", 0.45f, 0.95f);
-                a1.setDuration(850);
-                a1.setRepeatCount(ValueAnimator.INFINITE);
-                a1.setRepeatMode(ValueAnimator.REVERSE);
-                a1.start();
+            View[] skels = {skelHomeHero, skelHomeTimer, skelHomeLeaves, skelHomeHolidays, skelHomeHeatmap};
+            for (View v : skels) {
+                if (v != null) {
+                    ObjectAnimator anim = ObjectAnimator.ofFloat(v, "alpha", 0.40f, 0.95f);
+                    anim.setDuration(850);
+                    anim.setRepeatCount(ValueAnimator.INFINITE);
+                    anim.setRepeatMode(ValueAnimator.REVERSE);
+                    anim.start();
+                }
             }
-            if (skelHomeTimer != null) {
-                ObjectAnimator a2 = ObjectAnimator.ofFloat(skelHomeTimer, "alpha", 0.45f, 0.95f);
-                a2.setDuration(850);
-                a2.setRepeatCount(ValueAnimator.INFINITE);
-                a2.setRepeatMode(ValueAnimator.REVERSE);
-                a2.start();
-            }
-            if (skelHomeLeaves != null) {
-                ObjectAnimator a3 = ObjectAnimator.ofFloat(skelHomeLeaves, "alpha", 0.45f, 0.95f);
-                a3.setDuration(850);
-                a3.setRepeatCount(ValueAnimator.INFINITE);
-                a3.setRepeatMode(ValueAnimator.REVERSE);
-                a3.start();
-            }
+
+            // Safe fallback timeout: dismiss after 3.5s if network is slow/offline
+            new Handler(Looper.getMainLooper()).postDelayed(this::hideSkeletonLoading, 3500);
         }
     }
 
@@ -1657,7 +1654,8 @@ public class HomeActivity extends AppCompatActivity {
                         layoutSkeletonHome.setVisibility(View.GONE);
                         if (llHomeCardsContainer != null) {
                             llHomeCardsContainer.setVisibility(View.VISIBLE);
-                            llHomeCardsContainer.setAlpha(1f);
+                            llHomeCardsContainer.setAlpha(0f);
+                            llHomeCardsContainer.animate().alpha(1f).setDuration(250).start();
                         }
                     })
                     .start();

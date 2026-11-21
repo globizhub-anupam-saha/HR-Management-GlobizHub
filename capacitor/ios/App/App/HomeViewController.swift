@@ -279,7 +279,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         heatmapModeSegmented.selectedSegmentIndex = 0
         didChangeHeatmapMode(heatmapModeSegmented)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+        // Safety fallback timeout: dismiss after 3.5s if network is slow/offline
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
             self?.dismissSkeleton()
         }
         heroCard.play()
@@ -3193,8 +3194,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.syncTodayAttendanceRecord()
                     self.renderMonthlyHeatmap()
                 }
+                self.dismissSkeleton()
             case .failure:
                 // Keep local session if active, do not overwrite with false
+                self.dismissSkeleton()
                 break
             }
         }
@@ -3429,6 +3432,7 @@ private class GradientCardView: UIView {
 
 // MARK: - Skeleton Shimmer View for Home Dashboard
 final class HomeSkeletonOverlay: UIView {
+    private let scrollView = UIScrollView()
     private let stack = UIStackView()
 
     override init(frame: CGRect) {
@@ -3436,74 +3440,292 @@ final class HomeSkeletonOverlay: UIView {
         backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
         translatesAutoresizingMaskIntoConstraints = false
 
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = false
+        addSubview(scrollView)
+
         stack.axis = .vertical
         stack.spacing = 16
         stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        scrollView.addSubview(stack)
 
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -20)
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            stack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
+            stack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            stack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -32),
+            stack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32)
         ])
 
         // 1. Hero Card Placeholder
-        stack.addArrangedSubview(createSkeletonCard(height: 180))
-        // 2. Timer Card Placeholder
-        stack.addArrangedSubview(createSkeletonCard(height: 250))
-        // 3. Stats Row Placeholder
-        stack.addArrangedSubview(createSkeletonCard(height: 120))
+        stack.addArrangedSubview(createHeroSkeleton())
+        // 2. Active Shift Timer Card Placeholder
+        stack.addArrangedSubview(createTimerSkeleton())
+        // 3. Leaves Card Placeholder
+        stack.addArrangedSubview(createLeavesSkeleton())
+        // 4. Upcoming Holidays Card Placeholder
+        stack.addArrangedSubview(createHolidaysSkeleton())
+        // 5. Heatmap Card Placeholder
+        stack.addArrangedSubview(createHeatmapSkeleton())
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    private func createSkeletonCard(height: CGFloat) -> UIView {
-        let card = UIView()
-        card.backgroundColor = .white
-        card.layer.cornerRadius = 24
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.03
-        card.layer.shadowOffset = CGSize(width: 0, height: 4)
-        card.layer.shadowRadius = 8
-        card.translatesAutoresizingMaskIntoConstraints = false
-        card.heightAnchor.constraint(equalToConstant: height).isActive = true
-
+    private func createPulseAnimation() -> CABasicAnimation {
         let pulse = CABasicAnimation(keyPath: "opacity")
         pulse.duration = 0.85
-        pulse.fromValue = 0.45
+        pulse.fromValue = 0.40
         pulse.toValue = 0.95
         pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         pulse.autoreverses = true
         pulse.repeatCount = .infinity
+        return pulse
+    }
 
-        let topBar = UIView()
-        topBar.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
-        topBar.layer.cornerRadius = 8
-        topBar.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(topBar)
+    private func makeBar(width: CGFloat? = nil, height: CGFloat, cornerRadius: CGFloat = 8, color: UIColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0)) -> UIView {
+        let v = UIView()
+        v.backgroundColor = color
+        v.layer.cornerRadius = cornerRadius
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.heightAnchor.constraint(equalToConstant: height).isActive = true
+        if let w = width {
+            v.widthAnchor.constraint(equalToConstant: w).isActive = true
+        }
+        v.layer.add(createPulseAnimation(), forKey: "pulse")
+        return v
+    }
 
-        let mainBlock = UIView()
-        mainBlock.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
-        mainBlock.layer.cornerRadius = 12
-        mainBlock.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(mainBlock)
+    // 1. Hero Card
+    private func createHeroSkeleton() -> UIView {
+        let card = UIView()
+        card.backgroundColor = UIColor(red: 13/255, green: 27/255, blue: 42/255, alpha: 1.0)
+        card.layer.cornerRadius = 24
+        card.layer.masksToBounds = true
+        card.translatesAutoresizingMaskIntoConstraints = false
 
-        topBar.layer.add(pulse, forKey: "pulse")
-        mainBlock.layer.add(pulse, forKey: "pulse")
+        let pillColor = UIColor.white.withAlphaComponent(0.22)
+        let portalPill = makeBar(width: 110, height: 22, cornerRadius: 11, color: pillColor)
+        let greeting = makeBar(width: 190, height: 26, cornerRadius: 8, color: pillColor)
+        let subtitle = makeBar(width: 140, height: 14, cornerRadius: 6, color: pillColor)
+        let shiftPill = makeBar(height: 38, cornerRadius: 12, color: UIColor.white.withAlphaComponent(0.28))
+
+        card.addSubview(portalPill)
+        card.addSubview(greeting)
+        card.addSubview(subtitle)
+        card.addSubview(shiftPill)
 
         NSLayoutConstraint.activate([
-            topBar.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
-            topBar.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            topBar.widthAnchor.constraint(equalToConstant: 140),
-            topBar.heightAnchor.constraint(equalToConstant: 20),
+            portalPill.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            portalPill.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
 
-            mainBlock.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 16),
-            mainBlock.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
-            mainBlock.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
-            mainBlock.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
+            greeting.topAnchor.constraint(equalTo: portalPill.bottomAnchor, constant: 14),
+            greeting.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            subtitle.topAnchor.constraint(equalTo: greeting.bottomAnchor, constant: 8),
+            subtitle.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            shiftPill.topAnchor.constraint(equalTo: subtitle.bottomAnchor, constant: 16),
+            shiftPill.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            shiftPill.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+            shiftPill.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
         ])
+        return card
+    }
 
+    // 2. Timer Card
+    private func createTimerSkeleton() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 24
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.04
+        card.layer.shadowOffset = CGSize(width: 0, height: 4)
+        card.layer.shadowRadius = 10
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let headerBar = makeBar(width: 130, height: 14, cornerRadius: 6)
+        let timerBar = makeBar(width: 180, height: 34, cornerRadius: 10)
+        let statusDot = makeBar(width: 100, height: 12, cornerRadius: 6)
+
+        let punchCircle = UIView()
+        punchCircle.backgroundColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0)
+        punchCircle.layer.cornerRadius = 44
+        punchCircle.translatesAutoresizingMaskIntoConstraints = false
+        punchCircle.layer.add(createPulseAnimation(), forKey: "pulse")
+
+        let holdText = makeBar(width: 130, height: 14, cornerRadius: 6)
+        let breakPill = makeBar(width: 160, height: 42, cornerRadius: 21, color: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0))
+
+        card.addSubview(headerBar)
+        card.addSubview(timerBar)
+        card.addSubview(statusDot)
+        card.addSubview(punchCircle)
+        card.addSubview(holdText)
+        card.addSubview(breakPill)
+
+        NSLayoutConstraint.activate([
+            headerBar.topAnchor.constraint(equalTo: card.topAnchor, constant: 22),
+            headerBar.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+
+            timerBar.topAnchor.constraint(equalTo: headerBar.bottomAnchor, constant: 10),
+            timerBar.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+
+            statusDot.topAnchor.constraint(equalTo: timerBar.bottomAnchor, constant: 8),
+            statusDot.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+
+            punchCircle.topAnchor.constraint(equalTo: statusDot.bottomAnchor, constant: 16),
+            punchCircle.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            punchCircle.widthAnchor.constraint(equalToConstant: 88),
+            punchCircle.heightAnchor.constraint(equalToConstant: 88),
+
+            holdText.topAnchor.constraint(equalTo: punchCircle.bottomAnchor, constant: 14),
+            holdText.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+
+            breakPill.topAnchor.constraint(equalTo: holdText.bottomAnchor, constant: 16),
+            breakPill.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+            breakPill.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -22)
+        ])
+        return card
+    }
+
+    // 3. Leaves Card
+    private func createLeavesSkeleton() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 20
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.03
+        card.layer.shadowOffset = CGSize(width: 0, height: 3)
+        card.layer.shadowRadius = 8
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let title = makeBar(width: 80, height: 18, cornerRadius: 8)
+        let icon = makeBar(width: 24, height: 24, cornerRadius: 12)
+        let metric1 = makeBar(width: 95, height: 14, cornerRadius: 6)
+        let metric2 = makeBar(width: 105, height: 14, cornerRadius: 6)
+        let track = makeBar(height: 8, cornerRadius: 4)
+
+        card.addSubview(title)
+        card.addSubview(icon)
+        card.addSubview(metric1)
+        card.addSubview(metric2)
+        card.addSubview(track)
+
+        NSLayoutConstraint.activate([
+            title.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            title.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            icon.centerYAnchor.constraint(equalTo: title.centerYAnchor),
+            icon.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+
+            metric1.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 14),
+            metric1.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            metric2.centerYAnchor.constraint(equalTo: metric1.centerYAnchor),
+            metric2.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+
+            track.topAnchor.constraint(equalTo: metric1.bottomAnchor, constant: 12),
+            track.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            track.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+            track.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
+        ])
+        return card
+    }
+
+    // 4. Upcoming Holidays Card
+    private func createHolidaysSkeleton() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 20
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.03
+        card.layer.shadowOffset = CGSize(width: 0, height: 3)
+        card.layer.shadowRadius = 8
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let title = makeBar(width: 140, height: 18, cornerRadius: 8)
+        let holName = makeBar(width: 120, height: 16, cornerRadius: 6)
+        let holDate = makeBar(width: 80, height: 12, cornerRadius: 6)
+        let tagPill = makeBar(width: 85, height: 26, cornerRadius: 13, color: UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 0.6))
+
+        card.addSubview(title)
+        card.addSubview(holName)
+        card.addSubview(holDate)
+        card.addSubview(tagPill)
+
+        NSLayoutConstraint.activate([
+            title.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            title.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            holName.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 14),
+            holName.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            holDate.topAnchor.constraint(equalTo: holName.bottomAnchor, constant: 6),
+            holDate.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            holDate.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18),
+
+            tagPill.centerYAnchor.constraint(equalTo: holName.centerYAnchor),
+            tagPill.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18)
+        ])
+        return card
+    }
+
+    // 5. Heatmap Card
+    private func createHeatmapSkeleton() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 20
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.03
+        card.layer.shadowOffset = CGSize(width: 0, height: 3)
+        card.layer.shadowRadius = 8
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let title = makeBar(width: 150, height: 18, cornerRadius: 8)
+        let seg = makeBar(width: 90, height: 28, cornerRadius: 14, color: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0))
+        let nav = makeBar(width: 130, height: 16, cornerRadius: 6)
+
+        card.addSubview(title)
+        card.addSubview(seg)
+        card.addSubview(nav)
+
+        let gridStack = UIStackView()
+        gridStack.axis = .vertical
+        gridStack.spacing = 6
+        gridStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(gridStack)
+
+        for _ in 0..<2 {
+            let row = UIStackView()
+            row.axis = .horizontal
+            row.distribution = .equalSpacing
+            for _ in 0..<7 {
+                let cell = makeBar(width: 28, height: 28, cornerRadius: 6)
+                row.addArrangedSubview(cell)
+            }
+            gridStack.addArrangedSubview(row)
+        }
+
+        NSLayoutConstraint.activate([
+            title.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
+            title.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+
+            seg.centerYAnchor.constraint(equalTo: title.centerYAnchor),
+            seg.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+
+            nav.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 16),
+            nav.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+
+            gridStack.topAnchor.constraint(equalTo: nav.bottomAnchor, constant: 14),
+            gridStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 18),
+            gridStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -18),
+            gridStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20)
+        ])
         return card
     }
 }
