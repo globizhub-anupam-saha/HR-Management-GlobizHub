@@ -29,7 +29,7 @@ enum AuthError: LocalizedError {
 class AuthService {
     static let shared = AuthService()
     static let defaultValidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMmYxODFkNi05Mzg3LTQ4YjctYWMwMC1mNDM1OGQzNTBmMDIiLCJlbWFpbCI6InNlYWxtYW5hc2g3QGdtYWlsLmNvbSIsImNvbXBhbnlJZCI6IjcwNzBjMmFkLTgzNTgtNDhhOC1iZWMyLWE1YjMzM2E1N2UxYiIsInJvbGUiOiJFTVBMT1lFRSIsImlhdCI6MTc5NDI5NjkyMCwiZXhwIjoxNzk0MzgzMzIwfQ.wldeC_UTAuL9UmWSRDGGFf9sjblFOjSuuW-OhtSwlYY"
-    private let baseURL = "https://hr-management-globizhub.onrender.com"
+    private let baseURL = "https://hr.globizhub.com/api"
 
     private let tokenKey = "TeamHubAuth_Token"
     private let emailKey = "TeamHubAuth_Email"

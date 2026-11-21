@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 public class ApiClient {
 
     private static final String TAG = "TeamHubApi";
-    public static final String BASE_URL = "https://hr-management-globizhub.onrender.com";
+    public static final String BASE_URL = "https://hr.globizhub.com/api";
 
     public static final String DEFAULT_VALID_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMmYxODFkNi05Mzg3LTQ4YjctYWMwMC1mNDM1OGQzNTBmMDIiLCJlbWFpbCI6InNlYWxtYW5hc2g3QGdtYWlsLmNvbSIsImNvbXBhbnlJZCI6IjcwNzBjMmFkLTgzNTgtNDhhOC1iZWMyLWE1YjMzM2E1N2UxYiIsInJvbGUiOiJFTVBMT1lFRSIsImlhdCI6MTc5NDI5NjkyMCwiZXhwIjoxNzk0MzgzMzIwfQ.wldeC_UTAuL9UmWSRDGGFf9sjblFOjSuuW-OhtSwlYY";
 
