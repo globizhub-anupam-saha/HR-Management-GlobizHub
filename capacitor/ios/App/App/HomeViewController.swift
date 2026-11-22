@@ -106,7 +106,24 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private let leavesProgressBar = UIView()
     private var leavesProgressWidthConstraint: NSLayoutConstraint?
 
-    // Card B: Holiday (Real-time & Interactive Cycle)
+    // Attendance Metrics Row (Monthly Attendance & Hours Today)
+    private let attendanceMetricsRow = UIStackView()
+    private let monthlyAttendanceCard = UIView()
+    private let monthlyAttendanceLabel = UILabel()
+    private let hoursTodayCard = UIView()
+    private let hoursTodayLabel = UILabel()
+
+    // Holidays & Leaves Card
+    private let holidaysAndLeavesCard = UIView()
+    private let upcomingHolidaysCountLabel = UILabel()
+    private let daysPresentCountLabel = UILabel()
+
+    // Announcements Card
+    private let employeeAnnouncementsCard = UIView()
+    private let employeeAnnouncementsStack = UIStackView()
+    private let employeeAnnouncementsEmptyLabel = UILabel()
+
+    // Card B: Holiday (Real-time & Interactive Cycle - Fallback)
     private let holidayCard = UIView()
     private let holidayTitleLabel = UILabel()
     private let holidayBadge = UIView()
@@ -291,7 +308,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         setupScrollView()
         setupHeroCard()
         setupTimerCard()
-        setupTwoColumnRow()
+        setupAttendanceMetricsRow()
+        setupHolidaysAndLeavesCard()
+        setupAnnouncementsCard()
         setupTeamPresenceCard()
         setupTasksCard()
         setupMonthlyHeatmapCard()
@@ -354,6 +373,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             loadRealAttendanceHistoryForHeatmap()
             loadRealLeaves()
             loadRealHolidays()
+            loadEmployeeAnnouncements()
             loadRealSchedule()
             loadTeamPresence()
             loadTasks()
@@ -810,198 +830,462 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         updateCapsuleButtonsState()
     }
 
-    // MARK: - 3. Leaves & Holiday Row
-    private func setupTwoColumnRow() {
-        twoColumnRow.axis = .vertical
-        twoColumnRow.distribution = .fill
-        twoColumnRow.spacing = 14
-        twoColumnRow.translatesAutoresizingMaskIntoConstraints = false
-        employeeStackView.addArrangedSubview(twoColumnRow)
+    // MARK: - 2b. Attendance Metrics Row (Monthly Attendance & Hours Today)
+    private func setupAttendanceMetricsRow() {
+        attendanceMetricsRow.axis = .horizontal
+        attendanceMetricsRow.distribution = .fillEqually
+        attendanceMetricsRow.spacing = 12
+        attendanceMetricsRow.translatesAutoresizingMaskIntoConstraints = false
+        employeeStackView.addArrangedSubview(attendanceMetricsRow)
 
-        // Card A: Leaves (Full-width 1st)
-        leavesCard.backgroundColor = .white
-        leavesCard.layer.cornerRadius = 20
-        leavesCard.layer.borderWidth = 1
-        leavesCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
-        leavesCard.layer.shadowColor = UIColor.black.cgColor
-        leavesCard.layer.shadowOpacity = 0.03
-        leavesCard.layer.shadowOffset = CGSize(width: 0, height: 2)
-        leavesCard.layer.shadowRadius = 8
-        leavesCard.translatesAutoresizingMaskIntoConstraints = false
-        twoColumnRow.addArrangedSubview(leavesCard)
+        // Card 1: Monthly Attendance
+        monthlyAttendanceCard.backgroundColor = .white
+        monthlyAttendanceCard.layer.cornerRadius = 18
+        monthlyAttendanceCard.layer.borderWidth = 1
+        monthlyAttendanceCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
+        monthlyAttendanceCard.layer.shadowColor = UIColor.black.cgColor
+        monthlyAttendanceCard.layer.shadowOpacity = 0.03
+        monthlyAttendanceCard.layer.shadowOffset = CGSize(width: 0, height: 2)
+        monthlyAttendanceCard.layer.shadowRadius = 8
+        monthlyAttendanceCard.translatesAutoresizingMaskIntoConstraints = false
+        attendanceMetricsRow.addArrangedSubview(monthlyAttendanceCard)
 
-        leavesTitleLabel.text = "Total Leave"
-        leavesTitleLabel.font = .systemFont(ofSize: 16, weight: .bold)
-        leavesTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        leavesTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        leavesCard.addSubview(leavesTitleLabel)
+        let calIcon = UIImageView(image: UIImage(systemName: "calendar")?.withRenderingMode(.alwaysTemplate))
+        calIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        calIcon.translatesAutoresizingMaskIntoConstraints = false
+        monthlyAttendanceCard.addSubview(calIcon)
+
+        let monthTitle = UILabel()
+        monthTitle.text = "Monthly Attendance"
+        monthTitle.font = .systemFont(ofSize: 11, weight: .bold)
+        monthTitle.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        monthTitle.translatesAutoresizingMaskIntoConstraints = false
+        monthlyAttendanceCard.addSubview(monthTitle)
+
+        monthlyAttendanceLabel.text = "0%"
+        monthlyAttendanceLabel.font = .systemFont(ofSize: 22, weight: .heavy)
+        monthlyAttendanceLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        monthlyAttendanceLabel.translatesAutoresizingMaskIntoConstraints = false
+        monthlyAttendanceCard.addSubview(monthlyAttendanceLabel)
+
+        let monthSub = UILabel()
+        monthSub.text = "Target: 85%"
+        monthSub.font = .systemFont(ofSize: 11, weight: .regular)
+        monthSub.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        monthSub.translatesAutoresizingMaskIntoConstraints = false
+        monthlyAttendanceCard.addSubview(monthSub)
+
+        // Card 2: Hours Today
+        hoursTodayCard.backgroundColor = .white
+        hoursTodayCard.layer.cornerRadius = 18
+        hoursTodayCard.layer.borderWidth = 1
+        hoursTodayCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
+        hoursTodayCard.layer.shadowColor = UIColor.black.cgColor
+        hoursTodayCard.layer.shadowOpacity = 0.03
+        hoursTodayCard.layer.shadowOffset = CGSize(width: 0, height: 2)
+        hoursTodayCard.layer.shadowRadius = 8
+        hoursTodayCard.translatesAutoresizingMaskIntoConstraints = false
+        attendanceMetricsRow.addArrangedSubview(hoursTodayCard)
+
+        let clockIcon = UIImageView(image: UIImage(systemName: "clock")?.withRenderingMode(.alwaysTemplate))
+        clockIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        clockIcon.translatesAutoresizingMaskIntoConstraints = false
+        hoursTodayCard.addSubview(clockIcon)
+
+        let hoursTitle = UILabel()
+        hoursTitle.text = "Hours Today"
+        hoursTitle.font = .systemFont(ofSize: 11, weight: .bold)
+        hoursTitle.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        hoursTitle.translatesAutoresizingMaskIntoConstraints = false
+        hoursTodayCard.addSubview(hoursTitle)
+
+        hoursTodayLabel.text = "0 hrs"
+        hoursTodayLabel.font = .systemFont(ofSize: 22, weight: .heavy)
+        hoursTodayLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        hoursTodayLabel.translatesAutoresizingMaskIntoConstraints = false
+        hoursTodayCard.addSubview(hoursTodayLabel)
+
+        let hoursSub = UILabel()
+        hoursSub.text = "Logged today"
+        hoursSub.font = .systemFont(ofSize: 11, weight: .regular)
+        hoursSub.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        hoursSub.translatesAutoresizingMaskIntoConstraints = false
+        hoursTodayCard.addSubview(hoursSub)
+
+        NSLayoutConstraint.activate([
+            calIcon.topAnchor.constraint(equalTo: monthlyAttendanceCard.topAnchor, constant: 14),
+            calIcon.leadingAnchor.constraint(equalTo: monthlyAttendanceCard.leadingAnchor, constant: 14),
+            calIcon.widthAnchor.constraint(equalToConstant: 16),
+            calIcon.heightAnchor.constraint(equalToConstant: 16),
+
+            monthTitle.centerYAnchor.constraint(equalTo: calIcon.centerYAnchor),
+            monthTitle.leadingAnchor.constraint(equalTo: calIcon.trailingAnchor, constant: 6),
+            monthTitle.trailingAnchor.constraint(lessThanOrEqualTo: monthlyAttendanceCard.trailingAnchor, constant: -10),
+
+            monthlyAttendanceLabel.topAnchor.constraint(equalTo: monthTitle.bottomAnchor, constant: 10),
+            monthlyAttendanceLabel.leadingAnchor.constraint(equalTo: monthlyAttendanceCard.leadingAnchor, constant: 14),
+
+            monthSub.topAnchor.constraint(equalTo: monthlyAttendanceLabel.bottomAnchor, constant: 2),
+            monthSub.leadingAnchor.constraint(equalTo: monthlyAttendanceCard.leadingAnchor, constant: 14),
+            monthSub.bottomAnchor.constraint(equalTo: monthlyAttendanceCard.bottomAnchor, constant: -14),
+
+            clockIcon.topAnchor.constraint(equalTo: hoursTodayCard.topAnchor, constant: 14),
+            clockIcon.leadingAnchor.constraint(equalTo: hoursTodayCard.leadingAnchor, constant: 14),
+            clockIcon.widthAnchor.constraint(equalToConstant: 16),
+            clockIcon.heightAnchor.constraint(equalToConstant: 16),
+
+            hoursTitle.centerYAnchor.constraint(equalTo: clockIcon.centerYAnchor),
+            hoursTitle.leadingAnchor.constraint(equalTo: clockIcon.trailingAnchor, constant: 6),
+            hoursTitle.trailingAnchor.constraint(lessThanOrEqualTo: hoursTodayCard.trailingAnchor, constant: -10),
+
+            hoursTodayLabel.topAnchor.constraint(equalTo: hoursTitle.bottomAnchor, constant: 10),
+            hoursTodayLabel.leadingAnchor.constraint(equalTo: hoursTodayCard.leadingAnchor, constant: 14),
+
+            hoursSub.topAnchor.constraint(equalTo: hoursTodayLabel.bottomAnchor, constant: 2),
+            hoursSub.leadingAnchor.constraint(equalTo: hoursTodayCard.leadingAnchor, constant: 14),
+            hoursSub.bottomAnchor.constraint(equalTo: hoursTodayCard.bottomAnchor, constant: -14)
+        ])
+    }
+
+    // MARK: - 3. Holidays & Leaves Card
+    private func setupHolidaysAndLeavesCard() {
+        holidaysAndLeavesCard.backgroundColor = .white
+        holidaysAndLeavesCard.layer.cornerRadius = 20
+        holidaysAndLeavesCard.layer.borderWidth = 1
+        holidaysAndLeavesCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
+        holidaysAndLeavesCard.layer.shadowColor = UIColor.black.cgColor
+        holidaysAndLeavesCard.layer.shadowOpacity = 0.03
+        holidaysAndLeavesCard.layer.shadowOffset = CGSize(width: 0, height: 2)
+        holidaysAndLeavesCard.layer.shadowRadius = 8
+        holidaysAndLeavesCard.translatesAutoresizingMaskIntoConstraints = false
+        employeeStackView.addArrangedSubview(holidaysAndLeavesCard)
+
+        let calIcon = UIImageView(image: UIImage(systemName: "calendar")?.withRenderingMode(.alwaysTemplate))
+        calIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        calIcon.translatesAutoresizingMaskIntoConstraints = false
+        holidaysAndLeavesCard.addSubview(calIcon)
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Holidays & Leaves"
+        titleLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        holidaysAndLeavesCard.addSubview(titleLabel)
 
         leavesBadge.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
         leavesBadge.layer.cornerRadius = 16
         leavesBadge.translatesAutoresizingMaskIntoConstraints = false
-        leavesCard.addSubview(leavesBadge)
+        holidaysAndLeavesCard.addSubview(leavesBadge)
 
-        let calConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        leavesBadgeIcon.image = UIImage(systemName: "leaf.fill", withConfiguration: calConfig) ?? UIImage(systemName: "calendar", withConfiguration: calConfig)
+        let leafConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+        leavesBadgeIcon.image = UIImage(systemName: "leaf.fill", withConfiguration: leafConfig)
         leavesBadgeIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         leavesBadgeIcon.contentMode = .scaleAspectFit
         leavesBadgeIcon.translatesAutoresizingMaskIntoConstraints = false
         leavesBadge.addSubview(leavesBadgeIcon)
 
+        // Grid of 2 Metric Boxes Side by Side (Upcoming Holidays & Days Present)
+        let metricsStack = UIStackView()
+        metricsStack.axis = .horizontal
+        metricsStack.distribution = .fillEqually
+        metricsStack.spacing = 12
+        metricsStack.translatesAutoresizingMaskIntoConstraints = false
+        holidaysAndLeavesCard.addSubview(metricsStack)
+
+        // Sub Box 1: Upcoming Holidays
+        let holidaysBox = UIView()
+        holidaysBox.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        holidaysBox.layer.cornerRadius = 14
+        holidaysBox.layer.borderWidth = 1
+        holidaysBox.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        holidaysBox.translatesAutoresizingMaskIntoConstraints = false
+        metricsStack.addArrangedSubview(holidaysBox)
+
+        upcomingHolidaysCountLabel.text = "0"
+        upcomingHolidaysCountLabel.font = .systemFont(ofSize: 22, weight: .heavy)
+        upcomingHolidaysCountLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        upcomingHolidaysCountLabel.textAlignment = .center
+        upcomingHolidaysCountLabel.translatesAutoresizingMaskIntoConstraints = false
+        holidaysBox.addSubview(upcomingHolidaysCountLabel)
+
+        let holidaysSubLabel = UILabel()
+        holidaysSubLabel.text = "Upcoming Holidays"
+        holidaysSubLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        holidaysSubLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        holidaysSubLabel.textAlignment = .center
+        holidaysSubLabel.translatesAutoresizingMaskIntoConstraints = false
+        holidaysBox.addSubview(holidaysSubLabel)
+
+        // Sub Box 2: Days Present
+        let presentBox = UIView()
+        presentBox.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        presentBox.layer.cornerRadius = 14
+        presentBox.layer.borderWidth = 1
+        presentBox.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        presentBox.translatesAutoresizingMaskIntoConstraints = false
+        metricsStack.addArrangedSubview(presentBox)
+
+        daysPresentCountLabel.text = "0"
+        daysPresentCountLabel.font = .systemFont(ofSize: 22, weight: .heavy)
+        daysPresentCountLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        daysPresentCountLabel.textAlignment = .center
+        daysPresentCountLabel.translatesAutoresizingMaskIntoConstraints = false
+        presentBox.addSubview(daysPresentCountLabel)
+
+        let presentSubLabel = UILabel()
+        presentSubLabel.text = "Days Present"
+        presentSubLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        presentSubLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        presentSubLabel.textAlignment = .center
+        presentSubLabel.translatesAutoresizingMaskIntoConstraints = false
+        presentBox.addSubview(presentSubLabel)
+
+        // Leave Progress & Info Row
         leavesCasualLabel.text = "18 Leaves Left"
-        leavesCasualLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        leavesCasualLabel.font = .systemFont(ofSize: 14, weight: .bold)
         leavesCasualLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         leavesCasualLabel.translatesAutoresizingMaskIntoConstraints = false
-        leavesCard.addSubview(leavesCasualLabel)
+        holidaysAndLeavesCard.addSubview(leavesCasualLabel)
 
         leavesSickLabel.text = "Allocated: 24 • Used: 6"
-        leavesSickLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        leavesSickLabel.font = .systemFont(ofSize: 12, weight: .medium)
         leavesSickLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         leavesSickLabel.translatesAutoresizingMaskIntoConstraints = false
-        leavesCard.addSubview(leavesSickLabel)
+        holidaysAndLeavesCard.addSubview(leavesSickLabel)
 
         leavesProgressTrack.backgroundColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0)
         leavesProgressTrack.layer.cornerRadius = 2.5
         leavesProgressTrack.layer.masksToBounds = true
         leavesProgressTrack.translatesAutoresizingMaskIntoConstraints = false
-        leavesCard.addSubview(leavesProgressTrack)
+        holidaysAndLeavesCard.addSubview(leavesProgressTrack)
 
         leavesProgressBar.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         leavesProgressBar.layer.cornerRadius = 2.5
         leavesProgressBar.translatesAutoresizingMaskIntoConstraints = false
         leavesProgressTrack.addSubview(leavesProgressBar)
 
-        // Card B: Holiday (Full-width below Leaves)
-        holidayCard.backgroundColor = .white
-        holidayCard.layer.cornerRadius = 20
-        holidayCard.layer.borderWidth = 1
-        holidayCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
-        holidayCard.layer.shadowColor = UIColor.black.cgColor
-        holidayCard.layer.shadowOpacity = 0.03
-        holidayCard.layer.shadowOffset = CGSize(width: 0, height: 2)
-        holidayCard.layer.shadowRadius = 8
-        holidayCard.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.isUserInteractionEnabled = true
-        holidayCard.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cycleNextHoliday)))
-        let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cycleNextHoliday))
-        swipeLeft.direction = .left
-        holidayCard.addGestureRecognizer(swipeLeft)
-        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(cyclePrevHoliday))
-        swipeRight.direction = .right
-        holidayCard.addGestureRecognizer(swipeRight)
-        twoColumnRow.addArrangedSubview(holidayCard)
-
-        holidayTitleLabel.text = "Upcoming Holidays"
-        holidayTitleLabel.font = .systemFont(ofSize: 16, weight: .bold)
-        holidayTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        holidayTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.addSubview(holidayTitleLabel)
-
-        holidayDotsStack.axis = .horizontal
-        holidayDotsStack.spacing = 4
-        holidayDotsStack.alignment = .center
-        holidayDotsStack.distribution = .fill
-        holidayDotsStack.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.addSubview(holidayDotsStack)
-
-        holidayDots.removeAll()
-        for i in 0..<3 {
-            let dot = UIView()
-            dot.backgroundColor = (i == 0) ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0) : UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0)
-            dot.layer.cornerRadius = 3
-            dot.translatesAutoresizingMaskIntoConstraints = false
-            let wConstraint = dot.widthAnchor.constraint(equalToConstant: i == 0 ? 12 : 6)
-            let hConstraint = dot.heightAnchor.constraint(equalToConstant: 6)
-            NSLayoutConstraint.activate([wConstraint, hConstraint])
-            holidayDots.append(dot)
-            holidayDotsStack.addArrangedSubview(dot)
-        }
-
-        holidayNameLabel.text = "Diwali"
-        holidayNameLabel.font = .systemFont(ofSize: 16, weight: .bold)
-        holidayNameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        holidayNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.addSubview(holidayNameLabel)
-
-        holidayDateLabel.text = "Fri, Nov 1"
-        holidayDateLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        holidayDateLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        holidayDateLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.addSubview(holidayDateLabel)
-
-        holidayDaysLeftBadge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
-        holidayDaysLeftBadge.layer.cornerRadius = 10
-        holidayDaysLeftBadge.layer.borderWidth = 1
-        holidayDaysLeftBadge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
-        holidayDaysLeftBadge.translatesAutoresizingMaskIntoConstraints = false
-        holidayCard.addSubview(holidayDaysLeftBadge)
-
-        holidayDaysLeftLabel.text = "In 8 days"
-        holidayDaysLeftLabel.font = .systemFont(ofSize: 12, weight: .bold)
-        holidayDaysLeftLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
-        holidayDaysLeftLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidayDaysLeftBadge.addSubview(holidayDaysLeftLabel)
-
         leavesProgressWidthConstraint = leavesProgressBar.widthAnchor.constraint(equalTo: leavesProgressTrack.widthAnchor, multiplier: 0.70)
         leavesProgressWidthConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
-            leavesCard.widthAnchor.constraint(equalTo: twoColumnRow.widthAnchor),
-            holidayCard.widthAnchor.constraint(equalTo: twoColumnRow.widthAnchor),
+            calIcon.topAnchor.constraint(equalTo: holidaysAndLeavesCard.topAnchor, constant: 16),
+            calIcon.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
+            calIcon.widthAnchor.constraint(equalToConstant: 20),
+            calIcon.heightAnchor.constraint(equalToConstant: 20),
 
-            // Leaves Card Constraints (Full width)
-            leavesTitleLabel.topAnchor.constraint(equalTo: leavesCard.topAnchor, constant: 16),
-            leavesTitleLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 16),
+            titleLabel.centerYAnchor.constraint(equalTo: calIcon.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: calIcon.trailingAnchor, constant: 8),
 
-            leavesBadge.topAnchor.constraint(equalTo: leavesCard.topAnchor, constant: 14),
-            leavesBadge.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -16),
+            leavesBadge.centerYAnchor.constraint(equalTo: calIcon.centerYAnchor),
+            leavesBadge.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
             leavesBadge.widthAnchor.constraint(equalToConstant: 32),
             leavesBadge.heightAnchor.constraint(equalToConstant: 32),
 
             leavesBadgeIcon.centerXAnchor.constraint(equalTo: leavesBadge.centerXAnchor),
             leavesBadgeIcon.centerYAnchor.constraint(equalTo: leavesBadge.centerYAnchor),
 
-            leavesCasualLabel.topAnchor.constraint(equalTo: leavesTitleLabel.bottomAnchor, constant: 14),
-            leavesCasualLabel.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 16),
+            metricsStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14),
+            metricsStack.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
+            metricsStack.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
+
+            upcomingHolidaysCountLabel.topAnchor.constraint(equalTo: holidaysBox.topAnchor, constant: 12),
+            upcomingHolidaysCountLabel.centerXAnchor.constraint(equalTo: holidaysBox.centerXAnchor),
+            holidaysSubLabel.topAnchor.constraint(equalTo: upcomingHolidaysCountLabel.bottomAnchor, constant: 4),
+            holidaysSubLabel.centerXAnchor.constraint(equalTo: holidaysBox.centerXAnchor),
+            holidaysSubLabel.bottomAnchor.constraint(equalTo: holidaysBox.bottomAnchor, constant: -12),
+
+            daysPresentCountLabel.topAnchor.constraint(equalTo: presentBox.topAnchor, constant: 12),
+            daysPresentCountLabel.centerXAnchor.constraint(equalTo: presentBox.centerXAnchor),
+            presentSubLabel.topAnchor.constraint(equalTo: daysPresentCountLabel.bottomAnchor, constant: 4),
+            presentSubLabel.centerXAnchor.constraint(equalTo: presentBox.centerXAnchor),
+            presentSubLabel.bottomAnchor.constraint(equalTo: presentBox.bottomAnchor, constant: -12),
+
+            leavesCasualLabel.topAnchor.constraint(equalTo: metricsStack.bottomAnchor, constant: 14),
+            leavesCasualLabel.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
 
             leavesSickLabel.centerYAnchor.constraint(equalTo: leavesCasualLabel.centerYAnchor),
-            leavesSickLabel.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -16),
+            leavesSickLabel.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
             leavesSickLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leavesCasualLabel.trailingAnchor, constant: 12),
 
-            leavesProgressTrack.topAnchor.constraint(equalTo: leavesCasualLabel.bottomAnchor, constant: 12),
-            leavesProgressTrack.leadingAnchor.constraint(equalTo: leavesCard.leadingAnchor, constant: 16),
-            leavesProgressTrack.trailingAnchor.constraint(equalTo: leavesCard.trailingAnchor, constant: -16),
+            leavesProgressTrack.topAnchor.constraint(equalTo: leavesCasualLabel.bottomAnchor, constant: 10),
+            leavesProgressTrack.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
+            leavesProgressTrack.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
             leavesProgressTrack.heightAnchor.constraint(equalToConstant: 5),
-            leavesProgressTrack.bottomAnchor.constraint(equalTo: leavesCard.bottomAnchor, constant: -16),
+            leavesProgressTrack.bottomAnchor.constraint(equalTo: holidaysAndLeavesCard.bottomAnchor, constant: -16),
 
             leavesProgressBar.topAnchor.constraint(equalTo: leavesProgressTrack.topAnchor),
             leavesProgressBar.bottomAnchor.constraint(equalTo: leavesProgressTrack.bottomAnchor),
-            leavesProgressBar.leadingAnchor.constraint(equalTo: leavesProgressTrack.leadingAnchor),
-
-            // Holiday Card Constraints (Full width)
-            holidayTitleLabel.topAnchor.constraint(equalTo: holidayCard.topAnchor, constant: 16),
-            holidayTitleLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 16),
-
-            holidayDotsStack.centerYAnchor.constraint(equalTo: holidayTitleLabel.centerYAnchor),
-            holidayDotsStack.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -16),
-
-            holidayNameLabel.topAnchor.constraint(equalTo: holidayTitleLabel.bottomAnchor, constant: 14),
-            holidayNameLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 16),
-            holidayNameLabel.trailingAnchor.constraint(lessThanOrEqualTo: holidayDaysLeftBadge.leadingAnchor, constant: -12),
-
-            holidayDateLabel.topAnchor.constraint(equalTo: holidayNameLabel.bottomAnchor, constant: 4),
-            holidayDateLabel.leadingAnchor.constraint(equalTo: holidayCard.leadingAnchor, constant: 16),
-            holidayDateLabel.trailingAnchor.constraint(lessThanOrEqualTo: holidayDaysLeftBadge.leadingAnchor, constant: -12),
-            holidayDateLabel.bottomAnchor.constraint(equalTo: holidayCard.bottomAnchor, constant: -16),
-
-            holidayDaysLeftBadge.centerYAnchor.constraint(equalTo: holidayNameLabel.centerYAnchor),
-            holidayDaysLeftBadge.trailingAnchor.constraint(equalTo: holidayCard.trailingAnchor, constant: -16),
-
-            holidayDaysLeftLabel.topAnchor.constraint(equalTo: holidayDaysLeftBadge.topAnchor, constant: 4),
-            holidayDaysLeftLabel.bottomAnchor.constraint(equalTo: holidayDaysLeftBadge.bottomAnchor, constant: -4),
-            holidayDaysLeftLabel.leadingAnchor.constraint(equalTo: holidayDaysLeftBadge.leadingAnchor, constant: 10),
-            holidayDaysLeftLabel.trailingAnchor.constraint(equalTo: holidayDaysLeftBadge.trailingAnchor, constant: -10)
+            leavesProgressBar.leadingAnchor.constraint(equalTo: leavesProgressTrack.leadingAnchor)
         ])
+    }
+
+    // MARK: - 3b. Announcements Card
+    private func setupAnnouncementsCard() {
+        employeeAnnouncementsCard.backgroundColor = .white
+        employeeAnnouncementsCard.layer.cornerRadius = 20
+        employeeAnnouncementsCard.layer.borderWidth = 1
+        employeeAnnouncementsCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
+        employeeAnnouncementsCard.layer.shadowColor = UIColor.black.cgColor
+        employeeAnnouncementsCard.layer.shadowOpacity = 0.03
+        employeeAnnouncementsCard.layer.shadowOffset = CGSize(width: 0, height: 2)
+        employeeAnnouncementsCard.layer.shadowRadius = 8
+        employeeAnnouncementsCard.translatesAutoresizingMaskIntoConstraints = false
+        employeeStackView.addArrangedSubview(employeeAnnouncementsCard)
+
+        let hornConfig = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+        let hornIcon = UIImageView(image: UIImage(systemName: "megaphone.fill", withConfiguration: hornConfig) ?? UIImage(systemName: "bell.badge.fill", withConfiguration: hornConfig))
+        hornIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        hornIcon.translatesAutoresizingMaskIntoConstraints = false
+        employeeAnnouncementsCard.addSubview(hornIcon)
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Announcements"
+        titleLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        employeeAnnouncementsCard.addSubview(titleLabel)
+
+        employeeAnnouncementsStack.axis = .vertical
+        employeeAnnouncementsStack.spacing = 10
+        employeeAnnouncementsStack.translatesAutoresizingMaskIntoConstraints = false
+        employeeAnnouncementsCard.addSubview(employeeAnnouncementsStack)
+
+        employeeAnnouncementsEmptyLabel.text = "No active company announcements."
+        employeeAnnouncementsEmptyLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        employeeAnnouncementsEmptyLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        employeeAnnouncementsEmptyLabel.textAlignment = .center
+        employeeAnnouncementsEmptyLabel.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        employeeAnnouncementsEmptyLabel.layer.cornerRadius = 12
+        employeeAnnouncementsEmptyLabel.layer.borderWidth = 1
+        employeeAnnouncementsEmptyLabel.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        employeeAnnouncementsEmptyLabel.layer.masksToBounds = true
+        employeeAnnouncementsEmptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        employeeAnnouncementsEmptyLabel.isHidden = true
+        employeeAnnouncementsCard.addSubview(employeeAnnouncementsEmptyLabel)
+
+        let footerLabel = UILabel()
+        footerLabel.text = "GlobizHR System v1.0"
+        footerLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        footerLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        footerLabel.textAlignment = .center
+        footerLabel.translatesAutoresizingMaskIntoConstraints = false
+        employeeAnnouncementsCard.addSubview(footerLabel)
+
+        NSLayoutConstraint.activate([
+            hornIcon.topAnchor.constraint(equalTo: employeeAnnouncementsCard.topAnchor, constant: 16),
+            hornIcon.leadingAnchor.constraint(equalTo: employeeAnnouncementsCard.leadingAnchor, constant: 16),
+            hornIcon.widthAnchor.constraint(equalToConstant: 20),
+            hornIcon.heightAnchor.constraint(equalToConstant: 20),
+
+            titleLabel.centerYAnchor.constraint(equalTo: hornIcon.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: hornIcon.trailingAnchor, constant: 8),
+
+            employeeAnnouncementsStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14),
+            employeeAnnouncementsStack.leadingAnchor.constraint(equalTo: employeeAnnouncementsCard.leadingAnchor, constant: 16),
+            employeeAnnouncementsStack.trailingAnchor.constraint(equalTo: employeeAnnouncementsCard.trailingAnchor, constant: -16),
+
+            employeeAnnouncementsEmptyLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14),
+            employeeAnnouncementsEmptyLabel.leadingAnchor.constraint(equalTo: employeeAnnouncementsCard.leadingAnchor, constant: 16),
+            employeeAnnouncementsEmptyLabel.trailingAnchor.constraint(equalTo: employeeAnnouncementsCard.trailingAnchor, constant: -16),
+            employeeAnnouncementsEmptyLabel.heightAnchor.constraint(equalToConstant: 54),
+
+            footerLabel.topAnchor.constraint(greaterThanOrEqualTo: employeeAnnouncementsStack.bottomAnchor, constant: 12),
+            footerLabel.topAnchor.constraint(greaterThanOrEqualTo: employeeAnnouncementsEmptyLabel.bottomAnchor, constant: 12),
+            footerLabel.centerXAnchor.constraint(equalTo: employeeAnnouncementsCard.centerXAnchor),
+            footerLabel.bottomAnchor.constraint(equalTo: employeeAnnouncementsCard.bottomAnchor, constant: -14)
+        ])
+    }
+
+    private func loadEmployeeAnnouncements() {
+        AuthService.shared.getAnnouncements { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if case .success(let announcements) = result, !announcements.isEmpty {
+                    self.employeeAnnouncementsEmptyLabel.isHidden = true
+                    self.employeeAnnouncementsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+                    let limit = min(announcements.count, 3)
+                    for i in 0..<limit {
+                        let ann = announcements[i]
+                        let title = ann["title"] as? String ?? "Company Announcement"
+                        let content = ann["content"] as? String ?? (ann["message"] as? String ?? "")
+                        let createdStr = ann["createdAt"] as? String ?? ""
+
+                        var dateFormatted = "Recent"
+                        if let d = self.parseIsoDate(createdStr) {
+                            let df = DateFormatter()
+                            df.dateFormat = "MMM d, yyyy"
+                            dateFormatted = df.string(from: d)
+                        }
+
+                        let item = UIView()
+                        item.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+                        item.layer.cornerRadius = 14
+                        item.layer.borderWidth = 1
+                        item.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+                        item.translatesAutoresizingMaskIntoConstraints = false
+
+                        let badge = UILabel()
+                        badge.text = "Update"
+                        badge.font = .systemFont(ofSize: 10, weight: .bold)
+                        badge.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+                        badge.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+                        badge.layer.cornerRadius = 6
+                        badge.layer.masksToBounds = true
+                        badge.textAlignment = .center
+                        badge.translatesAutoresizingMaskIntoConstraints = false
+                        item.addSubview(badge)
+
+                        let dateLabel = UILabel()
+                        dateLabel.text = dateFormatted
+                        dateLabel.font = .systemFont(ofSize: 11, weight: .medium)
+                        dateLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+                        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+                        item.addSubview(dateLabel)
+
+                        let titleLab = UILabel()
+                        titleLab.text = title
+                        titleLab.font = .systemFont(ofSize: 14, weight: .bold)
+                        titleLab.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+                        titleLab.numberOfLines = 2
+                        titleLab.translatesAutoresizingMaskIntoConstraints = false
+                        item.addSubview(titleLab)
+
+                        let contentLab = UILabel()
+                        contentLab.text = content
+                        contentLab.font = .systemFont(ofSize: 12, weight: .regular)
+                        contentLab.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+                        contentLab.numberOfLines = 3
+                        contentLab.translatesAutoresizingMaskIntoConstraints = false
+                        item.addSubview(contentLab)
+
+                        NSLayoutConstraint.activate([
+                            badge.topAnchor.constraint(equalTo: item.topAnchor, constant: 12),
+                            badge.leadingAnchor.constraint(equalTo: item.leadingAnchor, constant: 14),
+                            badge.widthAnchor.constraint(equalToConstant: 52),
+                            badge.heightAnchor.constraint(equalToConstant: 20),
+
+                            dateLabel.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
+                            dateLabel.trailingAnchor.constraint(equalTo: item.trailingAnchor, constant: -14),
+
+                            titleLab.topAnchor.constraint(equalTo: badge.bottomAnchor, constant: 8),
+                            titleLab.leadingAnchor.constraint(equalTo: item.leadingAnchor, constant: 14),
+                            titleLab.trailingAnchor.constraint(equalTo: item.trailingAnchor, constant: -14),
+
+                            contentLab.topAnchor.constraint(equalTo: titleLab.bottomAnchor, constant: 4),
+                            contentLab.leadingAnchor.constraint(equalTo: item.leadingAnchor, constant: 14),
+                            contentLab.trailingAnchor.constraint(equalTo: item.trailingAnchor, constant: -14),
+                            contentLab.bottomAnchor.constraint(equalTo: item.bottomAnchor, constant: -12)
+                        ])
+
+                        self.employeeAnnouncementsStack.addArrangedSubview(item)
+                    }
+                } else {
+                    self.employeeAnnouncementsEmptyLabel.isHidden = false
+                    self.employeeAnnouncementsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+                }
+            }
+        }
     }
 
     // MARK: - 4. Team Presence Card
@@ -3099,6 +3383,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
             self.upcomingHolidays = Array(upcomingList.prefix(3))
             self.currentHolidayIndex = 0
+            DispatchQueue.main.async {
+                self.upcomingHolidaysCountLabel.text = "\(max(upcomingList.count, 1))"
+            }
             self.displayHolidayAtIndex(0)
         }
     }
@@ -3404,6 +3691,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.liveTimerLabel.text = "00:00:00"
                     self.updateUIForAttendance(clockedIn: false)
                 }
+
+                DispatchQueue.main.async {
+                    let percentage = stats["attendancePercentage"] as? Int ?? 0
+                    self.monthlyAttendanceLabel.text = "\(percentage)%"
+
+                    let workingHours = stats["workingHours"] as? Double ?? Double(stats["workingHours"] as? Int ?? 0)
+                    self.hoursTodayLabel.text = String(format: "%.1f hrs", workingHours)
+
+                    let presentDays = stats["presentDays"] as? Int ?? 0
+                    self.daysPresentCountLabel.text = "\(presentDays)"
+                }
+
                 self.dismissSkeleton()
             case .failure:
                 // Keep local session if active, do not overwrite with false

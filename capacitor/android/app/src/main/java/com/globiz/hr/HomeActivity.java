@@ -115,6 +115,16 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvSickLeave;
     private ProgressBar pbLeaveProgress;
 
+    // Attendance Metrics & Holidays/Leaves & Announcements Views
+    private TextView tvMonthlyAttendanceValue;
+    private TextView tvHoursTodayValue;
+    private View cvHolidaysAndLeaves;
+    private TextView tvUpcomingHolidaysCount;
+    private TextView tvDaysPresentCount;
+    private View cvAnnouncementsCard;
+    private LinearLayout llEmployeeAnnouncements;
+    private TextView tvEmployeeAnnouncementsEmpty;
+
     // Holiday Card Views
     private View cvHolidayCard;
     private TextView tvHolidayName;
@@ -434,20 +444,23 @@ public class HomeActivity extends AppCompatActivity {
         btnClockIn = findViewById(R.id.btnClockIn);
         btnClockOut = findViewById(R.id.btnClockOut);
 
-        // Leaves Card
-        cvLeavesCard = findViewById(R.id.cvLeavesCard);
+        // Attendance Metrics
+        tvMonthlyAttendanceValue = findViewById(R.id.tvMonthlyAttendanceValue);
+        tvHoursTodayValue = findViewById(R.id.tvHoursTodayValue);
+
+        // Holidays & Leaves Card
+        cvHolidaysAndLeaves = findViewById(R.id.cvHolidaysAndLeaves);
+        cvLeavesCard = cvHolidaysAndLeaves;
+        tvUpcomingHolidaysCount = findViewById(R.id.tvUpcomingHolidaysCount);
+        tvDaysPresentCount = findViewById(R.id.tvDaysPresentCount);
         tvCasualLeave = findViewById(R.id.tvCasualLeave);
         tvSickLeave = findViewById(R.id.tvSickLeave);
         pbLeaveProgress = findViewById(R.id.pbLeaveProgress);
 
-        // Holiday Card
-        cvHolidayCard = findViewById(R.id.cvHolidayCard);
-        tvHolidayName = findViewById(R.id.tvHolidayName);
-        tvHolidayDate = findViewById(R.id.tvHolidayDate);
-        tvHolidayDaysLeft = findViewById(R.id.tvHolidayDaysLeft);
-        dotHoliday0 = findViewById(R.id.dotHoliday0);
-        dotHoliday1 = findViewById(R.id.dotHoliday1);
-        dotHoliday2 = findViewById(R.id.dotHoliday2);
+        // Announcements Card
+        cvAnnouncementsCard = findViewById(R.id.cvAnnouncementsCard);
+        llEmployeeAnnouncements = findViewById(R.id.llEmployeeAnnouncements);
+        tvEmployeeAnnouncementsEmpty = findViewById(R.id.tvEmployeeAnnouncementsEmpty);
 
         // Other Cards
         cvTeamPresence = findViewById(R.id.cvTeamPresence);
@@ -1192,38 +1205,6 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
-        if (cvHolidayCard != null) {
-            GestureDetector holidayDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
-                @Override
-                public boolean onSingleTapUp(MotionEvent e) {
-                    cycleNextHoliday();
-                    return true;
-                }
-
-                @Override
-                public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                    if (e1 != null && e2 != null) {
-                        float diffX = e2.getX() - e1.getX();
-                        if (Math.abs(diffX) > 40 && Math.abs(velocityX) > 100) {
-                            if (diffX < 0) {
-                                cycleNextHoliday();
-                            } else {
-                                cyclePrevHoliday();
-                            }
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            });
-
-            cvHolidayCard.setOnTouchListener((v, event) -> {
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    v.performClick();
-                }
-                return holidayDetector.onTouchEvent(event);
-            });
-        }
 
         if (cvTeamPresence != null) {
             cvTeamPresence.setOnClickListener(v -> showTeamRosterDialog());
@@ -1935,6 +1916,21 @@ public class HomeActivity extends AppCompatActivity {
                     isOnBreak = remoteOnBreak || apiClient.isOnBreak();
                     updateBreakUI(isOnBreak);
                 }
+
+                // Real-time Attendance & Hours metrics (Web synchronized)
+                int percentage = stats.optInt("attendancePercentage", 0);
+                if (tvMonthlyAttendanceValue != null) {
+                    tvMonthlyAttendanceValue.setText(percentage + "%");
+                }
+                double workingHours = stats.optDouble("workingHours", 0.0);
+                if (tvHoursTodayValue != null) {
+                    tvHoursTodayValue.setText(String.format(Locale.getDefault(), "%.1f hrs", workingHours));
+                }
+                int presentDays = stats.optInt("presentDays", 0);
+                if (tvDaysPresentCount != null) {
+                    tvDaysPresentCount.setText(String.valueOf(presentDays));
+                }
+
                 hideSkeletonLoading();
             }
 
@@ -2869,92 +2865,16 @@ public class HomeActivity extends AppCompatActivity {
                 // Sort upcoming holidays ascending
                 Collections.sort(upcomingHolidays, Comparator.comparing(o -> o.date));
 
-                // Take top 3 upcoming holidays
-                if (upcomingHolidays.size() > 3) {
-                    List<HolidayItem> topThree = new ArrayList<>(upcomingHolidays.subList(0, 3));
-                    upcomingHolidays.clear();
-                    upcomingHolidays.addAll(topThree);
+                if (tvUpcomingHolidaysCount != null) {
+                    tvUpcomingHolidaysCount.setText(String.valueOf(upcomingHolidays.size()));
                 }
-
-                currentHolidayIndex = 0;
-                displayCurrentHoliday();
             }
 
             @Override
             public void onError(String errorMessage, int statusCode) {
-                // Keep default holiday
+                // Keep default holiday count
             }
         });
-    }
-
-    private void displayCurrentHoliday() {
-        if (upcomingHolidays.isEmpty()) return;
-
-        if (currentHolidayIndex >= upcomingHolidays.size()) {
-            currentHolidayIndex = 0;
-        }
-
-        HolidayItem current = upcomingHolidays.get(currentHolidayIndex);
-        if (tvHolidayName != null) tvHolidayName.setText(current.name);
-        if (tvHolidayDate != null) tvHolidayDate.setText(current.formattedDate);
-        if (tvHolidayDaysLeft != null) {
-            if (current.daysRemaining == 0) {
-                tvHolidayDaysLeft.setText("Today");
-                tvHolidayDaysLeft.setTextColor(Color.parseColor("#DC2626"));
-            } else if (current.daysRemaining == 1) {
-                tvHolidayDaysLeft.setText("Tomorrow");
-                tvHolidayDaysLeft.setTextColor(Color.parseColor("#D97706"));
-            } else {
-                tvHolidayDaysLeft.setText("In " + current.daysRemaining + " days");
-                tvHolidayDaysLeft.setTextColor(Color.parseColor("#D97706"));
-            }
-        }
-
-        updateHolidayDots(currentHolidayIndex);
-    }
-
-    private void updateHolidayDots(int activeIndex) {
-        View[] dots = new View[]{dotHoliday0, dotHoliday1, dotHoliday2};
-        float density = getResources().getDisplayMetrics().density;
-        for (int i = 0; i < dots.length; i++) {
-            if (dots[i] != null) {
-                boolean isActive = (i == activeIndex);
-                dots[i].setBackgroundResource(isActive ? R.drawable.bg_holiday_dot_active : R.drawable.bg_holiday_dot_inactive);
-                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) dots[i].getLayoutParams();
-                if (lp != null) {
-                    lp.width = (int) ((isActive ? 12 : 6) * density);
-                    lp.height = (int) (6 * density);
-                    dots[i].setLayoutParams(lp);
-                }
-            }
-        }
-    }
-
-    private void cycleNextHoliday() {
-        if (upcomingHolidays.isEmpty()) return;
-        currentHolidayIndex = (currentHolidayIndex + 1) % upcomingHolidays.size();
-        animateHolidaySlide(true);
-        displayCurrentHoliday();
-    }
-
-    private void cyclePrevHoliday() {
-        if (upcomingHolidays.isEmpty()) return;
-        currentHolidayIndex = (currentHolidayIndex - 1 + upcomingHolidays.size()) % upcomingHolidays.size();
-        animateHolidaySlide(false);
-        displayCurrentHoliday();
-    }
-
-    private void animateHolidaySlide(boolean forward) {
-        if (cvHolidayCard == null) return;
-        float offset = forward ? 35f : -35f;
-        cvHolidayCard.setTranslationX(offset);
-        cvHolidayCard.setAlpha(0.65f);
-        cvHolidayCard.animate()
-                .translationX(0f)
-                .alpha(1f)
-                .setDuration(220)
-                .setInterpolator(new DecelerateInterpolator())
-                .start();
     }
 
     private Date parseIsoDate(String isoString) {
@@ -3107,6 +3027,7 @@ public class HomeActivity extends AppCompatActivity {
             loadSchedule();
             loadLeaveBalance();
             loadHolidays();
+            loadEmployeeAnnouncements();
             loadTeamPresence();
             loadTasks();
             updateNotificationBadge();
@@ -3499,6 +3420,115 @@ public class HomeActivity extends AppCompatActivity {
             item.addView(authorTv);
 
             llAdminAnnouncementsList.addView(item);
+        }
+    }
+
+    private void loadEmployeeAnnouncements() {
+        if (apiClient == null) return;
+        apiClient.getAnnouncements(new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray announcements) {
+                runOnUiThread(() -> renderEmployeeAnnouncements(announcements));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> renderEmployeeAnnouncements(null));
+            }
+        });
+    }
+
+    private void renderEmployeeAnnouncements(JSONArray announcements) {
+        if (llEmployeeAnnouncements == null) return;
+        llEmployeeAnnouncements.removeAllViews();
+
+        if (announcements == null || announcements.length() == 0) {
+            if (tvEmployeeAnnouncementsEmpty != null) {
+                tvEmployeeAnnouncementsEmpty.setVisibility(View.VISIBLE);
+            }
+            return;
+        }
+
+        if (tvEmployeeAnnouncementsEmpty != null) {
+            tvEmployeeAnnouncementsEmpty.setVisibility(View.GONE);
+        }
+
+        int limit = Math.min(announcements.length(), 3);
+        SimpleDateFormat inFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        inFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat outFmt = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+
+        for (int i = 0; i < limit; i++) {
+            JSONObject ann = announcements.optJSONObject(i);
+            if (ann == null) continue;
+
+            String title = ann.optString("title", "Company Announcement");
+            String content = ann.optString("content", ann.optString("message", ""));
+            String createdAt = ann.optString("createdAt", "");
+            String dateFormatted = "Recent";
+            if (!createdAt.isEmpty()) {
+                try {
+                    Date d = inFmt.parse(createdAt);
+                    if (d != null) dateFormatted = outFmt.format(d);
+                } catch (Exception ignored) {
+                    dateFormatted = createdAt.length() >= 10 ? createdAt.substring(0, 10) : createdAt;
+                }
+            }
+
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_sub_stat_card));
+            item.setPadding(dpToPx(14), dpToPx(12), dpToPx(14), dpToPx(12));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.bottomMargin = dpToPx(10);
+            item.setLayoutParams(lp);
+
+            LinearLayout headerRow = new LinearLayout(this);
+            headerRow.setOrientation(LinearLayout.HORIZONTAL);
+            headerRow.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            headerRow.setLayoutParams(headerLp);
+
+            TextView badge = new TextView(this);
+            badge.setText("Update");
+            badge.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+            badge.setTypeface(null, Typeface.BOLD);
+            badge.setTextColor(Color.parseColor("#0056FD"));
+            badge.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_mint_pill));
+            badge.setPadding(dpToPx(8), dpToPx(2), dpToPx(8), dpToPx(2));
+            headerRow.addView(badge);
+
+            View spacer = new View(this);
+            LinearLayout.LayoutParams spacerLp = new LinearLayout.LayoutParams(0, 0, 1.0f);
+            spacer.setLayoutParams(spacerLp);
+            headerRow.addView(spacer);
+
+            TextView dateTv = new TextView(this);
+            dateTv.setText(dateFormatted);
+            dateTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            dateTv.setTextColor(Color.parseColor("#94A3B8"));
+            headerRow.addView(dateTv);
+
+            item.addView(headerRow);
+
+            TextView titleTv = new TextView(this);
+            titleTv.setText(title);
+            titleTv.setTextColor(Color.parseColor("#0F172A"));
+            titleTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            titleTv.setTypeface(null, Typeface.BOLD);
+            titleTv.setPadding(0, dpToPx(8), 0, dpToPx(4));
+            item.addView(titleTv);
+
+            TextView contentTv = new TextView(this);
+            contentTv.setText(content);
+            contentTv.setTextColor(Color.parseColor("#475569"));
+            contentTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            contentTv.setLineSpacing(dpToPx(2), 1.0f);
+            item.addView(contentTv);
+
+            llEmployeeAnnouncements.addView(item);
         }
     }
 
