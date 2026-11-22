@@ -44,10 +44,10 @@ class TabManager {
         case .employee:
             list.append(TabItem(id: "attendance", title: "Attendance", systemIcon: "clock", isLocked: false, isEnabled: true))
             list.append(TabItem(id: "leave", title: "Leave", systemIcon: "calendar", isLocked: false, isEnabled: true))
-            list.append(TabItem(id: "tasks", title: "Tasks", systemIcon: "checkmark.square", isLocked: false, isEnabled: true))
-            list.append(TabItem(id: "schedules", title: "Schedules", systemIcon: "calendar.badge.clock", isLocked: false, isEnabled: false))
+            list.append(TabItem(id: "schedules", title: "Schedule", systemIcon: "calendar", isLocked: false, isEnabled: true))
+            list.append(TabItem(id: "payslips", title: "My Payslips", systemIcon: "banknote", isLocked: false, isEnabled: false))
+            list.append(TabItem(id: "tasks", title: "Tasks", systemIcon: "checklist", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "shifts", title: "Shifts", systemIcon: "briefcase", isLocked: false, isEnabled: false))
-            list.append(TabItem(id: "payslips", title: "My Payslips", systemIcon: "doc.text", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "documents", title: "Documents", systemIcon: "folder", isLocked: false, isEnabled: false))
         }
 
@@ -67,13 +67,16 @@ class TabManager {
         var seenIds = Set<String>()
 
         for item in decoded {
-            let lowerId = item.id.lowercased()
+            var lowerId = item.id.lowercased()
+            if role == .employee && lowerId == "tasks" {
+                lowerId = "schedules"
+            }
             if lowerId == "home" {
                 tabs.append(TabItem(id: "home", title: "Home", systemIcon: "house.fill", isLocked: true, isEnabled: true))
             } else {
                 let defaultIcon = defaults.first(where: { $0.id.lowercased() == lowerId })?.systemIcon ?? "square.grid.2x2"
                 let defaultTitle = defaults.first(where: { $0.id.lowercased() == lowerId })?.title ?? item.title
-                tabs.append(TabItem(id: item.id, title: defaultTitle, systemIcon: defaultIcon, isLocked: false, isEnabled: item.isEnabled))
+                tabs.append(TabItem(id: lowerId, title: defaultTitle, systemIcon: defaultIcon, isLocked: false, isEnabled: item.isEnabled))
             }
             seenIds.insert(lowerId)
         }

@@ -174,7 +174,8 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             MoreModule(id: "documents", title: "Documents", systemIcon: "folder", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
             MoreModule(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", iconColor: nil, allowedRoles: ["HR_HEAD", "SUPER_ADMIN", "OWNER"]),
             MoreModule(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", iconColor: nil, allowedRoles: ["HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["SUPER_ADMIN", "OWNER"])
+            MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "help", title: "Help & Support", systemIcon: "questionmark.circle", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"])
         ]
     }
 
@@ -620,6 +621,10 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             let tasksVC = TasksViewController()
             tasksVC.modalPresentationStyle = .fullScreen
             present(tasksVC, animated: true)
+        } else if module.id == "help" {
+            let helpVC = HelpSupportViewController()
+            helpVC.modalPresentationStyle = .fullScreen
+            present(helpVC, animated: true)
         } else {
             let alert = UIAlertController(title: module.title, message: "\(module.title) module is active and synchronized.", preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))

@@ -46,6 +46,7 @@ struct MoreModule {
                 || id == "leave_policies"
                 || id == "documents_admin"
                 || id == "settings"
+                || id == "help"
 
         case .admin:
             return id == "tasks"
@@ -53,12 +54,11 @@ struct MoreModule {
                 || id == "leave_policies"
                 || id == "payroll"
                 || id == "documents_admin"
+                || id == "help"
 
         case .employee:
-            return id == "schedules"
-                || id == "shifts"
-                || id == "payslips"
-                || id == "documents"
+            return id == "payslips"
+                || id == "help"
         }
     }
 }
@@ -193,7 +193,7 @@ class RoleNavigationManager {
                 leaveVC.modalPresentationStyle = .fullScreen
                 vc.present(leaveVC, animated: false)
             }
-        } else if id == "tasks" {
+        } else if id == "tasks" || id == "schedules" {
             if vc is TasksViewController {
                 scrollHandler?()
             } else {

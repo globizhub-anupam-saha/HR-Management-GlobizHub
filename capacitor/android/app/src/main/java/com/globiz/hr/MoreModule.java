@@ -49,7 +49,8 @@ public class MoreModule {
                         || "manage_schedules".equals(id)
                         || "leave_policies".equals(id)
                         || "documents_admin".equals(id)
-                        || "settings".equals(id);
+                        || "settings".equals(id)
+                        || "help".equals(id);
 
             case ADMIN:
                 // Admin has management and operations modules in More
@@ -57,15 +58,14 @@ public class MoreModule {
                         || "manage_schedules".equals(id)
                         || "leave_policies".equals(id)
                         || "payroll".equals(id)
-                        || "documents_admin".equals(id);
+                        || "documents_admin".equals(id)
+                        || "help".equals(id);
 
             case EMPLOYEE:
             default:
                 // Employee only has personal self-service modules in More
-                return "schedules".equals(id)
-                        || "shifts".equals(id)
-                        || "payslips".equals(id)
-                        || "documents".equals(id);
+                return "payslips".equals(id)
+                        || "help".equals(id);
         }
     }
 }

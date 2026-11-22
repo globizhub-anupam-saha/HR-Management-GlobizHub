@@ -1152,6 +1152,10 @@ public class ApiClient {
     }
 
     // 6. Schedule
+    public void getMySchedule(ApiCallback<JSONArray> callback) {
+        getMySchedule(getToken(), callback);
+    }
+
     public void getMySchedule(String token, ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/schedules/me", token, callback);

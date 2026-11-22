@@ -2849,14 +2849,14 @@
             <ImageView
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_mod_tasks"
+                android:src="@drawable/ic_calendar"
                 android:tint="#475569" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Tasks"
+                android:text="Schedule"
                 android:textColor="#475569"
                 android:textSize="11sp" />
         </LinearLayout>

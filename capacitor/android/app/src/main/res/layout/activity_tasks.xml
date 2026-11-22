@@ -51,7 +51,7 @@
                         android:id="@+id/tvHeaderTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tasks"
+                        android:text="Schedule"
                         android:textColor="#0F172A"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -222,7 +222,7 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- 4. Tasks (ACTIVE) -->
+            <!-- 4. Schedule (ACTIVE) -->
             <LinearLayout
                 android:id="@+id/navTabTasks"
                 android:layout_width="0dp"
@@ -236,14 +236,14 @@
                 <ImageView
                     android:layout_width="22dp"
                     android:layout_height="22dp"
-                    android:src="@drawable/ic_mod_tasks"
+                    android:src="@drawable/ic_calendar"
                     android:tint="#0056FD" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Tasks"
+                    android:text="Schedule"
                     android:textColor="#0056FD"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -301,10 +301,11 @@
             android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
-            <!-- Overview Header & Action -->
+            <!-- Page Header -->
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -316,205 +317,153 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tasks Due Today"
+                        android:text="My Roster"
                         android:textColor="#0F172A"
-                        android:textSize="18sp"
+                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/tvTasksSubLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="3 pending items requiring action"
+                        android:text="View your assigned shifts, schedules, and active overrides."
                         android:textColor="#64748B"
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/btnNewTask"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:background="@drawable/bg_blue_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingStart="12dp"
-                    android:paddingTop="7dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="7dp"
-                    android:text="+ Add Task"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:background="@drawable/bg_day_pill_inactive"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="10dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="6dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="5dp"
+                        android:src="@drawable/ic_calendar"
+                        android:tint="#10B981" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Upcoming 7 Days"
+                        android:textColor="#334155"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </RelativeLayout>
 
-            <LinearLayout
-                android:id="@+id/llTasksList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-            <!-- Task Item 1 -->
+            <!-- Card 1: Weekly Overview -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_attendance_card"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Review Q4 HR Payroll Reports"
-                        android:textColor="#0F172A"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:background="@drawable/bg_red_glow_ring"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:text="High Priority"
-                        android:textColor="#EF4444"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </RelativeLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Weekly Overview"
+                    android:textColor="#0F172A"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Verify employee overtime approvals and deductions before salary disbursement."
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Due today at 05:00 PM • HR Dept"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="14dp"
+                    android:text="A quick glance at your week ahead showing active schedules."
                     android:textColor="#64748B"
-                    android:textSize="11sp" />
+                    android:textSize="12sp" />
+
+                <!-- Horizontal scroll of days -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/llWeekOverview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <!-- Populated programmatically -->
+                    </LinearLayout>
+                </HorizontalScrollView>
             </LinearLayout>
 
-            <!-- Task Item 2 -->
+            <!-- Card 2: Upcoming Shifts Details -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_attendance_card"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_clock"
+                        android:tint="#6366F1" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Conduct 1-on-1 Performance Sync"
+                        android:text="Upcoming Shifts Details"
                         android:textColor="#0F172A"
-                        android:textSize="14sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
+                </LinearLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:background="@drawable/bg_day_pill_inactive"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:text="Medium"
-                        android:textColor="#F59E0B"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </RelativeLayout>
+                <ProgressBar
+                    android:id="@+id/pbLoading"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Bi-weekly review discussion for design system alignment and milestones."
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Due today at 02:30 PM • Team Room 3"
-                    android:textColor="#64748B"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <!-- Task Item 3 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_attendance_card"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <RelativeLayout
+                    android:id="@+id/tvEmptyShifts"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Update Biometric Geofence Guidelines"
-                        android:textColor="#0F172A"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:background="@drawable/bg_mint_pill"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:text="Completed"
-                        android:textColor="#059669"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </RelativeLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Finalize updated office radius coordinates in capacitor config."
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:gravity="center"
+                    android:text="No upcoming active shifts to display."
+                    android:textColor="#94A3B8"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/llUpcomingShifts"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Completed at 11:20 AM"
-                    android:textColor="#10B981"
-                    android:textSize="11sp" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical">
+                    <!-- Populated programmatically -->
+                </LinearLayout>
             </LinearLayout>
-            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 </RelativeLayout>

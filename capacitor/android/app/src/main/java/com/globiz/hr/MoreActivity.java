@@ -119,6 +119,7 @@ public class MoreActivity extends AppCompatActivity {
         allModules.add(new MoreModule("documents_admin", "Documents (Admin)", R.drawable.ic_mod_files, 0xFF1E293B, "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("manage_schedules", "Manage Schedules", R.drawable.ic_calendar_edit, 0xFF1E293B, "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("settings", "Settings", R.drawable.ic_settings_gear, 0xFF1E293B, "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("help", "Help & Support", R.drawable.ic_info, 0xFF1E293B, "EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
     }
 
     private void filterModulesByRole() {
@@ -271,6 +272,8 @@ public class MoreActivity extends AppCompatActivity {
             startActivity(new Intent(this, LeaveActivity.class));
         } else if ("tasks".equals(module.getId())) {
             startActivity(new Intent(this, TasksActivity.class));
+        } else if ("help".equals(module.getId())) {
+            startActivity(new Intent(this, HelpSupportActivity.class));
         } else {
             showModuleInfoDialog(module);
         }

@@ -98,10 +98,10 @@ public class TabManager {
             default:
                 list.add(new TabItem("attendance", "Attendance", R.drawable.ic_attendance, false, true));
                 list.add(new TabItem("leave", "Leave", R.drawable.ic_nav_leave, false, true));
-                list.add(new TabItem("tasks", "Tasks", R.drawable.ic_mod_tasks, false, true));
-                list.add(new TabItem("schedules", "Schedules", R.drawable.ic_calendar, false, false));
-                list.add(new TabItem("shifts", "Shifts", R.drawable.ic_mod_time, false, false));
+                list.add(new TabItem("schedules", "Schedule", R.drawable.ic_calendar, false, true));
                 list.add(new TabItem("payslips", "My Payslips", R.drawable.ic_chart_bar, false, false));
+                list.add(new TabItem("tasks", "Tasks", R.drawable.ic_mod_tasks, false, false));
+                list.add(new TabItem("shifts", "Shifts", R.drawable.ic_mod_time, false, false));
                 list.add(new TabItem("documents", "Documents", R.drawable.ic_mod_files, false, false));
                 break;
         }
@@ -132,6 +132,10 @@ public class TabManager {
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.getJSONObject(i);
                 TabItem item = TabItem.fromJson(obj);
+                // Migrate legacy tasks tab to schedules for employee
+                if ("tasks".equalsIgnoreCase(item.getId()) && role == UserRole.EMPLOYEE) {
+                    item = new TabItem("schedules", "Schedule", R.drawable.ic_calendar, false, item.isEnabled());
+                }
                 // Ensure index 0 / home is always locked and enabled
                 if ("home".equalsIgnoreCase(item.getId())) {
                     item = new TabItem("home", "Home", R.drawable.ic_nav_home, true, true);

@@ -108,6 +108,8 @@ class SplashViewController: UIViewController {
             nextVC = AttendanceViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteLeaves") {
             nextVC = LeaveViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteSchedule") || ProcessInfo.processInfo.arguments.contains("-testRouteTasks") {
+            nextVC = TasksViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteMore") {
             nextVC = MoreViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteCustomizeTabs") {

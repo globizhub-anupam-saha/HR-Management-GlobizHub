@@ -117,7 +117,7 @@ public class BottomNavHelper {
                 activity.startActivity(new Intent(activity, LeaveActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
-        } else if ("tasks".equals(id)) {
+        } else if ("tasks".equals(id) || "schedules".equals(id)) {
             if (!(activity instanceof TasksActivity)) {
                 activity.startActivity(new Intent(activity, TasksActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
@@ -129,7 +129,7 @@ public class BottomNavHelper {
             }
         } else if ("payslips".equals(id)) {
             activity.startActivity(new Intent(activity, PayslipsActivity.class));
-        } else if ("shifts".equals(id) || "schedules".equals(id) || "manage_schedules".equals(id)) {
+        } else if ("shifts".equals(id) || "manage_schedules".equals(id)) {
             activity.startActivity(new Intent(activity, ShiftsActivity.class));
         } else if ("documents".equals(id) || "documents_admin".equals(id)) {
             activity.startActivity(new Intent(activity, DocumentsActivity.class));
