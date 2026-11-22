@@ -334,8 +334,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="• Shift Scheduled for 09:00 AM"
-                    android:textColor="#64748B"
+                    android:text="• Not Clocked In"
+                    android:textColor="#EF4444"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
@@ -365,18 +365,10 @@
                         android:gravity="center"
                         android:orientation="horizontal">
 
-                        <ImageView
-                            android:id="@+id/ivClockIn"
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_clock"
-                            app:tint="#FFFFFF" />
-
                         <TextView
                             android:id="@+id/tvClockIn"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
                             android:text="Clock In"
                             android:textColor="#FFFFFF"
                             android:textSize="14sp"
@@ -396,18 +388,10 @@
                         android:gravity="center"
                         android:orientation="horizontal">
 
-                        <ImageView
-                            android:id="@+id/ivClockOut"
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_door_exit"
-                            app:tint="#FFFFFF" />
-
                         <TextView
                             android:id="@+id/tvClockOut"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
                             android:text="Clock Out"
                             android:textColor="#FFFFFF"
                             android:textSize="14sp"
@@ -450,28 +434,14 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/tvMonthlyAttendanceTitle"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_calendar"
-                            android:tint="#0056FD" />
-
-                        <TextView
-                            android:id="@+id/tvMonthlyAttendanceTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="Monthly Attendance"
-                            android:textColor="#64748B"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        android:text="Monthly Attendance"
+                        android:textColor="#64748B"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvMonthlyAttendanceValue"
@@ -505,28 +475,14 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/tvHoursTodayTitle"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_clock"
-                            android:tint="#0056FD" />
-
-                        <TextView
-                            android:id="@+id/tvHoursTodayTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="Hours Today"
-                            android:textColor="#64748B"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        android:text="Hours Today"
+                        android:textColor="#64748B"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvHoursTodayValue"
@@ -588,20 +544,6 @@
                             android:textSize="16sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-
-                    <FrameLayout
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_alignParentEnd="true"
-                        android:background="@drawable/bg_day_pill_active">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_total_leave"
-                            android:tint="#2563EB" />
-                    </FrameLayout>
                 </RelativeLayout>
 
                 <!-- Two Stat Boxes Side by Side (Upcoming Holidays & Days Present) -->
@@ -620,8 +562,9 @@
                         android:layout_marginEnd="6dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_sub_stat_card"
-                        android:gravity="center"
+                        android:gravity="start"
                         android:orientation="vertical"
+                        android:paddingHorizontal="16dp"
                         android:paddingVertical="14dp">
 
                         <TextView
@@ -650,8 +593,9 @@
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_sub_stat_card"
-                        android:gravity="center"
+                        android:gravity="start"
                         android:orientation="vertical"
+                        android:paddingHorizontal="16dp"
                         android:paddingVertical="14dp">
 
                         <TextView
@@ -673,45 +617,6 @@
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
-
-                <!-- Leave Summary & Progress Bar -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tvCasualLeave"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="18 Leaves Left"
-                        android:textColor="#0F172A"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvSickLeave"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Allocated: 24 • Used: 6"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <ProgressBar
-                    android:id="@+id/pbLeaveProgress"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="5dp"
-                    android:layout_marginTop="10dp"
-                    android:max="100"
-                    android:progress="60"
-                    android:progressTint="#0056FD"
-                    android:progressBackgroundTint="#E2E8F0" />
             </LinearLayout>
 
             <!-- 4. ANNOUNCEMENTS CARD -->
@@ -761,27 +666,34 @@
                     android:orientation="vertical" />
 
                 <!-- Empty State -->
-                <TextView
+                <LinearLayout
                     android:id="@+id/tvEmployeeAnnouncementsEmpty"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_sub_stat_card"
                     android:gravity="center"
+                    android:orientation="vertical"
                     android:paddingVertical="18dp"
-                    android:text="No active company announcements."
-                    android:textColor="#94A3B8"
-                    android:textSize="13sp"
-                    android:visibility="gone" />
+                    android:paddingHorizontal="16dp"
+                    android:visibility="gone">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:gravity="center"
-                    android:text="GlobizHR System v1.0"
-                    android:textColor="#94A3B8"
-                    android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No new announcements"
+                        android:textColor="#0F172A"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="You're all caught up with company updates."
+                        android:textColor="#94A3B8"
+                        android:textSize="11sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- 4. TEAM PRESENCE CARD -->
@@ -869,73 +781,7 @@
                 </RelativeLayout>
             </LinearLayout>
 
-            <!-- 5. TASKS CARD -->
-            <LinearLayout
-                android:id="@+id/cvTasksCard"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_task_card"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_blue_button">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_mod_tasks"
-                        android:tint="#FFFFFF" />
-                </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tvTasksDueTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0 Tasks due today"
-                        android:textColor="#0F172A"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvTasksNextSubtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="All caught up! No pending tasks for today."
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <FrameLayout
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/bg_day_pill_inactive">
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_chevron_right"
-                        android:tint="#0F172A" />
-                </FrameLayout>
-            </LinearLayout>
-
-            <!-- 6. GITHUB-STYLE ATTENDANCE ACTIVITY HEATMAP (MONTH & FULL YEAR) -->
+            <!-- 5. GITHUB-STYLE ATTENDANCE ACTIVITY HEATMAP (MONTH & FULL YEAR) -->
             <LinearLayout
                 android:id="@+id/cvMonthlyHeatmapCard"
                 android:layout_width="match_parent"

@@ -123,7 +123,7 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvDaysPresentCount;
     private View cvAnnouncementsCard;
     private LinearLayout llEmployeeAnnouncements;
-    private TextView tvEmployeeAnnouncementsEmpty;
+    private View tvEmployeeAnnouncementsEmpty;
 
     // Holiday Card Views
     private View cvHolidayCard;
@@ -453,9 +453,6 @@ public class HomeActivity extends AppCompatActivity {
         cvLeavesCard = cvHolidaysAndLeaves;
         tvUpcomingHolidaysCount = findViewById(R.id.tvUpcomingHolidaysCount);
         tvDaysPresentCount = findViewById(R.id.tvDaysPresentCount);
-        tvCasualLeave = findViewById(R.id.tvCasualLeave);
-        tvSickLeave = findViewById(R.id.tvSickLeave);
-        pbLeaveProgress = findViewById(R.id.pbLeaveProgress);
 
         // Announcements Card
         cvAnnouncementsCard = findViewById(R.id.cvAnnouncementsCard);
@@ -467,10 +464,6 @@ public class HomeActivity extends AppCompatActivity {
         tvTeamActiveCount = findViewById(R.id.tvTeamActiveCount);
         llTeamAvatars = findViewById(R.id.llTeamAvatars);
         tvViewRoster = findViewById(R.id.tvViewRoster);
-
-        cvTasksCard = findViewById(R.id.cvTasksCard);
-        tvTasksDueTitle = findViewById(R.id.tvTasksDueTitle);
-        tvTasksNextSubtitle = findViewById(R.id.tvTasksNextSubtitle);
 
         // Monthly & Full Year Heatmap Views
         cvMonthlyHeatmapCard = findViewById(R.id.cvMonthlyHeatmapCard);
@@ -645,7 +638,7 @@ public class HomeActivity extends AppCompatActivity {
                 if (tvPunchedInAt != null) {
                     SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
                     tvPunchedInAt.setText("• Clocked Out at " + timeFmt.format(parsedOut));
-                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                    tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
                 }
                 return;
             }
@@ -690,7 +683,8 @@ public class HomeActivity extends AppCompatActivity {
         SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
         String timeStr = sdf.format(outDate);
         if (tvPunchedInAt != null) {
-            tvPunchedInAt.setText("• Shift Completed at " + timeStr);
+            tvPunchedInAt.setText("• Clocked Out at " + timeStr);
+            tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
         }
         updatePunchButtonUI(false);
 
@@ -815,7 +809,7 @@ public class HomeActivity extends AppCompatActivity {
         updateCapsuleButtonsState();
         if (clockedIn) {
             if (checkInDateTime != null && tvPunchedInAt != null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a", Locale.US);
+                SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.US);
                 tvPunchedInAt.setText("• Clocked In at " + sdf.format(checkInDateTime));
                 tvPunchedInAt.setTextColor(Color.parseColor("#16A34A"));
             }
@@ -824,18 +818,16 @@ public class HomeActivity extends AppCompatActivity {
             updateBreakUI(false);
             if (isShiftCompletedToday) {
                 if (tvPunchedInAt != null) {
-                    tvPunchedInAt.setText("• Shift Completed for Today");
-                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
-                }
-            } else if (!isWithinPunchInWindow()) {
-                if (tvPunchedInAt != null) {
-                    tvPunchedInAt.setText("• Shift Scheduled for 09:00 AM");
-                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                    String curr = tvPunchedInAt.getText().toString();
+                    if (!curr.startsWith("• Clocked Out")) {
+                        tvPunchedInAt.setText("• Clocked Out");
+                    }
+                    tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
                 }
             } else {
                 if (tvPunchedInAt != null) {
-                    tvPunchedInAt.setText("• Ready to Clock In");
-                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                    tvPunchedInAt.setText("• Not Clocked In");
+                    tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
                 }
             }
         }
@@ -945,7 +937,7 @@ public class HomeActivity extends AppCompatActivity {
         String timeStr = sdf.format(outDate);
         if (tvPunchedInAt != null) {
             tvPunchedInAt.setText("• Clocked Out at " + timeStr);
-            tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+            tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
         }
         updatePunchButtonUI(false);
         syncTodayAttendanceRecord();
@@ -1890,9 +1882,9 @@ public class HomeActivity extends AppCompatActivity {
                             SimpleDateFormat timeFmt = new SimpleDateFormat("hh:mm a", Locale.US);
                             tvPunchedInAt.setText("• Clocked Out at " + timeFmt.format(outDate));
                         } else {
-                            tvPunchedInAt.setText("• Shift Completed");
+                            tvPunchedInAt.setText("• Clocked Out");
                         }
-                        tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                        tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
                     }
                 } else if (("CHECKED_IN".equalsIgnoreCase(status) || (checkInTimeStr != null && !checkInTimeStr.isEmpty() && !"null".equalsIgnoreCase(checkInTimeStr)))
                         && !"CHECKED_OUT".equalsIgnoreCase(status)) {
@@ -2059,7 +2051,7 @@ public class HomeActivity extends AppCompatActivity {
             String timeStr = sdf.format(outDate);
             if (tvPunchedInAt != null) {
                 tvPunchedInAt.setText("• Clocked Out at " + timeStr);
-                tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+                tvPunchedInAt.setTextColor(Color.parseColor("#EF4444"));
             }
 
             triggerSystemNotification("Attendance • Punched Out", "Clocked out at " + timeStr + ". Thank you for your dedication and hard work!");

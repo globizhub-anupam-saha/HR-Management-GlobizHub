@@ -312,7 +312,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         setupHolidaysAndLeavesCard()
         setupAnnouncementsCard()
         setupTeamPresenceCard()
-        setupTasksCard()
+        // Tasks card removed per user request
         setupMonthlyHeatmapCard()
         setupAdminDashboard()
         setupSuperAdminDashboard()
@@ -747,9 +747,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         timerCard.addSubview(liveTimerLabel)
 
         // Punch status
-        punchStatusLabel.text = "• Shift Scheduled for 09:00 AM"
+        punchStatusLabel.text = "• Not Clocked In"
         punchStatusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
-        punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
         punchStatusLabel.textAlignment = .center
         punchStatusLabel.translatesAutoresizingMaskIntoConstraints = false
         timerCard.addSubview(punchStatusLabel)
@@ -771,24 +771,20 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         // Left: Clock In Button (Vibrant Brand Blue)
         btnClockIn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
         btnClockIn.layer.cornerRadius = 22
-        btnClockIn.setTitle(" Clock In", for: .normal)
+        btnClockIn.setTitle("Clock In", for: .normal)
         btnClockIn.setTitleColor(.white, for: .normal)
         btnClockIn.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-        let clockConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .bold)
-        btnClockIn.setImage(UIImage(systemName: "clock.badge.checkmark.fill", withConfiguration: clockConfig), for: .normal)
-        btnClockIn.tintColor = .white
+        btnClockIn.setImage(nil, for: .normal)
         btnClockIn.addTarget(self, action: #selector(handleClockInTapped), for: .touchUpInside)
         shiftCapsuleStack.addArrangedSubview(btnClockIn)
 
         // Right: Clock Out Button (Vibrant Red)
         btnClockOut.backgroundColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
         btnClockOut.layer.cornerRadius = 22
-        btnClockOut.setTitle(" Clock Out", for: .normal)
+        btnClockOut.setTitle("Clock Out", for: .normal)
         btnClockOut.setTitleColor(.white, for: .normal)
         btnClockOut.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-        let exitConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .bold)
-        btnClockOut.setImage(UIImage(systemName: "power.circle.fill", withConfiguration: exitConfig), for: .normal)
-        btnClockOut.tintColor = .white
+        btnClockOut.setImage(nil, for: .normal)
         btnClockOut.addTarget(self, action: #selector(handleClockOutTapped), for: .touchUpInside)
         shiftCapsuleStack.addArrangedSubview(btnClockOut)
 
@@ -850,11 +846,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         monthlyAttendanceCard.translatesAutoresizingMaskIntoConstraints = false
         attendanceMetricsRow.addArrangedSubview(monthlyAttendanceCard)
 
-        let calIcon = UIImageView(image: UIImage(systemName: "calendar")?.withRenderingMode(.alwaysTemplate))
-        calIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        calIcon.translatesAutoresizingMaskIntoConstraints = false
-        monthlyAttendanceCard.addSubview(calIcon)
-
         let monthTitle = UILabel()
         monthTitle.text = "Monthly Attendance"
         monthTitle.font = .systemFont(ofSize: 11, weight: .bold)
@@ -887,11 +878,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         hoursTodayCard.translatesAutoresizingMaskIntoConstraints = false
         attendanceMetricsRow.addArrangedSubview(hoursTodayCard)
 
-        let clockIcon = UIImageView(image: UIImage(systemName: "clock")?.withRenderingMode(.alwaysTemplate))
-        clockIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        clockIcon.translatesAutoresizingMaskIntoConstraints = false
-        hoursTodayCard.addSubview(clockIcon)
-
         let hoursTitle = UILabel()
         hoursTitle.text = "Hours Today"
         hoursTitle.font = .systemFont(ofSize: 11, weight: .bold)
@@ -913,13 +899,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         hoursTodayCard.addSubview(hoursSub)
 
         NSLayoutConstraint.activate([
-            calIcon.topAnchor.constraint(equalTo: monthlyAttendanceCard.topAnchor, constant: 14),
-            calIcon.leadingAnchor.constraint(equalTo: monthlyAttendanceCard.leadingAnchor, constant: 14),
-            calIcon.widthAnchor.constraint(equalToConstant: 16),
-            calIcon.heightAnchor.constraint(equalToConstant: 16),
-
-            monthTitle.centerYAnchor.constraint(equalTo: calIcon.centerYAnchor),
-            monthTitle.leadingAnchor.constraint(equalTo: calIcon.trailingAnchor, constant: 6),
+            monthTitle.topAnchor.constraint(equalTo: monthlyAttendanceCard.topAnchor, constant: 14),
+            monthTitle.leadingAnchor.constraint(equalTo: monthlyAttendanceCard.leadingAnchor, constant: 14),
             monthTitle.trailingAnchor.constraint(lessThanOrEqualTo: monthlyAttendanceCard.trailingAnchor, constant: -10),
 
             monthlyAttendanceLabel.topAnchor.constraint(equalTo: monthTitle.bottomAnchor, constant: 10),
@@ -929,13 +910,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             monthSub.leadingAnchor.constraint(equalTo: monthlyAttendanceCard.leadingAnchor, constant: 14),
             monthSub.bottomAnchor.constraint(equalTo: monthlyAttendanceCard.bottomAnchor, constant: -14),
 
-            clockIcon.topAnchor.constraint(equalTo: hoursTodayCard.topAnchor, constant: 14),
-            clockIcon.leadingAnchor.constraint(equalTo: hoursTodayCard.leadingAnchor, constant: 14),
-            clockIcon.widthAnchor.constraint(equalToConstant: 16),
-            clockIcon.heightAnchor.constraint(equalToConstant: 16),
-
-            hoursTitle.centerYAnchor.constraint(equalTo: clockIcon.centerYAnchor),
-            hoursTitle.leadingAnchor.constraint(equalTo: clockIcon.trailingAnchor, constant: 6),
+            hoursTitle.topAnchor.constraint(equalTo: hoursTodayCard.topAnchor, constant: 14),
+            hoursTitle.leadingAnchor.constraint(equalTo: hoursTodayCard.leadingAnchor, constant: 14),
             hoursTitle.trailingAnchor.constraint(lessThanOrEqualTo: hoursTodayCard.trailingAnchor, constant: -10),
 
             hoursTodayLabel.topAnchor.constraint(equalTo: hoursTitle.bottomAnchor, constant: 10),
@@ -972,18 +948,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         holidaysAndLeavesCard.addSubview(titleLabel)
 
-        leavesBadge.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
-        leavesBadge.layer.cornerRadius = 16
-        leavesBadge.translatesAutoresizingMaskIntoConstraints = false
-        holidaysAndLeavesCard.addSubview(leavesBadge)
-
-        let leafConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-        leavesBadgeIcon.image = UIImage(systemName: "leaf.fill", withConfiguration: leafConfig)
-        leavesBadgeIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        leavesBadgeIcon.contentMode = .scaleAspectFit
-        leavesBadgeIcon.translatesAutoresizingMaskIntoConstraints = false
-        leavesBadge.addSubview(leavesBadgeIcon)
-
         // Grid of 2 Metric Boxes Side by Side (Upcoming Holidays & Days Present)
         let metricsStack = UIStackView()
         metricsStack.axis = .horizontal
@@ -1004,7 +968,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         upcomingHolidaysCountLabel.text = "0"
         upcomingHolidaysCountLabel.font = .systemFont(ofSize: 22, weight: .heavy)
         upcomingHolidaysCountLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        upcomingHolidaysCountLabel.textAlignment = .center
+        upcomingHolidaysCountLabel.textAlignment = .left
         upcomingHolidaysCountLabel.translatesAutoresizingMaskIntoConstraints = false
         holidaysBox.addSubview(upcomingHolidaysCountLabel)
 
@@ -1012,7 +976,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         holidaysSubLabel.text = "Upcoming Holidays"
         holidaysSubLabel.font = .systemFont(ofSize: 12, weight: .bold)
         holidaysSubLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        holidaysSubLabel.textAlignment = .center
+        holidaysSubLabel.textAlignment = .left
         holidaysSubLabel.translatesAutoresizingMaskIntoConstraints = false
         holidaysBox.addSubview(holidaysSubLabel)
 
@@ -1028,7 +992,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         daysPresentCountLabel.text = "0"
         daysPresentCountLabel.font = .systemFont(ofSize: 22, weight: .heavy)
         daysPresentCountLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        daysPresentCountLabel.textAlignment = .center
+        daysPresentCountLabel.textAlignment = .left
         daysPresentCountLabel.translatesAutoresizingMaskIntoConstraints = false
         presentBox.addSubview(daysPresentCountLabel)
 
@@ -1036,36 +1000,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         presentSubLabel.text = "Days Present"
         presentSubLabel.font = .systemFont(ofSize: 12, weight: .bold)
         presentSubLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        presentSubLabel.textAlignment = .center
+        presentSubLabel.textAlignment = .left
         presentSubLabel.translatesAutoresizingMaskIntoConstraints = false
         presentBox.addSubview(presentSubLabel)
-
-        // Leave Progress & Info Row
-        leavesCasualLabel.text = "18 Leaves Left"
-        leavesCasualLabel.font = .systemFont(ofSize: 14, weight: .bold)
-        leavesCasualLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        leavesCasualLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidaysAndLeavesCard.addSubview(leavesCasualLabel)
-
-        leavesSickLabel.text = "Allocated: 24 • Used: 6"
-        leavesSickLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        leavesSickLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        leavesSickLabel.translatesAutoresizingMaskIntoConstraints = false
-        holidaysAndLeavesCard.addSubview(leavesSickLabel)
-
-        leavesProgressTrack.backgroundColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0)
-        leavesProgressTrack.layer.cornerRadius = 2.5
-        leavesProgressTrack.layer.masksToBounds = true
-        leavesProgressTrack.translatesAutoresizingMaskIntoConstraints = false
-        holidaysAndLeavesCard.addSubview(leavesProgressTrack)
-
-        leavesProgressBar.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        leavesProgressBar.layer.cornerRadius = 2.5
-        leavesProgressBar.translatesAutoresizingMaskIntoConstraints = false
-        leavesProgressTrack.addSubview(leavesProgressBar)
-
-        leavesProgressWidthConstraint = leavesProgressBar.widthAnchor.constraint(equalTo: leavesProgressTrack.widthAnchor, multiplier: 0.70)
-        leavesProgressWidthConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
             calIcon.topAnchor.constraint(equalTo: holidaysAndLeavesCard.topAnchor, constant: 16),
@@ -1076,46 +1013,26 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             titleLabel.centerYAnchor.constraint(equalTo: calIcon.centerYAnchor),
             titleLabel.leadingAnchor.constraint(equalTo: calIcon.trailingAnchor, constant: 8),
 
-            leavesBadge.centerYAnchor.constraint(equalTo: calIcon.centerYAnchor),
-            leavesBadge.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
-            leavesBadge.widthAnchor.constraint(equalToConstant: 32),
-            leavesBadge.heightAnchor.constraint(equalToConstant: 32),
-
-            leavesBadgeIcon.centerXAnchor.constraint(equalTo: leavesBadge.centerXAnchor),
-            leavesBadgeIcon.centerYAnchor.constraint(equalTo: leavesBadge.centerYAnchor),
-
             metricsStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14),
             metricsStack.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
             metricsStack.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
+            metricsStack.bottomAnchor.constraint(equalTo: holidaysAndLeavesCard.bottomAnchor, constant: -16),
 
-            upcomingHolidaysCountLabel.topAnchor.constraint(equalTo: holidaysBox.topAnchor, constant: 12),
-            upcomingHolidaysCountLabel.centerXAnchor.constraint(equalTo: holidaysBox.centerXAnchor),
+            upcomingHolidaysCountLabel.topAnchor.constraint(equalTo: holidaysBox.topAnchor, constant: 14),
+            upcomingHolidaysCountLabel.leadingAnchor.constraint(equalTo: holidaysBox.leadingAnchor, constant: 14),
+            upcomingHolidaysCountLabel.trailingAnchor.constraint(equalTo: holidaysBox.trailingAnchor, constant: -14),
             holidaysSubLabel.topAnchor.constraint(equalTo: upcomingHolidaysCountLabel.bottomAnchor, constant: 4),
-            holidaysSubLabel.centerXAnchor.constraint(equalTo: holidaysBox.centerXAnchor),
-            holidaysSubLabel.bottomAnchor.constraint(equalTo: holidaysBox.bottomAnchor, constant: -12),
+            holidaysSubLabel.leadingAnchor.constraint(equalTo: holidaysBox.leadingAnchor, constant: 14),
+            holidaysSubLabel.trailingAnchor.constraint(equalTo: holidaysBox.trailingAnchor, constant: -14),
+            holidaysSubLabel.bottomAnchor.constraint(equalTo: holidaysBox.bottomAnchor, constant: -14),
 
-            daysPresentCountLabel.topAnchor.constraint(equalTo: presentBox.topAnchor, constant: 12),
-            daysPresentCountLabel.centerXAnchor.constraint(equalTo: presentBox.centerXAnchor),
+            daysPresentCountLabel.topAnchor.constraint(equalTo: presentBox.topAnchor, constant: 14),
+            daysPresentCountLabel.leadingAnchor.constraint(equalTo: presentBox.leadingAnchor, constant: 14),
+            daysPresentCountLabel.trailingAnchor.constraint(equalTo: presentBox.trailingAnchor, constant: -14),
             presentSubLabel.topAnchor.constraint(equalTo: daysPresentCountLabel.bottomAnchor, constant: 4),
-            presentSubLabel.centerXAnchor.constraint(equalTo: presentBox.centerXAnchor),
-            presentSubLabel.bottomAnchor.constraint(equalTo: presentBox.bottomAnchor, constant: -12),
-
-            leavesCasualLabel.topAnchor.constraint(equalTo: metricsStack.bottomAnchor, constant: 14),
-            leavesCasualLabel.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
-
-            leavesSickLabel.centerYAnchor.constraint(equalTo: leavesCasualLabel.centerYAnchor),
-            leavesSickLabel.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
-            leavesSickLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leavesCasualLabel.trailingAnchor, constant: 12),
-
-            leavesProgressTrack.topAnchor.constraint(equalTo: leavesCasualLabel.bottomAnchor, constant: 10),
-            leavesProgressTrack.leadingAnchor.constraint(equalTo: holidaysAndLeavesCard.leadingAnchor, constant: 16),
-            leavesProgressTrack.trailingAnchor.constraint(equalTo: holidaysAndLeavesCard.trailingAnchor, constant: -16),
-            leavesProgressTrack.heightAnchor.constraint(equalToConstant: 5),
-            leavesProgressTrack.bottomAnchor.constraint(equalTo: holidaysAndLeavesCard.bottomAnchor, constant: -16),
-
-            leavesProgressBar.topAnchor.constraint(equalTo: leavesProgressTrack.topAnchor),
-            leavesProgressBar.bottomAnchor.constraint(equalTo: leavesProgressTrack.bottomAnchor),
-            leavesProgressBar.leadingAnchor.constraint(equalTo: leavesProgressTrack.leadingAnchor)
+            presentSubLabel.leadingAnchor.constraint(equalTo: presentBox.leadingAnchor, constant: 14),
+            presentSubLabel.trailingAnchor.constraint(equalTo: presentBox.trailingAnchor, constant: -14),
+            presentSubLabel.bottomAnchor.constraint(equalTo: presentBox.bottomAnchor, constant: -14)
         ])
     }
 
@@ -1150,9 +1067,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         employeeAnnouncementsStack.translatesAutoresizingMaskIntoConstraints = false
         employeeAnnouncementsCard.addSubview(employeeAnnouncementsStack)
 
-        employeeAnnouncementsEmptyLabel.text = "No active company announcements."
-        employeeAnnouncementsEmptyLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        employeeAnnouncementsEmptyLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        employeeAnnouncementsEmptyLabel.text = "No new announcements"
+        employeeAnnouncementsEmptyLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        employeeAnnouncementsEmptyLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         employeeAnnouncementsEmptyLabel.textAlignment = .center
         employeeAnnouncementsEmptyLabel.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
         employeeAnnouncementsEmptyLabel.layer.cornerRadius = 12
@@ -1163,13 +1080,11 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         employeeAnnouncementsEmptyLabel.isHidden = true
         employeeAnnouncementsCard.addSubview(employeeAnnouncementsEmptyLabel)
 
-        let footerLabel = UILabel()
-        footerLabel.text = "GlobizHR System v1.0"
-        footerLabel.font = .systemFont(ofSize: 11, weight: .medium)
-        footerLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
-        footerLabel.textAlignment = .center
-        footerLabel.translatesAutoresizingMaskIntoConstraints = false
-        employeeAnnouncementsCard.addSubview(footerLabel)
+        let emptyBottom = employeeAnnouncementsEmptyLabel.bottomAnchor.constraint(equalTo: employeeAnnouncementsCard.bottomAnchor, constant: -16)
+        emptyBottom.priority = UILayoutPriority(750)
+
+        let stackBottom = employeeAnnouncementsStack.bottomAnchor.constraint(equalTo: employeeAnnouncementsCard.bottomAnchor, constant: -16)
+        stackBottom.priority = UILayoutPriority(250)
 
         NSLayoutConstraint.activate([
             hornIcon.topAnchor.constraint(equalTo: employeeAnnouncementsCard.topAnchor, constant: 16),
@@ -1189,10 +1104,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             employeeAnnouncementsEmptyLabel.trailingAnchor.constraint(equalTo: employeeAnnouncementsCard.trailingAnchor, constant: -16),
             employeeAnnouncementsEmptyLabel.heightAnchor.constraint(equalToConstant: 54),
 
-            footerLabel.topAnchor.constraint(greaterThanOrEqualTo: employeeAnnouncementsStack.bottomAnchor, constant: 12),
-            footerLabel.topAnchor.constraint(greaterThanOrEqualTo: employeeAnnouncementsEmptyLabel.bottomAnchor, constant: 12),
-            footerLabel.centerXAnchor.constraint(equalTo: employeeAnnouncementsCard.centerXAnchor),
-            footerLabel.bottomAnchor.constraint(equalTo: employeeAnnouncementsCard.bottomAnchor, constant: -14)
+            emptyBottom,
+            stackBottom
         ])
     }
 
@@ -2643,6 +2556,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             self.stopTimer()
             self.updateUIForAttendance(clockedIn: false)
             self.punchStatusLabel.text = "• Clocked Out at \(timeStr)"
+            self.punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
             self.postShiftNotification(isClockIn: false)
             self.syncTodayAttendanceRecord()
             self.renderMonthlyHeatmap()
@@ -2822,7 +2736,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         self.stopTimer()
         self.updateCapsuleButtonsState()
         self.punchStatusLabel.text = "• Clocked Out at \(timeStr)"
-        self.punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        self.punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
         self.updatePunchInstructionLabel()
         self.postShiftNotification(isClockIn: false)
         self.syncTodayAttendanceRecord()
@@ -3311,6 +3225,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     private func updateLeavesProgress(ratio: CGFloat) {
+        guard leavesProgressBar.superview != nil, leavesProgressTrack.superview != nil else { return }
         leavesProgressWidthConstraint?.isActive = false
         leavesProgressWidthConstraint = leavesProgressBar.widthAnchor.constraint(equalTo: leavesProgressTrack.widthAnchor, multiplier: ratio)
         leavesProgressWidthConstraint?.isActive = true
@@ -3557,7 +3472,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         self.isShiftCompletedToday = true
         self.stopTimer()
         self.updateUIForAttendance(clockedIn: false)
-        self.punchStatusLabel.text = "• Shift Completed at \(timeStr)"
+        self.punchStatusLabel.text = "• Clocked Out at \(timeStr)"
+        self.punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
 
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -3674,6 +3590,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.isShiftCompletedToday = true
                     self.stopTimer()
                     self.updateUIForAttendance(clockedIn: false)
+                    if let parsedOut = self.parseIsoDate(checkOut) {
+                        let tf = DateFormatter()
+                        tf.dateFormat = "hh:mm a"
+                        self.punchStatusLabel.text = "• Clocked Out at \(tf.string(from: parsedOut))"
+                    } else {
+                        self.punchStatusLabel.text = "• Clocked Out"
+                    }
+                    self.punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
                 } else if let inStr = checkInStr, !inStr.isEmpty, inStr != "<null>", inStr != "null" {
                     self.isCheckedIn = true
                     self.isShiftCompletedToday = false
@@ -3718,14 +3642,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             updatePunchInStatusText()
         } else {
             if isShiftCompletedToday {
-                punchStatusLabel.text = "• Shift Completed for Today"
-                punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-            } else if !isWithinPunchInWindow() {
-                punchStatusLabel.text = "• Shift Scheduled for 09:00 AM"
-                punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+                let curr = punchStatusLabel.text ?? ""
+                if !curr.hasPrefix("• Clocked Out") {
+                    punchStatusLabel.text = "• Clocked Out"
+                }
+                punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
             } else {
-                punchStatusLabel.text = "• Ready to Clock In"
-                punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+                punchStatusLabel.text = "• Not Clocked In"
+                punchStatusLabel.textColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
             }
         }
         updatePunchInstructionLabel()
