@@ -145,7 +145,7 @@ class RoleNavigationManager {
 
         NSLayoutConstraint.activate([
             iconView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            iconView.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
+            iconView.topAnchor.constraint(equalTo: container.topAnchor, constant: 6),
             iconView.widthAnchor.constraint(equalToConstant: 22),
             iconView.heightAnchor.constraint(equalToConstant: 22),
 

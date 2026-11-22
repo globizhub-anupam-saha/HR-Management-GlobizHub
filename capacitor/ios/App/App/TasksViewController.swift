@@ -811,7 +811,7 @@ class TasksViewController: UIViewController, UIScrollViewDelegate {
             bottomNavBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bottomNavBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottomNavBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
+            bottomNavBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -56),
 
             bottomNavContainer.leadingAnchor.constraint(greaterThanOrEqualTo: bottomNavBar.leadingAnchor),
             bottomNavContainer.trailingAnchor.constraint(lessThanOrEqualTo: bottomNavBar.trailingAnchor),

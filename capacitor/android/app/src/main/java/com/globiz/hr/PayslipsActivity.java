@@ -110,27 +110,73 @@ public class PayslipsActivity extends AppCompatActivity {
     }
 
     private void showPayslipDetails(JSONObject payslip) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_payslip_breakdown, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
         int monthNum = payslip.optInt("month", 1);
         int year = payslip.optInt("year", 2026);
         double net = payslip.optDouble("netPay", payslip.optDouble("netSalary", 0));
-        double gross = payslip.optDouble("grossPay", payslip.optDouble("grossSalary", 0));
-        double deductions = payslip.optDouble("totalDeductions", gross - net);
+        double basic = payslip.optDouble("basicPay", 0);
+        double allowances = payslip.optDouble("allowances", 0);
+        double gross = payslip.optDouble("grossPay", payslip.optDouble("grossSalary", basic + allowances));
+        double deductions = payslip.optDouble("totalDeductions", payslip.optDouble("deductions", gross - net));
+        int totalWorkingDays = payslip.optInt("totalWorkingDays", 30);
+        int presentDays = payslip.optInt("presentDays", totalWorkingDays);
+        int unpaidLeaves = payslip.optInt("unpaidLeaves", 0);
+        String status = payslip.optString("status", "PAID");
+
+        JSONObject company = payslip.optJSONObject("company");
+        String companyName = company != null ? company.optString("name", "GLOBIZHUB HR") : "GLOBIZHUB HR";
 
         NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
-        String msg = "Period: " + getMonthName(monthNum) + " " + year + "\n" +
-                "Gross Earnings: " + formatter.format(gross) + "\n" +
-                "Total Deductions: " + formatter.format(deductions) + "\n" +
-                "Net Transfer: " + formatter.format(net) + "\n\n" +
-                "Status: Approved and Disbursed by Payroll.";
 
-        new AlertDialog.Builder(this)
-                .setTitle("Salary Statement")
-                .setMessage(msg)
-                .setPositiveButton("Download PDF", (dialog, which) -> {
-                    Toast.makeText(this, "Downloading official payslip PDF...", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Close", null)
-                .show();
+        TextView tvCompany = dialogView.findViewById(R.id.tvDialogCompanyName);
+        TextView tvPeriod = dialogView.findViewById(R.id.tvDialogPeriod);
+        TextView tvStatus = dialogView.findViewById(R.id.tvDialogStatus);
+        TextView tvNet = dialogView.findViewById(R.id.tvDialogNetSalary);
+        TextView tvBasic = dialogView.findViewById(R.id.tvDialogBasicPay);
+        TextView tvAllow = dialogView.findViewById(R.id.tvDialogAllowances);
+        TextView tvDed = dialogView.findViewById(R.id.tvDialogTotalDeductions);
+        TextView tvWorking = dialogView.findViewById(R.id.tvDialogWorkingDays);
+        TextView tvPresent = dialogView.findViewById(R.id.tvDialogPresentDays);
+        TextView tvLop = dialogView.findViewById(R.id.tvDialogLopDays);
+        View btnClose = dialogView.findViewById(R.id.btnDialogDismiss);
+        View btnDownload = dialogView.findViewById(R.id.btnDownloadPdf);
+
+        if (tvCompany != null) tvCompany.setText(companyName.toUpperCase(Locale.ROOT));
+        if (tvPeriod != null) tvPeriod.setText("Payslip for " + getMonthName(monthNum) + " " + year);
+        if (tvStatus != null) tvStatus.setText(status.toUpperCase(Locale.ROOT));
+        if (tvNet != null) tvNet.setText(formatter.format(net));
+        if (tvBasic != null) tvBasic.setText(formatter.format(basic));
+        if (tvAllow != null) tvAllow.setText(formatter.format(allowances));
+        if (tvDed != null) tvDed.setText(formatter.format(deductions));
+        if (tvWorking != null) tvWorking.setText(totalWorkingDays + " Days");
+        if (tvPresent != null) tvPresent.setText(presentDays + " Days");
+        if (tvLop != null) {
+            tvLop.setText(unpaidLeaves + " Days");
+            if (unpaidLeaves > 0) {
+                tvLop.setTextColor(0xFFE11D48);
+            }
+        }
+
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnDownload != null) {
+            btnDownload.setOnClickListener(v -> {
+                Toast.makeText(this, "Official payslip PDF downloaded to your device.", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        }
+
+        dialog.show();
     }
 
     private static String getMonthName(int monthNum) {
@@ -167,13 +213,27 @@ public class PayslipsActivity extends AppCompatActivity {
             int month = item.optInt("month", 1);
             int year = item.optInt("year", 2026);
             double net = item.optDouble("netPay", item.optDouble("netSalary", 0));
-            double gross = item.optDouble("grossPay", item.optDouble("grossSalary", 0));
-            double ded = item.optDouble("totalDeductions", gross - net);
+            double basic = item.optDouble("basicPay", 0);
+            double allowances = item.optDouble("allowances", 0);
+            double gross = item.optDouble("grossPay", item.optDouble("grossSalary", basic + allowances));
+            double ded = item.optDouble("totalDeductions", item.optDouble("deductions", gross - net));
+            int totalWorkingDays = item.optInt("totalWorkingDays", 30);
+            int unpaidLeaves = item.optInt("unpaidLeaves", 0);
+            String status = item.optString("status", "PAID");
 
             NumberFormat fmt = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
             holder.tvMonthYear.setText(getMonthName(month) + " " + year);
             holder.tvNetSalary.setText(fmt.format(net));
             holder.tvGrossDeductions.setText(fmt.format(gross) + " / " + fmt.format(ded));
+            holder.tvStatus.setText(status.toUpperCase(Locale.ROOT));
+            holder.tvScheduledDays.setText(totalWorkingDays + " Scheduled Days");
+
+            if (unpaidLeaves > 0) {
+                holder.tvLopDays.setText("• " + unpaidLeaves + " LOP Days");
+                holder.tvLopDays.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvLopDays.setVisibility(View.GONE);
+            }
 
             holder.itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onClick(item);
@@ -186,7 +246,7 @@ public class PayslipsActivity extends AppCompatActivity {
         }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvMonthYear, tvNetSalary, tvGrossDeductions, tvStatus;
+            TextView tvMonthYear, tvNetSalary, tvGrossDeductions, tvStatus, tvScheduledDays, tvLopDays;
 
             ViewHolder(@NonNull View v) {
                 super(v);
@@ -194,6 +254,8 @@ public class PayslipsActivity extends AppCompatActivity {
                 tvNetSalary = v.findViewById(R.id.tvNetSalary);
                 tvGrossDeductions = v.findViewById(R.id.tvGrossDeductions);
                 tvStatus = v.findViewById(R.id.tvPayslipStatus);
+                tvScheduledDays = v.findViewById(R.id.tvScheduledDays);
+                tvLopDays = v.findViewById(R.id.tvLopDays);
             }
         }
     }

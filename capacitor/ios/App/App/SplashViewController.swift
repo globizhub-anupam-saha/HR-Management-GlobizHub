@@ -112,6 +112,24 @@ class SplashViewController: UIViewController {
             nextVC = TasksViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteMore") {
             nextVC = MoreViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRoutePayslipsModal") {
+            let sample: [String: Any] = [
+                "id": "sample-1",
+                "month": 10,
+                "year": 2026,
+                "netSalary": 85000.0,
+                "basicPay": 50000.0,
+                "allowances": 45000.0,
+                "deductions": 10000.0,
+                "totalWorkingDays": 31,
+                "presentDays": 28,
+                "unpaidLeaves": 2,
+                "status": "PAID",
+                "company": ["name": "GlobizHub Technologies Pvt Ltd"]
+            ]
+            nextVC = PayslipDetailViewController(payslip: sample)
+        } else if ProcessInfo.processInfo.arguments.contains("-testRoutePayslips") {
+            nextVC = PayslipsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteCustomizeTabs") {
             nextVC = CustomizeTabsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteSettings") {

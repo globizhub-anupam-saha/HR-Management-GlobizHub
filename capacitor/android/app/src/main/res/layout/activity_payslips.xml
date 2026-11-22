@@ -185,7 +185,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Salary &amp; Tax Slips"
+                                    android:text="Payroll &amp; Tax Portal"
                                     android:textColor="#0F172A"
                                     android:textSize="16sp"
                                     android:textStyle="bold" />
@@ -194,7 +194,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="Official monthly earnings and statutory deductions"
+                                    android:text="Access your monthly payslips, salary breakdowns, and compensation history."
                                     android:textColor="#64748B"
                                     android:textSize="12sp" />
                             </LinearLayout>
