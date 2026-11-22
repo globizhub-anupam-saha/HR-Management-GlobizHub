@@ -15,23 +15,30 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
     private let avatarImageView = UIImageView()
     private let avatarInitialsLabel = UILabel()
 
-    // Banner Views
+    // 1. Banner Card
     private let bannerCard = UIView()
     private let bannerTitleLabel = UILabel()
-    private let clockActionBtn = UIButton(type: .system)
-    private let clockActionStack = UIStackView()
-    private let clockActionIcon = UIImageView()
-    private let clockActionLabel = UILabel()
+    private let clockInDisabledButton = UIView()
+    private let clockOutDisabledButton = UIView()
 
-    // Summary Card Views
-    private let summaryCard = UIView()
-    private let summaryClockInLabel = UILabel()
-    private let summaryBreakLabel = UILabel()
-    private let summaryClockOutLabel = UILabel()
+    // 2. Request Regularization Button
+    private let requestRegularizationButton = UIButton(type: .system)
 
-    // History Views
+    // 3. My Attendance Section
+    private let myAttendanceSectionView = UIView()
+    private let myAttendanceTitleLabel = UILabel()
+    private let myAttendanceSubtitleLabel = UILabel()
+    private let todayStatusBadgeView = UIView()
+    private let todayStatusDot = UIView()
+    private let todayStatusLabel = UILabel()
+    private let monthlyAttendanceValueLabel = UILabel()
+    private let daysPresentValueLabel = UILabel()
+    private let daysAbsentValueLabel = UILabel()
+
+    // 4. History Views
     private let historyHeaderView = UIView()
     private let historyTitleLabel = UILabel()
+    private let historySubtitleLabel = UILabel()
     private let seeAllButton = UIButton(type: .system)
     private let historyStackView = UIStackView()
 
@@ -44,17 +51,15 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         var rawDate: Date? = nil
         let dateDisplay: String
         let timeRange: String
-        let location: String
-        let status: String // "EARLY", "ON_TIME", "LATE", "IN_PROGRESS"
+        let shiftName: String
+        let status: String
         let clockIn: String
-        var clockOut: String
-        let breakTime: String
+        let clockOut: String
+        let workHours: String
     }
 
     private var historyItems: [HistoryItem] = []
-    private var currentFilter: String = "ALL" // "ALL", "EARLY", "ON_TIME", "LATE"
-    private var isExpanded: Bool = false
-    private var liveTimer: Timer?
+    private var isExpanded: Bool = true
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -66,10 +71,12 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         setupBottomNavBar()
         setupScrollView()
         setupBannerCard()
-        setupSummaryCard()
+        setupRequestRegularizationButton()
+        setupMyAttendanceSection()
         setupHistoryHeader()
         setupHistoryStack()
 
+        loadAttendanceStats()
         loadAttendanceData()
         loadUserProfile()
 
@@ -80,34 +87,9 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         super.viewWillAppear(animated)
         setupBottomNavBar()
         updateNotificationBadge()
-        updateAttendanceState()
-
-        // Fetch real-time schedule & shift assigned by company admin
-        AuthService.shared.getMySchedule { [weak self] result in
-            guard let self = self else { return }
-            if case .success(let schedules) = result, let first = schedules.first, let shift = first["shift"] as? [String: Any] {
-                let end = shift["endTime"] as? String ?? "18:00"
-                let endFmt = DateFormatter()
-                endFmt.dateFormat = "h:mma"
-                let inFmt = DateFormatter()
-                inFmt.dateFormat = "HH:mm"
-                if let eDate = inFmt.date(from: end) {
-                    let endStr = endFmt.string(from: eDate).lowercased()
-                    AuthService.shared.saveShiftEndTime(endStr)
-                }
-            }
-        }
-
-        liveTimer?.invalidate()
-        liveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateAttendanceState()
-        }
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        liveTimer?.invalidate()
-        liveTimer = nil
+        loadAttendanceStats()
+        loadAttendanceData()
+        loadUserProfile()
     }
 
     @objc private func handleNotificationBadgeChanged() {
@@ -270,7 +252,7 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
-    // MARK: - Banner Card (Reference UI Matching)
+    // MARK: - 1. Banner Card with Disabled Buttons
     private func setupBannerCard() {
         bannerCard.backgroundColor = UIColor(red: 244/255, green: 246/255, blue: 251/255, alpha: 1.0)
         bannerCard.layer.cornerRadius = 18
@@ -296,32 +278,21 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         bannerTitleLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
         leftStack.addArrangedSubview(bannerTitleLabel)
 
-        // Pill Clock Action Button
-        clockActionBtn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        clockActionBtn.layer.cornerRadius = 20
-        clockActionBtn.layer.masksToBounds = true
-        clockActionBtn.translatesAutoresizingMaskIntoConstraints = false
-        clockActionBtn.addTarget(self, action: #selector(didTapClockAction), for: .touchUpInside)
-        leftStack.addArrangedSubview(clockActionBtn)
+        // Side-by-Side Disabled Clock In & Clock Out Buttons
+        let buttonsRow = UIStackView()
+        buttonsRow.axis = .horizontal
+        buttonsRow.spacing = 8
+        buttonsRow.alignment = .center
+        buttonsRow.translatesAutoresizingMaskIntoConstraints = false
+        leftStack.addArrangedSubview(buttonsRow)
 
-        clockActionStack.axis = .horizontal
-        clockActionStack.spacing = 8
-        clockActionStack.alignment = .center
-        clockActionStack.isUserInteractionEnabled = false
-        clockActionStack.translatesAutoresizingMaskIntoConstraints = false
-        clockActionBtn.addSubview(clockActionStack)
+        // Clock In Pill (Disabled)
+        configureDisabledPill(clockInDisabledButton, iconName: "stopwatch.fill", title: "Clock In")
+        buttonsRow.addArrangedSubview(clockInDisabledButton)
 
-        let stopwatchConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .bold)
-        clockActionIcon.image = UIImage(systemName: "stopwatch.fill", withConfiguration: stopwatchConfig) ?? UIImage(systemName: "timer")
-        clockActionIcon.tintColor = .white
-        clockActionIcon.contentMode = .scaleAspectFit
-        clockActionIcon.translatesAutoresizingMaskIntoConstraints = false
-        clockActionStack.addArrangedSubview(clockActionIcon)
-
-        clockActionLabel.text = "Clock In"
-        clockActionLabel.font = .systemFont(ofSize: 14, weight: .bold)
-        clockActionLabel.textColor = .white
-        clockActionStack.addArrangedSubview(clockActionLabel)
+        // Clock Out Pill (Disabled)
+        configureDisabledPill(clockOutDisabledButton, iconName: "arrow.right.square.fill", title: "Clock Out")
+        buttonsRow.addArrangedSubview(clockOutDisabledButton)
 
         NSLayoutConstraint.activate([
             bannerCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
@@ -336,28 +307,56 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             leftStack.topAnchor.constraint(equalTo: bannerCard.topAnchor, constant: 18),
             leftStack.leadingAnchor.constraint(equalTo: bannerCard.leadingAnchor, constant: 18),
             leftStack.bottomAnchor.constraint(equalTo: bannerCard.bottomAnchor, constant: -18),
-            leftStack.trailingAnchor.constraint(equalTo: illustrationContainer.leadingAnchor, constant: -8),
+            leftStack.trailingAnchor.constraint(equalTo: illustrationContainer.leadingAnchor, constant: -8)
+        ])
+    }
 
-            clockActionBtn.heightAnchor.constraint(equalToConstant: 40),
-            clockActionStack.leadingAnchor.constraint(equalTo: clockActionBtn.leadingAnchor, constant: 18),
-            clockActionStack.trailingAnchor.constraint(equalTo: clockActionBtn.trailingAnchor, constant: -20),
-            clockActionStack.centerYAnchor.constraint(equalTo: clockActionBtn.centerYAnchor),
-            clockActionIcon.widthAnchor.constraint(equalToConstant: 16),
-            clockActionIcon.heightAnchor.constraint(equalToConstant: 16)
+    private func configureDisabledPill(_ pill: UIView, iconName: String, title: String) {
+        pill.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        pill.layer.cornerRadius = 18
+        pill.layer.masksToBounds = true
+        pill.isUserInteractionEnabled = false
+        pill.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 6
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        pill.addSubview(stack)
+
+        let config = UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
+        let iconView = UIImageView(image: UIImage(systemName: iconName, withConfiguration: config) ?? UIImage(systemName: "clock"))
+        iconView.tintColor = .white
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(iconView)
+
+        let label = UILabel()
+        label.text = title
+        label.font = .systemFont(ofSize: 12, weight: .bold)
+        label.textColor = .white
+        stack.addArrangedSubview(label)
+
+        NSLayoutConstraint.activate([
+            pill.heightAnchor.constraint(equalToConstant: 36),
+            iconView.widthAnchor.constraint(equalToConstant: 14),
+            iconView.heightAnchor.constraint(equalToConstant: 14),
+            stack.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 14),
+            stack.trailingAnchor.constraint(equalTo: pill.trailingAnchor, constant: -14),
+            stack.centerYAnchor.constraint(equalTo: pill.centerYAnchor)
         ])
     }
 
     private func createBannerClockIllustration() -> UIView {
         let container = UIView()
 
-        // Background subtle cloud accent
         let cloud = UIView()
         cloud.backgroundColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 0.8)
         cloud.layer.cornerRadius = 14
         cloud.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(cloud)
 
-        // Hand / Sleeve (light blue sleeve)
         let sleeve = UIView()
         sleeve.backgroundColor = UIColor(red: 191/255, green: 219/255, blue: 254/255, alpha: 1.0)
         sleeve.layer.cornerRadius = 8
@@ -367,7 +366,6 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         sleeve.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(sleeve)
 
-        // Clock Outer Ring
         let clockOuter = UIView()
         clockOuter.backgroundColor = .white
         clockOuter.layer.cornerRadius = 28
@@ -376,21 +374,18 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         clockOuter.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(clockOuter)
 
-        // Clock Top Stem / Crown
         let crown = UIView()
         crown.backgroundColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         crown.layer.cornerRadius = 2
         crown.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(crown)
 
-        // Clock Center Dot
         let centerDot = UIView()
         centerDot.backgroundColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         centerDot.layer.cornerRadius = 2.5
         centerDot.translatesAutoresizingMaskIntoConstraints = false
         clockOuter.addSubview(centerDot)
 
-        // Hour Hand
         let hourHand = UIView()
         hourHand.backgroundColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         hourHand.layer.cornerRadius = 1
@@ -398,7 +393,6 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         hourHand.translatesAutoresizingMaskIntoConstraints = false
         clockOuter.addSubview(hourHand)
 
-        // Minute Hand
         let minuteHand = UIView()
         minuteHand.backgroundColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         minuteHand.layer.cornerRadius = 1
@@ -446,99 +440,224 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         return container
     }
 
-    // MARK: - Summary Card (3 Columns)
-    private func setupSummaryCard() {
-        summaryCard.backgroundColor = .white
-        summaryCard.layer.cornerRadius = 16
-        summaryCard.layer.shadowColor = UIColor.black.cgColor
-        summaryCard.layer.shadowOpacity = 0.04
-        summaryCard.layer.shadowOffset = CGSize(width: 0, height: 2)
-        summaryCard.layer.shadowRadius = 4
-        summaryCard.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
-        summaryCard.layer.borderWidth = 1
-        summaryCard.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(summaryCard)
+    // MARK: - 2. Request Regularization Button
+    private func setupRequestRegularizationButton() {
+        requestRegularizationButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        requestRegularizationButton.layer.cornerRadius = 14
+        requestRegularizationButton.layer.masksToBounds = true
+        requestRegularizationButton.translatesAutoresizingMaskIntoConstraints = false
+        requestRegularizationButton.addTarget(self, action: #selector(didTapRequestRegularization), for: .touchUpInside)
+        contentView.addSubview(requestRegularizationButton)
 
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.distribution = .fillProportionally
+        stack.spacing = 10
         stack.alignment = .center
+        stack.isUserInteractionEnabled = false
         stack.translatesAutoresizingMaskIntoConstraints = false
-        summaryCard.addSubview(stack)
+        requestRegularizationButton.addSubview(stack)
 
-        // Col 1: Clock in Time
-        let col1 = makeSummaryColumn(title: "Clock in Time", valueLabel: summaryClockInLabel, defaultValue: "09:00am")
-        // Col 2: Break Time
-        let col2 = makeSummaryColumn(title: "Break Time", valueLabel: summaryBreakLabel, defaultValue: "12:00pm")
-        // Col 3: Shift End (Clock Out concept completely removed)
-        let col3 = makeSummaryColumn(title: "Shift End", valueLabel: summaryClockOutLabel, defaultValue: AuthService.shared.getShiftEndTime())
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)
+        let iconView = UIImageView(image: UIImage(systemName: "calendar.badge.clock", withConfiguration: config) ?? UIImage(systemName: "calendar"))
+        iconView.tintColor = .white
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(iconView)
 
-        let div1 = makeSummaryDivider()
-        let div2 = makeSummaryDivider()
-
-        stack.addArrangedSubview(col1)
-        stack.addArrangedSubview(div1)
-        stack.addArrangedSubview(col2)
-        stack.addArrangedSubview(div2)
-        stack.addArrangedSubview(col3)
+        let titleLabel = UILabel()
+        titleLabel.text = "Request Regularization"
+        titleLabel.font = .systemFont(ofSize: 14, weight: .bold)
+        titleLabel.textColor = .white
+        stack.addArrangedSubview(titleLabel)
 
         NSLayoutConstraint.activate([
-            summaryCard.topAnchor.constraint(equalTo: bannerCard.bottomAnchor, constant: 14),
-            summaryCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            summaryCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            requestRegularizationButton.topAnchor.constraint(equalTo: bannerCard.bottomAnchor, constant: 14),
+            requestRegularizationButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            requestRegularizationButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            requestRegularizationButton.heightAnchor.constraint(equalToConstant: 48),
 
-            stack.topAnchor.constraint(equalTo: summaryCard.topAnchor, constant: 16),
-            stack.leadingAnchor.constraint(equalTo: summaryCard.leadingAnchor, constant: 12),
-            stack.trailingAnchor.constraint(equalTo: summaryCard.trailingAnchor, constant: -12),
-            stack.bottomAnchor.constraint(equalTo: summaryCard.bottomAnchor, constant: -16),
-
-            col1.widthAnchor.constraint(equalTo: col2.widthAnchor),
-            col2.widthAnchor.constraint(equalTo: col3.widthAnchor),
-
-            div1.widthAnchor.constraint(equalToConstant: 1),
-            div1.heightAnchor.constraint(equalToConstant: 30),
-            div2.widthAnchor.constraint(equalToConstant: 1),
-            div2.heightAnchor.constraint(equalToConstant: 30)
+            stack.centerXAnchor.constraint(equalTo: requestRegularizationButton.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: requestRegularizationButton.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 20),
+            iconView.heightAnchor.constraint(equalToConstant: 20)
         ])
     }
 
-    private func makeSummaryColumn(title: String, valueLabel: UILabel, defaultValue: String) -> UIView {
-        let container = UIStackView()
-        container.axis = .vertical
-        container.spacing = 6
-        container.alignment = .center
+    // MARK: - 3. My Attendance Section (4 Real-time Stat Boxes)
+    private func setupMyAttendanceSection() {
+        myAttendanceSectionView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(myAttendanceSectionView)
 
+        myAttendanceTitleLabel.text = "My Attendance"
+        myAttendanceTitleLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        myAttendanceTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        myAttendanceTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        myAttendanceSectionView.addSubview(myAttendanceTitleLabel)
+
+        myAttendanceSubtitleLabel.text = "Personal monthly performance and daily status"
+        myAttendanceSubtitleLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        myAttendanceSubtitleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        myAttendanceSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        myAttendanceSectionView.addSubview(myAttendanceSubtitleLabel)
+
+        let gridStack = UIStackView()
+        gridStack.axis = .vertical
+        gridStack.spacing = 10
+        gridStack.translatesAutoresizingMaskIntoConstraints = false
+        myAttendanceSectionView.addSubview(gridStack)
+
+        // Row 1: Today's Status & Monthly Attendance
+        let row1 = UIStackView()
+        row1.axis = .horizontal
+        row1.spacing = 12
+        row1.distribution = .fillEqually
+        gridStack.addArrangedSubview(row1)
+
+        let card1 = makeStatCardContainer()
+        setupTodayStatusCard(in: card1)
+        row1.addArrangedSubview(card1)
+
+        let card2 = makeStatCardContainer()
+        setupValueCard(in: card2, title: "MONTHLY ATTENDANCE", titleColor: UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), valueLabel: monthlyAttendanceValueLabel, valueColor: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), defaultValue: "0%")
+        row1.addArrangedSubview(card2)
+
+        // Row 2: Days Present & Days Absent
+        let row2 = UIStackView()
+        row2.axis = .horizontal
+        row2.spacing = 12
+        row2.distribution = .fillEqually
+        gridStack.addArrangedSubview(row2)
+
+        let card3 = makeStatCardContainer()
+        setupValueCard(in: card3, title: "DAYS PRESENT", titleColor: UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0), valueLabel: daysPresentValueLabel, valueColor: UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0), defaultValue: "0")
+        row2.addArrangedSubview(card3)
+
+        let card4 = makeStatCardContainer()
+        setupValueCard(in: card4, title: "DAYS ABSENT", titleColor: UIColor(red: 225/255, green: 29/255, blue: 72/255, alpha: 1.0), valueLabel: daysAbsentValueLabel, valueColor: UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0), defaultValue: "0")
+        row2.addArrangedSubview(card4)
+
+        NSLayoutConstraint.activate([
+            myAttendanceSectionView.topAnchor.constraint(equalTo: requestRegularizationButton.bottomAnchor, constant: 22),
+            myAttendanceSectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            myAttendanceSectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+
+            myAttendanceTitleLabel.topAnchor.constraint(equalTo: myAttendanceSectionView.topAnchor),
+            myAttendanceTitleLabel.leadingAnchor.constraint(equalTo: myAttendanceSectionView.leadingAnchor),
+
+            myAttendanceSubtitleLabel.topAnchor.constraint(equalTo: myAttendanceTitleLabel.bottomAnchor, constant: 2),
+            myAttendanceSubtitleLabel.leadingAnchor.constraint(equalTo: myAttendanceSectionView.leadingAnchor),
+
+            gridStack.topAnchor.constraint(equalTo: myAttendanceSubtitleLabel.bottomAnchor, constant: 12),
+            gridStack.leadingAnchor.constraint(equalTo: myAttendanceSectionView.leadingAnchor),
+            gridStack.trailingAnchor.constraint(equalTo: myAttendanceSectionView.trailingAnchor),
+            gridStack.bottomAnchor.constraint(equalTo: myAttendanceSectionView.bottomAnchor)
+        ])
+    }
+
+    private func makeStatCardContainer() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 14
+        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.layer.borderWidth = 1
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.03
+        card.layer.shadowOffset = CGSize(width: 0, height: 2)
+        card.layer.shadowRadius = 4
+        card.translatesAutoresizingMaskIntoConstraints = false
+        return card
+    }
+
+    private func setupTodayStatusCard(in card: UIView) {
+        let titleLabel = UILabel()
+        titleLabel.text = "TODAY'S STATUS"
+        titleLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        titleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(titleLabel)
+
+        todayStatusBadgeView.backgroundColor = UIColor(red: 236/255, green: 253/255, blue: 245/255, alpha: 1.0)
+        todayStatusBadgeView.layer.cornerRadius = 6
+        todayStatusBadgeView.layer.borderColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0).cgColor
+        todayStatusBadgeView.layer.borderWidth = 1
+        todayStatusBadgeView.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(todayStatusBadgeView)
+
+        todayStatusDot.backgroundColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        todayStatusDot.layer.cornerRadius = 3
+        todayStatusDot.translatesAutoresizingMaskIntoConstraints = false
+        todayStatusBadgeView.addSubview(todayStatusDot)
+
+        todayStatusLabel.text = "Pending"
+        todayStatusLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        todayStatusLabel.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        todayStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        todayStatusBadgeView.addSubview(todayStatusLabel)
+
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+            titleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+
+            todayStatusBadgeView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            todayStatusBadgeView.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            todayStatusBadgeView.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14),
+            todayStatusBadgeView.heightAnchor.constraint(equalToConstant: 28),
+
+            todayStatusDot.leadingAnchor.constraint(equalTo: todayStatusBadgeView.leadingAnchor, constant: 8),
+            todayStatusDot.centerYAnchor.constraint(equalTo: todayStatusBadgeView.centerYAnchor),
+            todayStatusDot.widthAnchor.constraint(equalToConstant: 6),
+            todayStatusDot.heightAnchor.constraint(equalToConstant: 6),
+
+            todayStatusLabel.leadingAnchor.constraint(equalTo: todayStatusDot.trailingAnchor, constant: 6),
+            todayStatusLabel.trailingAnchor.constraint(equalTo: todayStatusBadgeView.trailingAnchor, constant: -10),
+            todayStatusLabel.centerYAnchor.constraint(equalTo: todayStatusBadgeView.centerYAnchor)
+        ])
+    }
+
+    private func setupValueCard(in card: UIView, title: String, titleColor: UIColor, valueLabel: UILabel, valueColor: UIColor, defaultValue: String) {
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        titleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        container.addArrangedSubview(titleLabel)
+        titleLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        titleLabel.textColor = titleColor
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(titleLabel)
 
         valueLabel.text = defaultValue
-        valueLabel.font = .systemFont(ofSize: 16, weight: .bold)
-        valueLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        container.addArrangedSubview(valueLabel)
+        valueLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        valueLabel.textColor = valueColor
+        valueLabel.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(valueLabel)
 
-        return container
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+            titleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+
+            valueLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 6),
+            valueLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            valueLabel.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
+        ])
     }
 
-    private func makeSummaryDivider() -> UIView {
-        let view = UIView()
-        view.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }
-
-    // MARK: - History Header
+    // MARK: - 4. History Header & Stack
     private func setupHistoryHeader() {
         historyHeaderView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(historyHeaderView)
 
+        let titleStack = UIStackView()
+        titleStack.axis = .vertical
+        titleStack.spacing = 1
+        titleStack.translatesAutoresizingMaskIntoConstraints = false
+        historyHeaderView.addSubview(titleStack)
+
         historyTitleLabel.text = "Attendance History"
         historyTitleLabel.font = .systemFont(ofSize: 18, weight: .bold)
         historyTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        historyTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        historyHeaderView.addSubview(historyTitleLabel)
+        titleStack.addArrangedSubview(historyTitleLabel)
+
+        historySubtitleLabel.text = "Last 30 Days"
+        historySubtitleLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        historySubtitleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        titleStack.addArrangedSubview(historySubtitleLabel)
 
         seeAllButton.setTitle("See All >", for: .normal)
         seeAllButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
@@ -548,20 +667,19 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         historyHeaderView.addSubview(seeAllButton)
 
         NSLayoutConstraint.activate([
-            historyHeaderView.topAnchor.constraint(equalTo: summaryCard.bottomAnchor, constant: 22),
+            historyHeaderView.topAnchor.constraint(equalTo: myAttendanceSectionView.bottomAnchor, constant: 24),
             historyHeaderView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             historyHeaderView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            historyHeaderView.heightAnchor.constraint(equalToConstant: 28),
 
-            historyTitleLabel.leadingAnchor.constraint(equalTo: historyHeaderView.leadingAnchor),
-            historyTitleLabel.centerYAnchor.constraint(equalTo: historyHeaderView.centerYAnchor),
+            titleStack.leadingAnchor.constraint(equalTo: historyHeaderView.leadingAnchor),
+            titleStack.topAnchor.constraint(equalTo: historyHeaderView.topAnchor),
+            titleStack.bottomAnchor.constraint(equalTo: historyHeaderView.bottomAnchor),
 
             seeAllButton.trailingAnchor.constraint(equalTo: historyHeaderView.trailingAnchor),
             seeAllButton.centerYAnchor.constraint(equalTo: historyHeaderView.centerYAnchor)
         ])
     }
 
-    // MARK: - History Stack
     private func setupHistoryStack() {
         historyStackView.axis = .vertical
         historyStackView.spacing = 10
@@ -576,7 +694,7 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         ])
     }
 
-    // MARK: - Auto-Hide Bottom Navigation on Scroll Down, Reveal on Scroll Up
+    // MARK: - Auto-Hide Bottom Navigation
     private var lastScrollOffsetY: CGFloat = 0
     private var isNavBarHidden: Bool = false
 
@@ -657,160 +775,123 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
         )
     }
 
-    private func makeNavTab(icon: String, title: String, isActive: Bool, tag: Int) -> UIView {
-        let container = UIView()
-        container.tag = tag
-        container.isUserInteractionEnabled = true
-        container.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapNavTab(_:))))
-
-        let iconView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: isActive ? .bold : .medium)
-        iconView.image = UIImage(systemName: icon, withConfiguration: config)
-        iconView.tintColor = isActive ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0) : UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        iconView.contentMode = .scaleAspectFit
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(iconView)
-
-        let label = UILabel()
-        label.text = title
-        label.font = .systemFont(ofSize: 11, weight: isActive ? .bold : .medium)
-        label.textColor = isActive ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0) : UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(label)
-
-        NSLayoutConstraint.activate([
-            iconView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            iconView.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
-            iconView.widthAnchor.constraint(equalToConstant: 22),
-            iconView.heightAnchor.constraint(equalToConstant: 22),
-
-            label.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 3),
-            label.centerXAnchor.constraint(equalTo: container.centerXAnchor)
-        ])
-        return container
+    // MARK: - Actions
+    @objc private func didTapSeeAll() {
+        isExpanded = !isExpanded
+        renderHistoryList()
     }
 
-    @objc private func didTapNavTab(_ gesture: UITapGestureRecognizer) {
-        guard let view = gesture.view else { return }
-        switch view.tag {
-        case 0:
-            let homeVC = HomeViewController()
-            homeVC.modalPresentationStyle = .fullScreen
-            present(homeVC, animated: false)
-        case 1:
-            break // Current tab
-        case 2:
-            let leaveVC = LeaveViewController()
-            leaveVC.modalPresentationStyle = .fullScreen
-            present(leaveVC, animated: false)
-        case 3:
-            let tasksVC = TasksViewController()
-            tasksVC.modalPresentationStyle = .fullScreen
-            present(tasksVC, animated: false)
-        case 4:
-            let moreVC = MoreViewController()
-            moreVC.modalPresentationStyle = .fullScreen
-            present(moreVC, animated: false)
+    @objc private func didTapNotifications() {
+        AuthService.shared.markLocalNotificationsAsRead()
+        updateNotificationBadge()
+        let alert = UIAlertController(title: "Notifications", message: "All attendance records and shift updates are synchronized in real-time.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    @objc private func didTapProfile() {
+        let settingsVC = SettingsViewController()
+        settingsVC.modalPresentationStyle = .fullScreen
+        present(settingsVC, animated: true)
+    }
+
+    // MARK: - Regularization Modal
+    @objc private func didTapRequestRegularization() {
+        let modal = RegularizationModalViewController()
+        modal.onSuccess = { [weak self] in
+            self?.loadAttendanceStats()
+            self?.loadAttendanceData()
+        }
+        let nav = UINavigationController(rootViewController: modal)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(nav, animated: true)
+    }
+
+    // MARK: - Real-Time Data Loading
+    private func loadAttendanceStats() {
+        AuthService.shared.getAttendanceStats { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if case .success(let stats) = result {
+                    self.applyAttendanceStats(stats)
+                }
+            }
+        }
+    }
+
+    private func applyAttendanceStats(_ stats: [String: Any]) {
+        let todayStatus = (stats["todayStatus"] as? String) ?? "PENDING"
+        let percentage = (stats["attendancePercentage"] as? Int) ?? 0
+        let presentDays = (stats["presentDays"] as? Int) ?? 0
+        let absentDays = (stats["absentDays"] as? Int) ?? 0
+
+        monthlyAttendanceValueLabel.text = "\(percentage)%"
+        daysPresentValueLabel.text = "\(presentDays)"
+        daysAbsentValueLabel.text = "\(absentDays)"
+
+        applyStatusBadge(badgeView: todayStatusBadgeView, dotView: todayStatusDot, label: todayStatusLabel, status: todayStatus)
+    }
+
+    private func applyStatusBadge(badgeView: UIView, dotView: UIView, label: UILabel, status: String) {
+        let upper = status.uppercased()
+        dotView.isHidden = false
+        badgeView.layer.cornerRadius = 6
+        badgeView.layer.masksToBounds = true
+        badgeView.layer.borderWidth = 1
+
+        switch upper {
+        case "PRESENT":
+            badgeView.backgroundColor = UIColor(red: 236/255, green: 253/255, blue: 245/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0).cgColor
+            dotView.backgroundColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+            label.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+            label.text = "Present"
+        case "LATE":
+            badgeView.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
+            dotView.backgroundColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+            label.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+            label.text = "Late"
+        case "HALF_DAY":
+            badgeView.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
+            dotView.backgroundColor = UIColor(red: 146/255, green: 64/255, blue: 14/255, alpha: 1.0)
+            label.textColor = UIColor(red: 146/255, green: 64/255, blue: 14/255, alpha: 1.0)
+            label.text = "Half Day"
+        case "ABSENT":
+            badgeView.backgroundColor = UIColor(red: 255/255, green: 228/255, blue: 230/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 254/255, green: 205/255, blue: 211/255, alpha: 1.0).cgColor
+            dotView.backgroundColor = UIColor(red: 225/255, green: 29/255, blue: 72/255, alpha: 1.0)
+            label.textColor = UIColor(red: 225/255, green: 29/255, blue: 72/255, alpha: 1.0)
+            label.text = "Absent"
+        case "ON_LEAVE":
+            badgeView.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 191/255, green: 219/255, blue: 254/255, alpha: 1.0).cgColor
+            dotView.backgroundColor = UIColor(red: 29/255, green: 78/255, blue: 216/255, alpha: 1.0)
+            label.textColor = UIColor(red: 29/255, green: 78/255, blue: 216/255, alpha: 1.0)
+            label.text = "On Leave"
+        case "SHIFT_GIVEN":
+            badgeView.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            dotView.isHidden = true
+            label.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+            label.text = "Shift Given"
+        case "PROXY_SHIFT_SWAP":
+            badgeView.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 191/255, green: 219/255, blue: 254/255, alpha: 1.0).cgColor
+            dotView.backgroundColor = UIColor(red: 37/255, green: 99/255, blue: 235/255, alpha: 1.0)
+            label.textColor = UIColor(red: 37/255, green: 99/255, blue: 235/255, alpha: 1.0)
+            label.text = "Proxy Present"
         default:
-            break
-        }
-    }
-
-    // MARK: - Actions & System Sync
-    @objc private func didTapClockAction() {
-        let currentStatus = AuthService.shared.getLocalAttendanceStatus()
-        let isClockedIn = currentStatus == "CLOCKED_IN" || currentStatus == "CHECKED_IN"
-
-        clockActionBtn.isEnabled = true
-
-        if !isClockedIn {
-            clockActionBtn.isEnabled = false
-            // User Clock In
-            AuthService.shared.clockIn { [weak self] result in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.clockActionBtn.isEnabled = true
-                    let alert = UIAlertController(title: "Clocked In", message: "Your attendance check-in has been synchronized with the HR system.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "OK", style: .default))
-                    self.present(alert, animated: true)
-
-                    let timeFmt = DateFormatter()
-                    timeFmt.dateFormat = "h:mma"
-                    let nowStr = timeFmt.string(from: Date()).lowercased()
-                    self.prependLiveHistoryItem(clockIn: nowStr)
-                    self.updateAttendanceState()
-                }
-            }
-        } else {
-            // Shift is active; Clock Out concept removed per organization policy
-            let alert = UIAlertController(title: "Shift in Progress", message: "Your shift is currently active and recorded in the system. Shift completes automatically based on your assigned company schedule.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            self.present(alert, animated: true)
-        }
-    }
-
-    private func updateAttendanceState() {
-        let currentStatus = AuthService.shared.getLocalAttendanceStatus()
-        let isClockedIn = currentStatus == "CLOCKED_IN" || currentStatus == "CHECKED_IN"
-
-        let displayFmt = DateFormatter()
-        displayFmt.dateFormat = "hh:mma"
-
-        if isClockedIn {
-            clockActionLabel.text = "✓ Clocked In"
-            clockActionBtn.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
-            clockActionLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
-
-            if let inIso = AuthService.shared.getLocalCheckInIso() {
-                let isoParser = ISO8601DateFormatter()
-                if let inDate = isoParser.date(from: inIso) {
-                    summaryClockInLabel.text = displayFmt.string(from: inDate).lowercased()
-                } else {
-                    summaryClockInLabel.text = "--:--"
-                }
-            } else {
-                summaryClockInLabel.text = "--:--"
-            }
-
-            if let breakTime = AuthService.shared.getLastBreakTimeStr() {
-                summaryBreakLabel.text = breakTime
-            } else {
-                summaryBreakLabel.text = "--:--"
-            }
-            summaryClockOutLabel.text = "--:--"
-        } else {
-            clockActionLabel.text = "Clock In"
-            clockActionBtn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-            clockActionLabel.textColor = .white
-
-            if let inIso = AuthService.shared.getLocalCheckInIso() {
-                let isoParser = ISO8601DateFormatter()
-                if let inDate = isoParser.date(from: inIso) {
-                    summaryClockInLabel.text = displayFmt.string(from: inDate).lowercased()
-                } else {
-                    summaryClockInLabel.text = "--:--"
-                }
-            } else {
-                summaryClockInLabel.text = "--:--"
-            }
-
-            if let breakTime = AuthService.shared.getLastBreakTimeStr() {
-                summaryBreakLabel.text = breakTime
-            } else {
-                summaryBreakLabel.text = "--:--"
-            }
-
-            if let outIso = AuthService.shared.getLocalCheckOutIso() {
-                let isoParser = ISO8601DateFormatter()
-                if let outDate = isoParser.date(from: outIso) {
-                    summaryClockOutLabel.text = displayFmt.string(from: outDate).lowercased()
-                } else {
-                    summaryClockOutLabel.text = "--:--"
-                }
-            } else {
-                summaryClockOutLabel.text = "--:--"
-            }
+            badgeView.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+            badgeView.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            dotView.isHidden = true
+            label.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            label.text = "Pending"
         }
     }
 
@@ -836,103 +917,61 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
     private func parseHistoryRecords(_ records: [[String: Any]]) {
         historyItems.removeAll()
         let apiFmt = ISO8601DateFormatter()
-        let rangeFmt = DateFormatter()
-        rangeFmt.dateFormat = "h:mma"
-        let summaryFmt = DateFormatter()
-        summaryFmt.dateFormat = "hh:mma"
-
-        let systemLoc = getSystemLocation()
-
         let isoFallback = ISO8601DateFormatter()
         isoFallback.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
+        let displayDateFmt = DateFormatter()
+        displayDateFmt.dateFormat = "EEE, dd MMM yyyy"
+
+        let timeFmt = DateFormatter()
+        timeFmt.dateFormat = "hh:mma"
+
         for record in records {
-            let clockInRaw = (record["clockIn"] as? String) ?? (record["checkInTime"] as? String)
-            let clockOutRaw = (record["clockOut"] as? String) ?? (record["checkOutTime"] as? String)
-            var location = (record["location"] as? String) ?? systemLoc
-            if location.isEmpty || location.lowercased() == "null" || location.lowercased().contains("jakande") || location.lowercased().contains("lekki") {
-                location = systemLoc
+            let dateRaw = record["date"] as? String ?? ""
+            var parsedDate: Date? = nil
+            if !dateRaw.isEmpty {
+                parsedDate = apiFmt.date(from: dateRaw) ?? isoFallback.date(from: dateRaw)
             }
 
-            if let clockInRaw = clockInRaw, !clockInRaw.isEmpty, clockInRaw.lowercased() != "null" {
-                let inDate = apiFmt.date(from: clockInRaw) ?? isoFallback.date(from: clockInRaw)
-                if let inDate = inDate {
-                    let dateDisplay = formatOrdinalDate(inDate)
-                    let inRange = rangeFmt.string(from: inDate).uppercased()
-                    var outRange = "--:--"
-                    let inSummary = summaryFmt.string(from: inDate).lowercased()
-                    var outSummary = "--:--"
+            let dateDisplay = parsedDate != nil ? displayDateFmt.string(from: parsedDate!) : (dateRaw.components(separatedBy: "T").first ?? "Date")
+            let status = (record["status"] as? String) ?? "PRESENT"
 
-                    if let clockOutRaw = clockOutRaw, !clockOutRaw.isEmpty, clockOutRaw.lowercased() != "null" {
-                        if let outDate = apiFmt.date(from: clockOutRaw) ?? isoFallback.date(from: clockOutRaw) {
-                            outRange = rangeFmt.string(from: outDate).uppercased()
-                            outSummary = summaryFmt.string(from: outDate).lowercased()
-                        }
-                    }
+            let clockInRaw = (record["checkInTime"] as? String) ?? (record["clockIn"] as? String)
+            let clockOutRaw = (record["checkOutTime"] as? String) ?? (record["clockOut"] as? String)
 
-                    let computedStatus = calculateStatusFromTime(inDate)
-
-                    historyItems.append(HistoryItem(
-                        rawDate: inDate,
-                        dateDisplay: dateDisplay,
-                        timeRange: "\(inRange) - \(outRange)",
-                        location: location,
-                        status: computedStatus,
-                        clockIn: inSummary,
-                        clockOut: outSummary,
-                        breakTime: "--:--"
-                    ))
-                }
+            var inStr = "--:--"
+            if let inRaw = clockInRaw, !inRaw.isEmpty, inRaw.lowercased() != "null",
+               let inDate = apiFmt.date(from: inRaw) ?? isoFallback.date(from: inRaw) {
+                inStr = timeFmt.string(from: inDate).lowercased()
             }
+
+            var outStr = "--:--"
+            if let outRaw = clockOutRaw, !outRaw.isEmpty, outRaw.lowercased() != "null",
+               let outDate = apiFmt.date(from: outRaw) ?? isoFallback.date(from: outRaw) {
+                outStr = timeFmt.string(from: outDate).lowercased()
+            }
+
+            let workHours = (record["workingHours"] as? Double) ?? (record["workingHours"] as? Int).map { Double($0) } ?? 0.0
+            let hoursStr = workHours > 0 ? "\(workHours) hrs" : "--"
+
+            let timeRange = "\(inStr) - \(outStr)" + (workHours > 0 ? " • \(hoursStr)" : "")
+
+            let shiftDict = record["shift"] as? [String: Any]
+            let shiftName = (shiftDict?["name"] as? String) ?? "Standard Shift"
+
+            historyItems.append(HistoryItem(
+                rawDate: parsedDate,
+                dateDisplay: dateDisplay,
+                timeRange: timeRange,
+                shiftName: shiftName,
+                status: status,
+                clockIn: inStr,
+                clockOut: outStr,
+                workHours: hoursStr
+            ))
         }
 
-        // Sort descending: Today, Yesterday, and continuing before
         historyItems.sort { ($0.rawDate ?? Date.distantPast) > ($1.rawDate ?? Date.distantPast) }
-    }
-
-    private func prependLiveHistoryItem(clockIn: String) {
-        let now = Date()
-        let todayDisplay = formatOrdinalDate(now)
-        let liveStatus = calculateStatusFromTime(now)
-        let rangeFmt = DateFormatter()
-        rangeFmt.dateFormat = "h:mma"
-        let inRange = rangeFmt.string(from: now).uppercased()
-
-        let breakStr = AuthService.shared.getLastBreakTimeStr() ?? "--:--"
-        let newItem = HistoryItem(
-            rawDate: now,
-            dateDisplay: todayDisplay,
-            timeRange: "\(inRange) - In Progress",
-            location: getSystemLocation(),
-            status: liveStatus,
-            clockIn: clockIn,
-            clockOut: "--:--",
-            breakTime: breakStr
-        )
-        historyItems.insert(newItem, at: 0)
-        renderHistoryList()
-    }
-
-    private func finalizeLiveHistoryItem(clockOut: String) {
-        if !historyItems.isEmpty {
-            let first = historyItems[0]
-            let rangeFmt = DateFormatter()
-            rangeFmt.dateFormat = "h:mma"
-            let outRange = rangeFmt.string(from: Date()).uppercased()
-            let inRange = first.timeRange.contains("-") ? first.timeRange.components(separatedBy: "-")[0].trimmingCharacters(in: .whitespaces) : "9:00AM"
-
-            historyItems[0] = HistoryItem(
-                rawDate: first.rawDate,
-                dateDisplay: first.dateDisplay,
-                timeRange: "\(inRange) - \(outRange)",
-                location: first.location,
-                status: first.status,
-                clockIn: first.clockIn,
-                clockOut: clockOut,
-                breakTime: first.breakTime
-            )
-            renderHistoryList()
-        }
     }
 
     private func renderHistoryList() {
@@ -951,265 +990,396 @@ class AttendanceViewController: UIViewController, UIScrollViewDelegate {
             return
         }
 
-        let count = isExpanded ? min(30, historyItems.count) : min(7, historyItems.count)
+        let maxCount = isExpanded ? min(30, historyItems.count) : min(7, historyItems.count)
         seeAllButton.isHidden = historyItems.count <= 7
         seeAllButton.setTitle(isExpanded ? "Show 7 Days" : "See All >", for: .normal)
 
-        for i in 0..<count {
+        for i in 0..<maxCount {
             let item = historyItems[i]
-
-            if currentFilter == "EARLY" && item.status != "EARLY" { continue }
-            if currentFilter == "ON_TIME" && item.status != "ON_TIME" { continue }
-            if currentFilter == "LATE" && item.status != "LATE" { continue }
-
-            let rowCard = makeHistoryRow(item: item)
-            historyStackView.addArrangedSubview(rowCard)
+            let card = makeHistoryItemCard(item: item)
+            historyStackView.addArrangedSubview(card)
         }
     }
 
-    private func makeHistoryRow(item: HistoryItem) -> UIView {
+    private func makeHistoryItemCard(item: HistoryItem) -> UIView {
         let card = UIView()
         card.backgroundColor = .white
-        card.layer.cornerRadius = 14
+        card.layer.cornerRadius = 16
+        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.layer.borderWidth = 1
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOpacity = 0.03
-        card.layer.shadowOffset = CGSize(width: 0, height: 1)
-        card.layer.shadowRadius = 3
-        card.layer.borderColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0).cgColor
-        card.layer.borderWidth = 1
+        card.layer.shadowOffset = CGSize(width: 0, height: 2)
+        card.layer.shadowRadius = 4
         card.translatesAutoresizingMaskIntoConstraints = false
 
-        // Left circular icon
-        let iconCircle = UIView()
-        iconCircle.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
-        iconCircle.layer.cornerRadius = 22
-        iconCircle.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(iconCircle)
+        let iconContainer = UIView()
+        iconContainer.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+        iconContainer.layer.cornerRadius = 22
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(iconContainer)
 
-        let iconView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)
-        iconView.image = UIImage(systemName: "stopwatch.fill", withConfiguration: config) ?? UIImage(systemName: "timer")
-        iconView.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        iconView.contentMode = .scaleAspectFit
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconCircle.addSubview(iconView)
+        let icon = UIImageView()
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        icon.image = UIImage(systemName: "clock.fill", withConfiguration: config) ?? UIImage(systemName: "clock")
+        icon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.addSubview(icon)
 
-        // Middle Stack (Date & Time Range)
-        let middleStack = UIStackView()
-        middleStack.axis = .vertical
-        middleStack.spacing = 3
-        middleStack.alignment = .leading
-        middleStack.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(middleStack)
+        let infoStack = UIStackView()
+        infoStack.axis = .vertical
+        infoStack.spacing = 3
+        infoStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(infoStack)
 
         let dateLabel = UILabel()
         dateLabel.text = item.dateDisplay
-        dateLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        dateLabel.font = .systemFont(ofSize: 14, weight: .bold)
         dateLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        middleStack.addArrangedSubview(dateLabel)
+        infoStack.addArrangedSubview(dateLabel)
 
         let timeLabel = UILabel()
         timeLabel.text = item.timeRange
-        timeLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        timeLabel.font = .systemFont(ofSize: 12, weight: .medium)
         timeLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        middleStack.addArrangedSubview(timeLabel)
+        infoStack.addArrangedSubview(timeLabel)
 
-        // Right Stack (Location & Status Badge)
         let rightStack = UIStackView()
         rightStack.axis = .vertical
-        rightStack.spacing = 5
+        rightStack.spacing = 4
         rightStack.alignment = .trailing
         rightStack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(rightStack)
 
-        let locationLabel = UILabel()
-        locationLabel.text = item.location
-        locationLabel.font = .systemFont(ofSize: 13, weight: .bold)
-        locationLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
-        locationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        rightStack.addArrangedSubview(locationLabel)
+        let shiftLabel = UILabel()
+        shiftLabel.text = item.shiftName
+        shiftLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        shiftLabel.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        rightStack.addArrangedSubview(shiftLabel)
 
-        let badgeView = makeStatusBadge(status: item.status)
-        badgeView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let badgeView = UIView()
+        badgeView.translatesAutoresizingMaskIntoConstraints = false
+        let badgeDot = UIView()
+        badgeDot.layer.cornerRadius = 3
+        badgeDot.translatesAutoresizingMaskIntoConstraints = false
+        badgeView.addSubview(badgeDot)
+        let badgeLabel = UILabel()
+        badgeLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        badgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        badgeView.addSubview(badgeLabel)
+
+        applyStatusBadge(badgeView: badgeView, dotView: badgeDot, label: badgeLabel, status: item.status)
         rightStack.addArrangedSubview(badgeView)
 
-        rightStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-
         NSLayoutConstraint.activate([
-            card.heightAnchor.constraint(greaterThanOrEqualToConstant: 72),
+            card.heightAnchor.constraint(greaterThanOrEqualToConstant: 68),
 
-            iconCircle.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            iconCircle.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-            iconCircle.widthAnchor.constraint(equalToConstant: 44),
-            iconCircle.heightAnchor.constraint(equalToConstant: 44),
+            iconContainer.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            iconContainer.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            iconContainer.widthAnchor.constraint(equalToConstant: 44),
+            iconContainer.heightAnchor.constraint(equalToConstant: 44),
 
-            iconView.centerXAnchor.constraint(equalTo: iconCircle.centerXAnchor),
-            iconView.centerYAnchor.constraint(equalTo: iconCircle.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 22),
-            iconView.heightAnchor.constraint(equalToConstant: 22),
+            icon.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 20),
+            icon.heightAnchor.constraint(equalToConstant: 20),
 
-            middleStack.leadingAnchor.constraint(equalTo: iconCircle.trailingAnchor, constant: 12),
-            middleStack.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-            middleStack.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -8),
+            infoStack.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 12),
+            infoStack.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+            infoStack.trailingAnchor.constraint(lessThanOrEqualTo: rightStack.leadingAnchor, constant: -8),
 
             rightStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
-            rightStack.centerYAnchor.constraint(equalTo: card.centerYAnchor)
+            rightStack.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+
+            badgeDot.leadingAnchor.constraint(equalTo: badgeView.leadingAnchor, constant: 6),
+            badgeDot.centerYAnchor.constraint(equalTo: badgeView.centerYAnchor),
+            badgeDot.widthAnchor.constraint(equalToConstant: 6),
+            badgeDot.heightAnchor.constraint(equalToConstant: 6),
+
+            badgeLabel.leadingAnchor.constraint(equalTo: badgeDot.trailingAnchor, constant: 4),
+            badgeLabel.trailingAnchor.constraint(equalTo: badgeView.trailingAnchor, constant: -6),
+            badgeLabel.topAnchor.constraint(equalTo: badgeView.topAnchor, constant: 3),
+            badgeLabel.bottomAnchor.constraint(equalTo: badgeView.bottomAnchor, constant: -3)
         ])
 
         return card
     }
 
-    private func makeStatusBadge(status: String) -> UIView {
-        let badge = UIView()
-        badge.layer.cornerRadius = 10
-        badge.translatesAutoresizingMaskIntoConstraints = false
-
-        let badgeStack = UIStackView()
-        badgeStack.axis = .horizontal
-        badgeStack.spacing = 5
-        badgeStack.alignment = .center
-        badgeStack.translatesAutoresizingMaskIntoConstraints = false
-        badge.addSubview(badgeStack)
-
-        let dot = UIView()
-        dot.layer.cornerRadius = 3
-        dot.translatesAutoresizingMaskIntoConstraints = false
-        badgeStack.addArrangedSubview(dot)
-
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 11, weight: .bold)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        badgeStack.addArrangedSubview(label)
-
-        if status == "LATE" {
-            badge.backgroundColor = UIColor(red: 255/255, green: 251/255, blue: 235/255, alpha: 1.0)
-            badge.layer.borderColor = UIColor(red: 253/255, green: 230/255, blue: 138/255, alpha: 1.0).cgColor
-            badge.layer.borderWidth = 1
-            dot.backgroundColor = UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0)
-            label.text = "Late"
-            label.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
-        } else if status == "ON_TIME" {
-            badge.backgroundColor = UIColor(red: 236/255, green: 253/255, blue: 245/255, alpha: 1.0)
-            badge.layer.borderColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0).cgColor
-            badge.layer.borderWidth = 1
-            dot.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
-            label.text = "On Time"
-            label.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
-        } else if status == "IN_PROGRESS" {
-            badge.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
-            badge.layer.borderColor = UIColor(red: 191/255, green: 219/255, blue: 254/255, alpha: 1.0).cgColor
-            badge.layer.borderWidth = 1
-            dot.backgroundColor = UIColor(red: 37/255, green: 99/255, blue: 235/255, alpha: 1.0)
-            label.text = "In Progress"
-            label.textColor = UIColor(red: 37/255, green: 99/255, blue: 235/255, alpha: 1.0)
-        } else {
-            // Default EARLY
-            badge.backgroundColor = UIColor(red: 236/255, green: 253/255, blue: 245/255, alpha: 1.0)
-            badge.layer.borderColor = UIColor(red: 167/255, green: 243/255, blue: 208/255, alpha: 1.0).cgColor
-            badge.layer.borderWidth = 1
-            dot.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
-            label.text = "Early"
-            label.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
-        }
-
-        NSLayoutConstraint.activate([
-            dot.widthAnchor.constraint(equalToConstant: 6),
-            dot.heightAnchor.constraint(equalToConstant: 6),
-
-            badgeStack.topAnchor.constraint(equalTo: badge.topAnchor, constant: 4),
-            badgeStack.bottomAnchor.constraint(equalTo: badge.bottomAnchor, constant: -4),
-            badgeStack.leadingAnchor.constraint(equalTo: badge.leadingAnchor, constant: 8),
-            badgeStack.trailingAnchor.constraint(equalTo: badge.trailingAnchor, constant: -8)
-        ])
-
-        return badge
-    }
-
-    private func calculateStatusFromTime(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-
-        // 09:00:59 is On Time, 09:01+ is Late
-        if hour < 9 {
-            return "EARLY"
-        } else if hour == 9 && minute == 0 {
-            return "ON_TIME"
-        } else {
-            return "LATE"
-        }
-    }
-
-    private func getSystemLocation() -> String {
-        let org = AuthService.shared.getOrganization()
-        if org.isEmpty || org.lowercased() == "null" || org.lowercased() == "acmecorp" {
-            return "GlobizHub HQ"
-        }
-        let clean = org.trimmingCharacters(in: .whitespacesAndNewlines)
-        if clean.lowercased() == "acmecorp" {
-            return "GlobizHub HQ"
-        }
-        if clean.lowercased().contains("globizhub") {
-            return "GlobizHub HQ"
-        }
-        return "\(clean) • Main Office"
-    }
-
-    private func formatOrdinalDate(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let day = calendar.component(.day, from: date)
-        let suffix: String
-        if day >= 11 && day <= 13 {
-            suffix = "th"
-        } else {
-            switch day % 10 {
-            case 1: suffix = "st"
-            case 2: suffix = "nd"
-            case 3: suffix = "rd"
-            default: suffix = "th"
-            }
-        }
-        let monthYearFmt = DateFormatter()
-        monthYearFmt.dateFormat = "MMMM, yyyy"
-        return "\(day)\(suffix) \(monthYearFmt.string(from: date))"
-    }
-
-    @objc private func didTapSeeAll() {
-        isExpanded.toggle()
-        renderHistoryList()
-    }
-
-    private func showRegularizationAlert() {
-        let alert = UIAlertController(title: "Request Regularization", message: "Submit attendance correction for biometric sync discrepancy.\n\nYour reporting manager will receive instant approval notification.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Submit", style: .default, handler: { [weak self] _ in
-            let successAlert = UIAlertController(title: "Request Submitted", message: "Your attendance regularization request was submitted to HR.", preferredStyle: .alert)
-            successAlert.addAction(UIAlertAction(title: "OK", style: .default))
-            self?.present(successAlert, animated: true)
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(alert, animated: true)
-    }
-
-    @objc private func didTapNotifications() {
-        AuthService.shared.markLocalNotificationsAsRead()
-        updateNotificationBadge()
-        let alert = UIAlertController(title: "Notifications", message: "All attendance records and shift updates are synchronized in real-time.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-    }
-
-    @objc private func didTapProfile() {
-        let settingsVC = SettingsViewController()
-        settingsVC.modalPresentationStyle = .fullScreen
-        present(settingsVC, animated: true)
-    }
-
     private func loadUserProfile() {
         let firstName = AuthService.shared.getFirstName()
+        let lastName = AuthService.shared.getLastName()
         if !firstName.isEmpty {
-            avatarInitialsLabel.text = String(firstName.prefix(1)).uppercased()
+            var initial = String(firstName.prefix(1)).uppercased()
+            if !lastName.isEmpty {
+                initial += String(lastName.prefix(1)).uppercased()
+            }
+            avatarInitialsLabel.text = initial
         } else {
             avatarInitialsLabel.text = "C"
+        }
+    }
+}
+
+// MARK: - Regularization Modal Controller
+class RegularizationModalViewController: UIViewController {
+
+    var onSuccess: (() -> Void)?
+
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let errorLabel = UILabel()
+
+    private let datePicker = UIDatePicker()
+    private let checkInPicker = UIDatePicker()
+    private let checkOutPicker = UIDatePicker()
+    private let reasonTextView = UITextView()
+    private let submitButton = UIButton(type: .system)
+    private let spinner = UIActivityIndicatorView(style: .medium)
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .white
+        title = "Attendance Regularization"
+
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Cancel", style: .plain, target: self, action: #selector(didTapCancel))
+        navigationItem.leftBarButtonItem?.tintColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+
+        setupForm()
+    }
+
+    @objc private func didTapCancel() {
+        dismiss(animated: true)
+    }
+
+    private func setupForm() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
+
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -30),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+
+        titleLabel.text = "Request Attendance Regularization"
+        titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(titleLabel)
+
+        subtitleLabel.text = "Submit a correction request for missed clock-ins, biometric failures, or on-duty client visits."
+        subtitleLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        subtitleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        subtitleLabel.numberOfLines = 0
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(subtitleLabel)
+
+        errorLabel.textColor = UIColor(red: 185/255, green: 28/255, blue: 28/255, alpha: 1.0)
+        errorLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        errorLabel.numberOfLines = 0
+        errorLabel.isHidden = true
+        errorLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(errorLabel)
+
+        // Date Field
+        let dateField = makeFieldContainer(title: "DATE TO REGULARIZE *", picker: datePicker, mode: .date)
+        datePicker.date = Date()
+        contentView.addSubview(dateField)
+
+        // Time Stack (Check In & Check Out)
+        let timeStack = UIStackView()
+        timeStack.axis = .horizontal
+        timeStack.spacing = 12
+        timeStack.distribution = .fillEqually
+        timeStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(timeStack)
+
+        let inField = makeFieldContainer(title: "CHECK-IN TIME", picker: checkInPicker, mode: .time)
+        let cal = Calendar.current
+        var comps = cal.dateComponents([.year, .month, .day], from: Date())
+        comps.hour = 9
+        comps.minute = 0
+        checkInPicker.date = cal.date(from: comps) ?? Date()
+        timeStack.addArrangedSubview(inField)
+
+        let outField = makeFieldContainer(title: "CHECK-OUT TIME", picker: checkOutPicker, mode: .time)
+        comps.hour = 18
+        comps.minute = 0
+        checkOutPicker.date = cal.date(from: comps) ?? Date()
+        timeStack.addArrangedSubview(outField)
+
+        // Reason Field
+        let reasonLabel = UILabel()
+        reasonLabel.text = "REASON / NOTE *"
+        reasonLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        reasonLabel.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+        reasonLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(reasonLabel)
+
+        reasonTextView.layer.cornerRadius = 10
+        reasonTextView.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        reasonTextView.layer.borderWidth = 1
+        reasonTextView.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        reasonTextView.font = .systemFont(ofSize: 14)
+        reasonTextView.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        reasonTextView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
+        reasonTextView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(reasonTextView)
+
+        // Submit Button
+        submitButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        submitButton.layer.cornerRadius = 14
+        submitButton.setTitle("Submit Correction", for: .normal)
+        submitButton.setTitleColor(.white, for: .normal)
+        submitButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
+        submitButton.translatesAutoresizingMaskIntoConstraints = false
+        submitButton.addTarget(self, action: #selector(didTapSubmit), for: .touchUpInside)
+        contentView.addSubview(submitButton)
+
+        spinner.color = .white
+        spinner.hidesWhenStopped = true
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        submitButton.addSubview(spinner)
+
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 18),
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            errorLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 8),
+            errorLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            errorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            dateField.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 18),
+            dateField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            dateField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            timeStack.topAnchor.constraint(equalTo: dateField.bottomAnchor, constant: 16),
+            timeStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            timeStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            reasonLabel.topAnchor.constraint(equalTo: timeStack.bottomAnchor, constant: 16),
+            reasonLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+
+            reasonTextView.topAnchor.constraint(equalTo: reasonLabel.bottomAnchor, constant: 6),
+            reasonTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            reasonTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            reasonTextView.heightAnchor.constraint(equalToConstant: 100),
+
+            submitButton.topAnchor.constraint(equalTo: reasonTextView.bottomAnchor, constant: 22),
+            submitButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            submitButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            submitButton.heightAnchor.constraint(equalToConstant: 48),
+            submitButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
+
+            spinner.centerXAnchor.constraint(equalTo: submitButton.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: submitButton.centerYAnchor)
+        ])
+    }
+
+    private func makeFieldContainer(title: String, picker: UIDatePicker, mode: UIDatePicker.Mode) -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let label = UILabel()
+        label.text = title
+        label.font = .systemFont(ofSize: 11, weight: .bold)
+        label.textColor = UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(label)
+
+        picker.datePickerMode = mode
+        if #available(iOS 14.0, *) {
+            picker.preferredDatePickerStyle = .compact
+        }
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(picker)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: container.topAnchor),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+
+            picker.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 6),
+            picker.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            picker.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        return container
+    }
+
+    @objc private func didTapSubmit() {
+        let reason = reasonTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if reason.isEmpty {
+            errorLabel.text = "Please provide a reason for the attendance correction."
+            errorLabel.isHidden = false
+            return
+        }
+
+        errorLabel.isHidden = true
+        submitButton.isEnabled = false
+        submitButton.setTitle("", for: .normal)
+        spinner.startAnimating()
+
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        let dateStr = df.string(from: datePicker.date)
+
+        let tf = DateFormatter()
+        tf.dateFormat = "HH:mm"
+        let inTimeStr = tf.string(from: checkInPicker.date)
+        let outTimeStr = tf.string(from: checkOutPicker.date)
+
+        let checkInIso = "\(dateStr)T\(inTimeStr):00"
+        let checkOutIso = "\(dateStr)T\(outTimeStr):00"
+
+        AuthService.shared.requestAttendanceCorrection(
+            date: dateStr,
+            requestedCheckIn: checkInIso,
+            requestedCheckOut: checkOutIso,
+            reason: reason
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.spinner.stopAnimating()
+                self.submitButton.isEnabled = true
+                self.submitButton.setTitle("Submit Correction", for: .normal)
+
+                switch result {
+                case .success:
+                    let alert = UIAlertController(title: "Submitted", message: "Regularization request submitted successfully!", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                        self.dismiss(animated: true) {
+                            self.onSuccess?()
+                        }
+                    }))
+                    self.present(alert, animated: true)
+                case .failure(let err):
+                    var msg = "Failed to submit regularization request."
+                    if case .serverError(let message, _) = err {
+                        msg = message
+                    }
+                    self.errorLabel.text = msg
+                    self.errorLabel.isHidden = false
+                }
+            }
         }
     }
 }

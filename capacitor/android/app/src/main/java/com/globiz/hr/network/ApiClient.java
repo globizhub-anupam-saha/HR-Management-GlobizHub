@@ -1132,6 +1132,25 @@ public class ApiClient {
         });
     }
 
+    public void requestAttendanceCorrection(String date, String requestedCheckIn, String requestedCheckOut, String reason, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("date", date);
+                if (requestedCheckIn != null && !requestedCheckIn.trim().isEmpty()) {
+                    body.put("requestedCheckIn", requestedCheckIn);
+                }
+                if (requestedCheckOut != null && !requestedCheckOut.trim().isEmpty()) {
+                    body.put("requestedCheckOut", requestedCheckOut);
+                }
+                body.put("reason", reason);
+                postJson("/attendance/corrections", body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 500);
+            }
+        });
+    }
+
     // 6. Schedule
     public void getMySchedule(String token, ApiCallback<JSONArray> callback) {
         executor.execute(() -> {

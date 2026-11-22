@@ -881,6 +881,65 @@ class AuthService {
         }.resume()
     }
 
+    // MARK: - Attendance Regularization
+    func requestAttendanceCorrection(date: String, requestedCheckIn: String?, requestedCheckOut: String?, reason: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/attendance/corrections"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "date": date,
+            "reason": reason
+        ]
+        if let checkIn = requestedCheckIn, !checkIn.isEmpty {
+            body["requestedCheckIn"] = checkIn
+        }
+        if let checkOut = requestedCheckOut, !checkOut.isEmpty {
+            body["requestedCheckOut"] = checkOut
+        }
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            completion(.failure(.serverError("Invalid payload", 500)))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(.serverError("No response", 500)))
+                    return
+                }
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    let json = (try? JSONSerialization.jsonObject(with: data ?? Data())) as? [String: Any] ?? ["success": true]
+                    completion(.success(json))
+                } else {
+                    var message = "Failed to submit regularization request."
+                    if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let msg = json["message"] as? String {
+                        message = msg
+                    }
+                    completion(.failure(.serverError(message, httpResponse.statusCode)))
+                }
+            }
+        }.resume()
+    }
+
     // MARK: - Clock In / Clock Out
     func clockIn(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         let isoFormatter = ISO8601DateFormatter()

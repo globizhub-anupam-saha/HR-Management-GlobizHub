@@ -312,7 +312,7 @@
                 android:paddingEnd="14dp"
                 android:paddingBottom="18dp">
 
-                <!-- Left Column: Title + Pill Clock In / Out Button -->
+                <!-- Left Column: Title + Disabled Clock In / Out Buttons -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -331,178 +331,346 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <!-- Clock In / Clock Out Pill Action Button -->
-                    <FrameLayout
-                        android:id="@+id/btnClockAction"
+                    <!-- Disabled Side-by-Side Clock In & Clock Out Buttons -->
+                    <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:background="@drawable/bg_pill_blue_button"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:minWidth="120dp"
-                        android:paddingStart="18dp"
-                        android:paddingEnd="20dp">
+                        android:orientation="horizontal">
 
-                        <LinearLayout
+                        <!-- Clock In (Disabled UI) -->
+                        <FrameLayout
+                            android:id="@+id/btnClockInDisabled"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_pill_blue_button"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp">
 
-                            <ImageView
-                                android:id="@+id/ivClockActionIcon"
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:src="@drawable/ic_mod_time"
-                                android:tint="#FFFFFF" />
-
-                            <TextView
-                                android:id="@+id/tvClockActionText"
+                            <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:text="Clock In"
-                                android:textColor="#FFFFFF"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </FrameLayout>
+                                android:layout_gravity="center"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_mod_time"
+                                    android:tint="#FFFFFF" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:text="Clock In"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </FrameLayout>
+
+                        <!-- Clock Out (Disabled UI) -->
+                        <FrameLayout
+                            android:id="@+id/btnClockOutDisabled"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/bg_pill_blue_button"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_arrow_out"
+                                    android:tint="#FFFFFF" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:text="Clock Out"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </FrameLayout>
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Right Column: Vector Illustration of Hand Holding Clock -->
                 <ImageView
                     android:id="@+id/ivBannerIllustration"
-                    android:layout_width="110dp"
-                    android:layout_height="90dp"
+                    android:layout_width="100dp"
+                    android:layout_height="80dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:scaleType="fitEnd"
                     android:src="@drawable/ic_banner_hand_clock" />
             </RelativeLayout>
 
-            <!-- 2. SUMMARY METRIC CARD (3 Columns: Clock in Time, Break Time, Clock Out Time) -->
-            <LinearLayout
-                android:id="@+id/cardAttendanceSummary"
+            <!-- 2. REQUEST REGULARIZATION BUTTON (Blue Box Action) -->
+            <FrameLayout
+                android:id="@+id/btnRequestRegularization"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_marginTop="14dp"
-                android:background="@drawable/bg_attendance_card"
-                android:elevation="1dp"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingTop="18dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="18dp">
+                android:background="@drawable/bg_pill_blue_button"
+                android:clickable="true"
+                android:focusable="true">
 
-                <!-- Column 1: Clock in Time -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    android:layout_gravity="center"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_calendar_edit"
+                        android:tint="#FFFFFF" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Clock in Time"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvSummaryClockIn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="09:00am"
-                        android:textColor="#0F172A"
-                        android:textSize="17sp"
+                        android:layout_marginStart="10dp"
+                        android:text="Request Regularization"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+            </FrameLayout>
 
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="32dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#F1F5F9" />
-
-                <!-- Column 2: Break Time -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Break Time"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvSummaryBreak"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="12:00pm"
-                        android:textColor="#0F172A"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="32dp"
-                    android:layout_gravity="center_vertical"
-                    android:background="#F1F5F9" />
-
-                <!-- Column 3: Clock Out Time -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Shift End"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvSummaryClockOut"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="06:00pm"
-                        android:textColor="#0F172A"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- 3. ATTENDANCE HISTORY SECTION HEADER -->
-            <RelativeLayout
+            <!-- 3. MY ATTENDANCE SECTION (4 Real-time Stat Boxes) -->
+            <LinearLayout
+                android:id="@+id/layoutMyAttendanceSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
-                android:layout_marginBottom="12dp">
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:text="Attendance History"
+                    android:text="My Attendance"
                     android:textColor="#0F172A"
                     android:textSize="18sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Personal monthly performance and daily status"
+                    android:textColor="#64748B"
+                    android:textSize="12sp" />
+
+                <!-- Row 1: Today's Status & Monthly Attendance -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <!-- Box 1: Today's Status -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attendance_card"
+                        android:elevation="1dp"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.05"
+                            android:text="TODAY'S STATUS"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/pillTodayStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_badge_early"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="8dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="4dp">
+
+                            <View
+                                android:id="@+id/dotTodayStatus"
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/dot_present" />
+
+                            <TextView
+                                android:id="@+id/tvTodayStatusValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Pending"
+                                android:textColor="#059669"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Box 2: Monthly Attendance -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attendance_card"
+                        android:elevation="1dp"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.05"
+                            android:text="MONTHLY ATTENDANCE"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvMonthlyAttendanceValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="0%"
+                            android:textColor="#0056FD"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Row 2: Days Present & Days Absent -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <!-- Box 3: Days Present -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attendance_card"
+                        android:elevation="1dp"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.05"
+                            android:text="DAYS PRESENT"
+                            android:textColor="#16A34A"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvDaysPresentValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="0"
+                            android:textColor="#0F172A"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Box 4: Days Absent -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_attendance_card"
+                        android:elevation="1dp"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.05"
+                            android:text="DAYS ABSENT"
+                            android:textColor="#E11D48"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvDaysAbsentValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="0"
+                            android:textColor="#0F172A"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 4. ATTENDANCE HISTORY SECTION HEADER -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Attendance History"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Last 30 Days"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/btnSeeAll"
@@ -520,7 +688,7 @@
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- 4. ATTENDANCE HISTORY LIST CONTAINER -->
+            <!-- 5. ATTENDANCE HISTORY LIST CONTAINER -->
             <LinearLayout
                 android:id="@+id/llAttendanceHistoryList"
                 android:layout_width="match_parent"
