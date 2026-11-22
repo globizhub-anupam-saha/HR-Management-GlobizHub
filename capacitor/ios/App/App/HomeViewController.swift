@@ -77,6 +77,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     private let punchStatusLabel = UILabel()
     private let breakTimerLabel = UILabel()
 
+    // Capsule Dual-Action Button Control
+    private let shiftCapsuleContainer = UIView()
+    private let shiftCapsuleStack = UIStackView()
+    private let btnClockIn = UIButton(type: .custom)
+    private let btnClockOut = UIButton(type: .custom)
+    private var attendanceSyncTimer: Timer?
+
     private let punchGlowRing = UIView()
     private let punchCircleButton = UIButton(type: .custom)
     private let punchIconView = UIImageView()
@@ -293,6 +300,15 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         setupBottomNavBar()
         setupHintPopup()
         updateGreeting()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    @objc private func appWillEnterForeground() {
+        let role = UserRole.from(string: AuthService.shared.getRole())
+        if role == .employee {
+            loadAttendanceStats()
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -345,6 +361,16 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             heatmapModeSegmented.selectedSegmentIndex = 0
             didChangeHeatmapMode(heatmapModeSegmented)
             heroCard.play()
+
+            // Real-time synchronization with Web (polls every 12s while dashboard active)
+            attendanceSyncTimer?.invalidate()
+            attendanceSyncTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                let role = UserRole.from(string: AuthService.shared.getRole())
+                if role == .employee {
+                    self.loadAttendanceStats()
+                }
+            }
         }
 
         // Safety fallback timeout: dismiss after 3.5s if network is slow/offline
@@ -371,6 +397,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        attendanceSyncTimer?.invalidate()
+        attendanceSyncTimer = nil
         stopTimer()
         resetHoldAnimation()
         heroCard.pause()
@@ -690,87 +718,66 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         timerSectionTitle.translatesAutoresizingMaskIntoConstraints = false
         timerCard.addSubview(timerSectionTitle)
 
-        // Live Timer: 07h 44m 35s
-        liveTimerLabel.text = "00h 00m 00s"
-        liveTimerLabel.font = .monospacedDigitSystemFont(ofSize: 32, weight: .heavy)
+        // Live Timer: 00:00:00 (Matching Web AttendanceWidget)
+        liveTimerLabel.text = "00:00:00"
+        liveTimerLabel.font = .monospacedDigitSystemFont(ofSize: 34, weight: .heavy)
         liveTimerLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         liveTimerLabel.textAlignment = .center
         liveTimerLabel.translatesAutoresizingMaskIntoConstraints = false
         timerCard.addSubview(liveTimerLabel)
 
         // Punch status
-        punchStatusLabel.text = "• Clocked Out"
+        punchStatusLabel.text = "• Shift Scheduled for 09:00 AM"
         punchStatusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         punchStatusLabel.textAlignment = .center
         punchStatusLabel.translatesAutoresizingMaskIntoConstraints = false
         timerCard.addSubview(punchStatusLabel)
 
-        // Break timer & session info label below punch status
-        breakTimerLabel.font = .systemFont(ofSize: 12, weight: .bold)
-        breakTimerLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
-        breakTimerLabel.textAlignment = .center
-        breakTimerLabel.translatesAutoresizingMaskIntoConstraints = false
-        breakTimerLabel.isHidden = true
-        timerCard.addSubview(breakTimerLabel)
+        // Capsule Dual-Action Container
+        shiftCapsuleContainer.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        shiftCapsuleContainer.layer.cornerRadius = 26
+        shiftCapsuleContainer.layer.borderWidth = 1
+        shiftCapsuleContainer.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        shiftCapsuleContainer.translatesAutoresizingMaskIntoConstraints = false
+        timerCard.addSubview(shiftCapsuleContainer)
 
-        // Fingerprint Punch Button (Outer Glow + Inner Blue Circle + Circular Loading Ring)
-        punchGlowRing.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 0.85)
-        punchGlowRing.layer.cornerRadius = 48
-        punchGlowRing.translatesAutoresizingMaskIntoConstraints = false
-        timerCard.addSubview(punchGlowRing)
+        shiftCapsuleStack.axis = .horizontal
+        shiftCapsuleStack.distribution = .fillEqually
+        shiftCapsuleStack.spacing = 8
+        shiftCapsuleStack.translatesAutoresizingMaskIntoConstraints = false
+        shiftCapsuleContainer.addSubview(shiftCapsuleStack)
 
-        punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-        punchCircleButton.layer.cornerRadius = 34
-        punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
-        punchCircleButton.layer.shadowOpacity = 0.3
-        punchCircleButton.layer.shadowOffset = CGSize(width: 0, height: 4)
-        punchCircleButton.layer.shadowRadius = 8
-        punchCircleButton.translatesAutoresizingMaskIntoConstraints = false
-        punchGlowRing.addSubview(punchCircleButton)
+        // Left: Clock In Button (Vibrant Brand Blue)
+        btnClockIn.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        btnClockIn.layer.cornerRadius = 22
+        btnClockIn.setTitle(" Clock In", for: .normal)
+        btnClockIn.setTitleColor(.white, for: .normal)
+        btnClockIn.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        let clockConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .bold)
+        btnClockIn.setImage(UIImage(systemName: "clock.badge.checkmark.fill", withConfiguration: clockConfig), for: .normal)
+        btnClockIn.tintColor = .white
+        btnClockIn.addTarget(self, action: #selector(handleClockInTapped), for: .touchUpInside)
+        shiftCapsuleStack.addArrangedSubview(btnClockIn)
 
-        // Setup Circular 2-Second Hold Animation Progress Ring (White Loading Circle)
-        let ringPath = UIBezierPath(arcCenter: CGPoint(x: 34, y: 34), radius: 32, startAngle: -CGFloat.pi / 2, endAngle: 1.5 * CGFloat.pi, clockwise: true)
-        progressRingLayer.path = ringPath.cgPath
-        progressRingLayer.strokeColor = UIColor.white.cgColor
-        progressRingLayer.fillColor = UIColor.clear.cgColor
-        progressRingLayer.lineWidth = 3.5
-        progressRingLayer.strokeEnd = 0.0
-        progressRingLayer.lineCap = .round
-        punchCircleButton.layer.addSublayer(progressRingLayer)
+        // Right: Clock Out Button (Vibrant Red)
+        btnClockOut.backgroundColor = UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0)
+        btnClockOut.layer.cornerRadius = 22
+        btnClockOut.setTitle(" Clock Out", for: .normal)
+        btnClockOut.setTitleColor(.white, for: .normal)
+        btnClockOut.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        let exitConfig = UIImage.SymbolConfiguration(pointSize: 15, weight: .bold)
+        btnClockOut.setImage(UIImage(systemName: "power.circle.fill", withConfiguration: exitConfig), for: .normal)
+        btnClockOut.tintColor = .white
+        btnClockOut.addTarget(self, action: #selector(handleClockOutTapped), for: .touchUpInside)
+        shiftCapsuleStack.addArrangedSubview(btnClockOut)
 
-        let fpConfig = UIImage.SymbolConfiguration(pointSize: 34, weight: .medium)
-        punchIconView.image = UIImage(systemName: "touchid", withConfiguration: fpConfig)
-        punchIconView.tintColor = .white
-        punchIconView.contentMode = .scaleAspectFit
-        punchIconView.translatesAutoresizingMaskIntoConstraints = false
-        punchCircleButton.addSubview(punchIconView)
-
-        // Add Touch Events for 2-Second Long Press Interaction
-        punchCircleButton.addTarget(self, action: #selector(punchTouchDown), for: .touchDown)
-        punchCircleButton.addTarget(self, action: #selector(punchTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
-
-        // Action Buttons Row: [Take Break] (Clock Out button completely removed)
-        actionButtonsRow.axis = .horizontal
-        actionButtonsRow.distribution = .fill
-        actionButtonsRow.alignment = .center
-        actionButtonsRow.spacing = 12
-        actionButtonsRow.translatesAutoresizingMaskIntoConstraints = false
-        timerCard.addSubview(actionButtonsRow)
-
-        // Take Break Button
-        takeBreakButton.backgroundColor = UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0)
-        takeBreakButton.layer.cornerRadius = 23
-        takeBreakButton.setTitle(" Take Break", for: .normal)
-        takeBreakButton.setTitleColor(UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0), for: .normal)
-        takeBreakButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        let cupConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
-        let cupImg = UIImage(systemName: "cup.and.saucer.fill", withConfiguration: cupConfig) ?? UIImage(systemName: "pause.circle.fill", withConfiguration: cupConfig)
-        takeBreakButton.setImage(cupImg, for: .normal)
-        takeBreakButton.tintColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
-        takeBreakButton.addTarget(self, action: #selector(handleTakeBreak), for: .touchUpInside)
-        actionButtonsRow.addArrangedSubview(takeBreakButton)
-
+        // Helper text below capsule
+        punchInstructionLabel.text = "Tap Clock In to record your attendance"
+        punchInstructionLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        punchInstructionLabel.textAlignment = .center
+        punchInstructionLabel.translatesAutoresizingMaskIntoConstraints = false
         timerCard.addSubview(punchInstructionLabel)
 
         NSLayoutConstraint.activate([
@@ -783,39 +790,24 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             punchStatusLabel.topAnchor.constraint(equalTo: liveTimerLabel.bottomAnchor, constant: 4),
             punchStatusLabel.centerXAnchor.constraint(equalTo: timerCard.centerXAnchor),
 
-            breakTimerLabel.topAnchor.constraint(equalTo: punchStatusLabel.bottomAnchor, constant: 3),
-            breakTimerLabel.centerXAnchor.constraint(equalTo: timerCard.centerXAnchor),
-            breakTimerLabel.leadingAnchor.constraint(greaterThanOrEqualTo: timerCard.leadingAnchor, constant: 12),
-            breakTimerLabel.trailingAnchor.constraint(lessThanOrEqualTo: timerCard.trailingAnchor, constant: -12),
+            shiftCapsuleContainer.topAnchor.constraint(equalTo: punchStatusLabel.bottomAnchor, constant: 18),
+            shiftCapsuleContainer.leadingAnchor.constraint(equalTo: timerCard.leadingAnchor, constant: 20),
+            shiftCapsuleContainer.trailingAnchor.constraint(equalTo: timerCard.trailingAnchor, constant: -20),
+            shiftCapsuleContainer.heightAnchor.constraint(equalToConstant: 52),
 
-            punchGlowRing.topAnchor.constraint(equalTo: breakTimerLabel.bottomAnchor, constant: 14),
-            punchGlowRing.centerXAnchor.constraint(equalTo: timerCard.centerXAnchor),
-            punchGlowRing.widthAnchor.constraint(equalToConstant: 96),
-            punchGlowRing.heightAnchor.constraint(equalToConstant: 96),
+            shiftCapsuleStack.topAnchor.constraint(equalTo: shiftCapsuleContainer.topAnchor, constant: 4),
+            shiftCapsuleStack.bottomAnchor.constraint(equalTo: shiftCapsuleContainer.bottomAnchor, constant: -4),
+            shiftCapsuleStack.leadingAnchor.constraint(equalTo: shiftCapsuleContainer.leadingAnchor, constant: 4),
+            shiftCapsuleStack.trailingAnchor.constraint(equalTo: shiftCapsuleContainer.trailingAnchor, constant: -4),
 
-            punchCircleButton.centerXAnchor.constraint(equalTo: punchGlowRing.centerXAnchor),
-            punchCircleButton.centerYAnchor.constraint(equalTo: punchGlowRing.centerYAnchor),
-            punchCircleButton.widthAnchor.constraint(equalToConstant: 68),
-            punchCircleButton.heightAnchor.constraint(equalToConstant: 68),
-
-            punchIconView.centerXAnchor.constraint(equalTo: punchCircleButton.centerXAnchor),
-            punchIconView.centerYAnchor.constraint(equalTo: punchCircleButton.centerYAnchor),
-            punchIconView.widthAnchor.constraint(equalToConstant: 34),
-            punchIconView.heightAnchor.constraint(equalToConstant: 34),
-
-            punchInstructionLabel.topAnchor.constraint(equalTo: punchGlowRing.bottomAnchor, constant: 10),
+            punchInstructionLabel.topAnchor.constraint(equalTo: shiftCapsuleContainer.bottomAnchor, constant: 14),
             punchInstructionLabel.centerXAnchor.constraint(equalTo: timerCard.centerXAnchor),
             punchInstructionLabel.leadingAnchor.constraint(greaterThanOrEqualTo: timerCard.leadingAnchor, constant: 16),
             punchInstructionLabel.trailingAnchor.constraint(lessThanOrEqualTo: timerCard.trailingAnchor, constant: -16),
-
-            actionButtonsRow.topAnchor.constraint(equalTo: punchInstructionLabel.bottomAnchor, constant: 14),
-            actionButtonsRow.centerXAnchor.constraint(equalTo: timerCard.centerXAnchor),
-            actionButtonsRow.heightAnchor.constraint(equalToConstant: 46),
-            actionButtonsRow.bottomAnchor.constraint(equalTo: timerCard.bottomAnchor, constant: -20),
-
-            takeBreakButton.heightAnchor.constraint(equalToConstant: 46),
-            takeBreakButton.widthAnchor.constraint(equalToConstant: 180)
+            punchInstructionLabel.bottomAnchor.constraint(equalTo: timerCard.bottomAnchor, constant: -20)
         ])
+
+        updateCapsuleButtonsState()
     }
 
     // MARK: - 3. Leaves & Holiday Row
@@ -2481,6 +2473,112 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         present(settingsVC, animated: true)
     }
 
+    // MARK: - Capsule Shift Actions
+    @objc private func handleClockInTapped() {
+        guard !isCheckedIn else { return }
+
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
+        let now = Date()
+        self.isCheckedIn = true
+        self.isShiftCompletedToday = false
+        self.checkInDate = now
+
+        let cal = Calendar.current
+        let h = cal.component(.hour, from: now)
+        let m = cal.component(.minute, from: now)
+        self.isTodayLate = (h > shiftStartHour || (h == shiftStartHour && m > shiftStartMinute))
+
+        self.startTimer()
+        self.updateCapsuleButtonsState()
+        self.updatePunchInStatusText()
+        self.updatePunchInstructionLabel()
+        self.postShiftNotification(isClockIn: true)
+        self.updateShiftBadgeForStatus(isLate: self.isTodayLate)
+        self.syncTodayAttendanceRecord()
+        self.renderMonthlyHeatmap()
+
+        AuthService.shared.clockIn { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success:
+                self.loadAttendanceStats()
+                self.syncTodayAttendanceRecord()
+                self.loadRealAttendanceHistoryForHeatmap()
+            case .failure(let err):
+                let errStr = err.localizedDescription.lowercased()
+                if errStr.contains("already") {
+                    self.loadAttendanceStats()
+                } else {
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    let nowIso = isoFormatter.string(from: now)
+                    AuthService.shared.savePendingOfflinePunch(type: "IN", isoTime: nowIso)
+                    self.showError("Clock In saved locally and will sync when connected.")
+                }
+            }
+        }
+    }
+
+    @objc private func handleClockOutTapped() {
+        guard isCheckedIn else { return }
+
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
+        let now = Date()
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.dateFormat = "hh:mm a"
+        let timeStr = timeFormatter.string(from: now)
+
+        self.isCheckedIn = false
+        self.isShiftCompletedToday = true
+        self.stopTimer()
+        self.updateCapsuleButtonsState()
+        self.punchStatusLabel.text = "• Clocked Out at \(timeStr)"
+        self.punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        self.updatePunchInstructionLabel()
+        self.postShiftNotification(isClockIn: false)
+        self.syncTodayAttendanceRecord()
+        self.renderMonthlyHeatmap()
+
+        AuthService.shared.clockOut { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success:
+                self.loadAttendanceStats()
+                self.loadRealAttendanceHistoryForHeatmap()
+            case .failure:
+                let isoFormatter = ISO8601DateFormatter()
+                isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                let nowIso = isoFormatter.string(from: now)
+                AuthService.shared.savePendingOfflinePunch(type: "OUT", isoTime: nowIso)
+                self.showError("Clock Out saved locally and will sync when connected.")
+            }
+        }
+    }
+
+    private func updateCapsuleButtonsState() {
+        if isCheckedIn {
+            btnClockIn.isEnabled = false
+            btnClockIn.alpha = 0.42
+            btnClockOut.isEnabled = true
+            btnClockOut.alpha = 1.0
+        } else if isShiftCompletedToday {
+            btnClockIn.isEnabled = false
+            btnClockIn.alpha = 0.42
+            btnClockOut.isEnabled = false
+            btnClockOut.alpha = 0.42
+        } else {
+            btnClockIn.isEnabled = true
+            btnClockIn.alpha = 1.0
+            btnClockOut.isEnabled = false
+            btnClockOut.alpha = 0.42
+        }
+    }
+
     @objc private func handleNotifications() {
         notifBadgeDot.isHidden = true
         let notifVC = NotificationsViewController()
@@ -3291,6 +3389,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.updateUIForAttendance(clockedIn: false)
                 } else if let inStr = checkInStr, !inStr.isEmpty, inStr != "<null>", inStr != "null" {
                     self.isCheckedIn = true
+                    self.isShiftCompletedToday = false
                     if let parsed = self.parseIsoDate(inStr) {
                         self.checkInDate = parsed
                     }
@@ -3298,6 +3397,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.startTimer()
                     self.syncTodayAttendanceRecord()
                     self.renderMonthlyHeatmap()
+                } else {
+                    self.isCheckedIn = false
+                    self.isShiftCompletedToday = false
+                    self.stopTimer()
+                    self.liveTimerLabel.text = "00:00:00"
+                    self.updateUIForAttendance(clockedIn: false)
                 }
                 self.dismissSkeleton()
             case .failure:
@@ -3309,58 +3414,34 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     private func updateUIForAttendance(clockedIn: Bool) {
+        updateCapsuleButtonsState()
         if clockedIn {
             updatePunchInStatusText()
-            // Active shift state: emerald green circle and soft green glow ring
-            punchCircleButton.backgroundColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
-            punchCircleButton.layer.shadowColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 0.35).cgColor
-            punchIconView.tintColor = .white
-            punchGlowRing.backgroundColor = UIColor(red: 220/255, green: 252/255, blue: 231/255, alpha: 0.85)
         } else {
             if isShiftCompletedToday {
                 punchStatusLabel.text = "• Shift Completed for Today"
                 punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-                punchCircleButton.backgroundColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
-                punchCircleButton.layer.shadowColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 0.25).cgColor
-                punchIconView.tintColor = .white
-                punchGlowRing.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 0.85)
             } else if !isWithinPunchInWindow() {
                 punchStatusLabel.text = "• Shift Scheduled for 09:00 AM"
                 punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-                punchCircleButton.backgroundColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
-                punchCircleButton.layer.shadowColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 0.25).cgColor
-                punchIconView.tintColor = .white
-                punchGlowRing.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 0.85)
             } else {
-                punchStatusLabel.text = "• Ready to Punch In"
+                punchStatusLabel.text = "• Ready to Clock In"
                 punchStatusLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-                punchCircleButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
-                punchCircleButton.layer.shadowColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.35).cgColor
-                punchIconView.tintColor = .white
-                punchGlowRing.backgroundColor = UIColor(red: 219/255, green: 234/255, blue: 254/255, alpha: 0.85)
             }
         }
         updatePunchInstructionLabel()
     }
 
     private func updatePunchInstructionLabel() {
-        if !isCheckedIn {
-            if isShiftCompletedToday {
-                punchInstructionLabel.text = "Shift Completed for Today"
-                punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-            } else if !isWithinPunchInWindow() {
-                punchInstructionLabel.text = "Shift starts at 09:00 AM • Opens at 08:55 AM"
-                punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-            } else {
-                punchInstructionLabel.text = "Hold 2s to Punch In"
-                punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-            }
-        } else if isOnBreak {
-            punchInstructionLabel.text = "Shift on break • Resume to continue"
-            punchInstructionLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
-        } else {
-            punchInstructionLabel.text = "Shift in Progress • Hold 2s to Punch Out"
+        if isCheckedIn {
+            punchInstructionLabel.text = "Shift in Progress • Tap Clock Out when done"
             punchInstructionLabel.textColor = UIColor(red: 22/255, green: 163/255, blue: 74/255, alpha: 1.0)
+        } else if isShiftCompletedToday {
+            punchInstructionLabel.text = "Shift Completed for Today"
+            punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        } else {
+            punchInstructionLabel.text = "Tap Clock In to record your attendance"
+            punchInstructionLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         }
     }
 
@@ -3377,36 +3458,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         stopTimer()
         liveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self, let startDate = self.checkInDate else { return }
-
-            if self.isOnBreak {
-                // Main timer pauses/freezes while on break!
-                // Break timer ticks below the main timer:
-                let elapsedBreak = Int(Date().timeIntervalSince(self.currentBreakStartDate ?? Date()))
-                let bm = (elapsedBreak % 3600) / 60
-                let bs = elapsedBreak % 60
-                let tf = DateFormatter()
-                tf.dateFormat = "hh:mm a"
-                let startStr = (self.currentBreakStartDate != nil) ? tf.string(from: self.currentBreakStartDate!) : ""
-                self.breakTimerLabel.isHidden = false
-                self.breakTimerLabel.text = "Break: \(String(format: "%02dm %02ds", bm, bs)) (from \(startStr))"
-                self.punchStatusLabel.text = "• On Break (Shift Paused)"
-                self.punchStatusLabel.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
-            } else {
-                let totalElapsed = max(0, Int(Date().timeIntervalSince(startDate)))
-                let activeElapsed = max(0, totalElapsed - Int(self.accumulatedBreakDuration))
-                let h = activeElapsed / 3600
-                let m = (activeElapsed % 3600) / 60
-                let s = activeElapsed % 60
-                self.liveTimerLabel.text = String(format: "%02dh %02dm %02ds", h, m, s)
-                self.updateHeatmapTodayLive(h: h, m: m, s: s)
-
-                if let lastBreak = self.lastBreakSessionText {
-                    self.breakTimerLabel.isHidden = false
-                    self.breakTimerLabel.text = lastBreak
-                } else {
-                    self.breakTimerLabel.isHidden = true
-                }
-            }
+            let totalElapsed = max(0, Int(Date().timeIntervalSince(startDate)))
+            let h = totalElapsed / 3600
+            let m = (totalElapsed % 3600) / 60
+            let s = totalElapsed % 60
+            self.liveTimerLabel.text = String(format: "%02d:%02d:%02d", h, m, s)
+            self.updateHeatmapTodayLive(h: h, m: m, s: s)
             self.updatePunchInstructionLabel()
         }
         liveTimer?.fire()

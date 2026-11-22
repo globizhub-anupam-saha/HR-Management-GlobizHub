@@ -322,9 +322,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="07h 44m 35s"
+                    android:fontFamily="monospace"
+                    android:text="00:00:00"
                     android:textColor="#0F172A"
-                    android:textSize="32sp"
+                    android:textSize="34sp"
                     android:textStyle="bold" />
 
                 <!-- Sub-status: Punched in time -->
@@ -333,120 +334,98 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="• Punched In at 08:58 AM"
-                    android:textColor="#059669"
+                    android:text="• Shift Scheduled for 09:00 AM"
+                    android:textColor="#64748B"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
-                <!-- Sub-status: Real-time Break Timer & Last Break History -->
-                <TextView
-                    android:id="@+id/tvBreakTimer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text=""
-                    android:textColor="#D97706"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
-
-                <!-- Center Interactive Fingerprint Punch Button with Glow Ring (iOS Identical Match) -->
-                <FrameLayout
-                    android:layout_width="96dp"
-                    android:layout_height="96dp"
-                    android:layout_marginTop="16dp">
-
-                    <!-- Outer Glow Ring (96dp x 96dp matching iOS) -->
-                    <View
-                        android:id="@+id/viewPunchGlowRing"
-                        android:layout_width="96dp"
-                        android:layout_height="96dp"
-                        android:background="@drawable/bg_blue_glow_ring" />
-
-                    <!-- Circular Progress Ring for 2-Second Hold Animation (76dp x 76dp) -->
-                    <ProgressBar
-                        android:id="@+id/holdProgressBar"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="76dp"
-                        android:layout_height="76dp"
-                        android:layout_gravity="center"
-                        android:indeterminate="false"
-                        android:max="100"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/circle_progress_bar_white"
-                        android:visibility="gone" />
-
-                    <!-- Blue/Red Inner Punch Button (68dp x 68dp matching iOS) -->
-                    <FrameLayout
-                        android:id="@+id/flPunchButton"
-                        android:layout_width="68dp"
-                        android:layout_height="68dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/bg_blue_circle"
-                        android:elevation="6dp"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <ImageView
-                            android:id="@+id/ivPunchIcon"
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_touchid_ios"
-                            android:tint="#FFFFFF"
-                            android:contentDescription="Fingerprint Punch" />
-                    </FrameLayout>
-                </FrameLayout>
-
-                <!-- Instruction helper text below button -->
-                <TextView
-                    android:id="@+id/tvPunchInstruction"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Hold 2s to Punch In"
-                    android:textColor="#64748B"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <!-- Action Buttons: Take Break (Clock Out completely removed) -->
+                <!-- Capsule Dual-Action Clock In / Clock Out Control -->
                 <LinearLayout
-                    android:id="@+id/actionButtonsRow"
+                    android:id="@+id/layoutShiftCapsule"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:layout_marginTop="18dp"
+                    android:background="@drawable/bg_shift_capsule"
                     android:gravity="center"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="4dp">
 
+                    <!-- Left: Clock In Button (Vibrant Brand Blue) -->
                     <LinearLayout
-                        android:id="@+id/btnTakeBreak"
-                        android:layout_width="wrap_content"
-                        android:layout_height="46dp"
-                        android:background="@drawable/bg_break_pill"
+                        android:id="@+id/btnClockIn"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/bg_clock_in_pill"
                         android:clickable="true"
                         android:focusable="true"
                         android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingStart="32dp"
-                        android:paddingEnd="32dp">
+                        android:orientation="horizontal">
 
                         <ImageView
-                            android:id="@+id/ivTakeBreak"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_coffee_cup" />
+                            android:id="@+id/ivClockIn"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_clock"
+                            app:tint="#FFFFFF" />
 
                         <TextView
-                            android:id="@+id/tvTakeBreak"
+                            android:id="@+id/tvClockIn"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:text="Take Break"
-                            android:textColor="#1E293B"
+                            android:text="Clock In"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Right: Clock Out Button (Vibrant Red) -->
+                    <LinearLayout
+                        android:id="@+id/btnClockOut"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:background="@drawable/bg_clock_out_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/ivClockOut"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_door_exit"
+                            app:tint="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tvClockOut"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Clock Out"
+                            android:textColor="#FFFFFF"
                             android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
+
+                <!-- Instruction helper text below capsule -->
+                <TextView
+                    android:id="@+id/tvPunchInstruction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="4dp"
+                    android:text="Tap Clock In to record your attendance"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <!-- 3. LEAVES CARD (Full Width 1st) -->

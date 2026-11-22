@@ -99,6 +99,9 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvLiveTimer;
     private TextView tvPunchedInAt;
     private TextView tvBreakTimer;
+    private View layoutShiftCapsule;
+    private View btnClockIn;
+    private View btnClockOut;
     private FrameLayout flPunchButton;
     private ImageView ivPunchIcon;
     private ProgressBar holdProgressBar;
@@ -295,6 +298,18 @@ public class HomeActivity extends AppCompatActivity {
         setupListeners();
     }
 
+    private final Handler autoSyncHandler = new Handler(Looper.getMainLooper());
+    private final Runnable autoSyncRunnable = new Runnable() {
+        @Override
+        public void run() {
+            String role = apiClient != null ? apiClient.getRole() : "employee";
+            if (!"admin".equalsIgnoreCase(role) && !"superadmin".equalsIgnoreCase(role)) {
+                loadAttendanceStats();
+            }
+            autoSyncHandler.postDelayed(this, 12000);
+        }
+    };
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -317,6 +332,10 @@ public class HomeActivity extends AppCompatActivity {
         updateGreeting();
         setupRoleDashboard();
 
+        // Start periodic sync with Web (real-time attendance reflection)
+        autoSyncHandler.removeCallbacks(autoSyncRunnable);
+        autoSyncHandler.postDelayed(autoSyncRunnable, 12000);
+
         // Resume hero background video loop
         if (heroMediaPlayer == null && textureViewHeroVideo != null && textureViewHeroVideo.isAvailable()) {
             initHeroMediaPlayer(new Surface(textureViewHeroVideo.getSurfaceTexture()),
@@ -331,6 +350,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        autoSyncHandler.removeCallbacks(autoSyncRunnable);
         if (heroMediaPlayer != null && heroMediaPlayer.isPlaying()) {
             try {
                 heroMediaPlayer.pause();
@@ -410,13 +430,9 @@ public class HomeActivity extends AppCompatActivity {
         // Timer Card
         tvLiveTimer = findViewById(R.id.tvLiveTimer);
         tvPunchedInAt = findViewById(R.id.tvPunchedInAt);
-        tvBreakTimer = findViewById(R.id.tvBreakTimer);
-        flPunchButton = findViewById(R.id.flPunchButton);
-        ivPunchIcon = findViewById(R.id.ivPunchIcon);
-        holdProgressBar = findViewById(R.id.holdProgressBar);
-        btnTakeBreak = findViewById(R.id.btnTakeBreak);
-        ivTakeBreak = findViewById(R.id.ivTakeBreak);
-        tvTakeBreak = findViewById(R.id.tvTakeBreak);
+        layoutShiftCapsule = findViewById(R.id.layoutShiftCapsule);
+        btnClockIn = findViewById(R.id.btnClockIn);
+        btnClockOut = findViewById(R.id.btnClockOut);
 
         // Leaves Card
         cvLeavesCard = findViewById(R.id.cvLeavesCard);
@@ -463,7 +479,6 @@ public class HomeActivity extends AppCompatActivity {
         // Bottom Elements
         hintPopupCard = findViewById(R.id.hintPopupCard);
         tvHintText = findViewById(R.id.tvHintText);
-        viewPunchGlowRing = findViewById(R.id.viewPunchGlowRing);
         tvPunchInstruction = findViewById(R.id.tvPunchInstruction);
 
         // Skeleton Elements
@@ -784,71 +799,166 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void updatePunchButtonUI(boolean clockedIn) {
+        updateCapsuleButtonsState();
         if (clockedIn) {
-            if (viewPunchGlowRing != null) {
-                viewPunchGlowRing.setBackgroundResource(R.drawable.bg_green_glow_ring);
-            }
-            if (flPunchButton != null) {
-                flPunchButton.setBackgroundResource(R.drawable.bg_green_circle);
-            }
-            if (ivPunchIcon != null) {
-                ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
-            }
-            if (btnTakeBreak != null) {
-                btnTakeBreak.setAlpha(1.0f);
-            }
             if (checkInDateTime != null && tvPunchedInAt != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a", Locale.US);
-                tvPunchedInAt.setText("• Punched In at " + sdf.format(checkInDateTime));
-                tvPunchedInAt.setTextColor(Color.parseColor("#059669"));
+                tvPunchedInAt.setText("• Clocked In at " + sdf.format(checkInDateTime));
+                tvPunchedInAt.setTextColor(Color.parseColor("#16A34A"));
             }
         } else {
             isOnBreak = false;
             updateBreakUI(false);
-            if (btnTakeBreak != null) {
-                btnTakeBreak.setAlpha(0.6f);
-            }
             if (isShiftCompletedToday) {
-                if (viewPunchGlowRing != null) {
-                    viewPunchGlowRing.setBackgroundResource(R.drawable.bg_slate_glow_ring);
-                }
-                if (flPunchButton != null) {
-                    flPunchButton.setBackgroundResource(R.drawable.bg_slate_circle);
-                }
-                if (ivPunchIcon != null) {
-                    ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
+                if (tvPunchedInAt != null) {
+                    tvPunchedInAt.setText("• Shift Completed for Today");
+                    tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
                 }
             } else if (!isWithinPunchInWindow()) {
-                if (viewPunchGlowRing != null) {
-                    viewPunchGlowRing.setBackgroundResource(R.drawable.bg_slate_glow_ring);
-                }
-                if (flPunchButton != null) {
-                    flPunchButton.setBackgroundResource(R.drawable.bg_slate_circle);
-                }
-                if (ivPunchIcon != null) {
-                    ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
-                }
                 if (tvPunchedInAt != null) {
-                    tvPunchedInAt.setText("• Shift Scheduled at 09:00 AM");
+                    tvPunchedInAt.setText("• Shift Scheduled for 09:00 AM");
                     tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
                 }
             } else {
-                if (viewPunchGlowRing != null) {
-                    viewPunchGlowRing.setBackgroundResource(R.drawable.bg_blue_glow_ring);
-                }
-                if (flPunchButton != null) {
-                    flPunchButton.setBackgroundResource(R.drawable.bg_blue_circle);
-                }
-                if (ivPunchIcon != null) {
-                    ivPunchIcon.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
-                }
                 if (tvPunchedInAt != null) {
-                    tvPunchedInAt.setText("• Ready to Punch In");
+                    tvPunchedInAt.setText("• Ready to Clock In");
                     tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
                 }
             }
         }
         updateInstructionLabel();
+    }
+
+    private void updateCapsuleButtonsState() {
+        if (btnClockIn == null || btnClockOut == null) return;
+        if (isCheckedIn) {
+            btnClockIn.setEnabled(false);
+            btnClockIn.setAlpha(0.42f);
+            btnClockOut.setEnabled(true);
+            btnClockOut.setAlpha(1.0f);
+        } else if (isShiftCompletedToday) {
+            btnClockIn.setEnabled(false);
+            btnClockIn.setAlpha(0.42f);
+            btnClockOut.setEnabled(false);
+            btnClockOut.setAlpha(0.42f);
+        } else {
+            btnClockIn.setEnabled(true);
+            btnClockIn.setAlpha(1.0f);
+            btnClockOut.setEnabled(false);
+            btnClockOut.setAlpha(0.42f);
+        }
+    }
+
+    private void handleClockInTapped() {
+        if (isCheckedIn) return;
+        if (btnClockIn != null) {
+            btnClockIn.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        }
+
+        accumulatedBreakTimeMs = 0;
+        currentBreakStartDate = null;
+        lastBreakSessionText = null;
+
+        isCheckedIn = true;
+        isShiftCompletedToday = false;
+        checkInDateTime = new Date();
+        Calendar c = Calendar.getInstance();
+        c.setTime(checkInDateTime);
+        int h = c.get(Calendar.HOUR_OF_DAY);
+        int m = c.get(Calendar.MINUTE);
+        isTodayLate = (h > shiftStartHour || (h == shiftStartHour && m > shiftStartMinute));
+
+        SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String nowIso = isoFmt.format(checkInDateTime);
+        apiClient.recordLocalClockIn(nowIso, isTodayLate);
+
+        startTimer();
+        updatePunchButtonUI(true);
+        updateShiftBadge();
+        syncTodayAttendanceRecord();
+        renderMonthlyHeatmap();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        SimpleDateFormat dateSdf = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
+        String timeStr = sdf.format(checkInDateTime);
+        String dateStr = dateSdf.format(checkInDateTime);
+
+        String statusDesc = isTodayLate ? " (Late)" : " (On Time)";
+        triggerSystemNotification("Attendance • Clocked In", "Clocked in at " + timeStr + statusDesc + " on " + dateStr + ". Have a wonderful work day!");
+        Toast.makeText(HomeActivity.this, "Clocked In at " + timeStr + statusDesc, Toast.LENGTH_SHORT).show();
+
+        String token = apiClient.getToken();
+        apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                runOnUiThread(() -> {
+                    loadAttendanceStats();
+                    loadAttendanceHistoryForHeatmap();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> {
+                    if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+                        loadAttendanceStats();
+                    } else {
+                        apiClient.savePendingOfflinePunch("IN", nowIso);
+                        Toast.makeText(HomeActivity.this, "Clock In recorded offline.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+    }
+
+    private void handleClockOutTapped() {
+        if (!isCheckedIn) return;
+        if (btnClockOut != null) {
+            btnClockOut.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        }
+
+        Date outDate = new Date();
+        isCheckedIn = false;
+        isShiftCompletedToday = true;
+        stopTimer();
+
+        SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String nowIso = isoFmt.format(outDate);
+        apiClient.recordLocalClockOut(nowIso);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        String timeStr = sdf.format(outDate);
+        if (tvPunchedInAt != null) {
+            tvPunchedInAt.setText("• Clocked Out at " + timeStr);
+            tvPunchedInAt.setTextColor(Color.parseColor("#64748B"));
+        }
+        updatePunchButtonUI(false);
+        syncTodayAttendanceRecord();
+        renderMonthlyHeatmap();
+
+        triggerSystemNotification("Attendance • Clocked Out", "Clocked out at " + timeStr + ". Thank you for your hard work today!");
+        Toast.makeText(HomeActivity.this, "Clocked Out at " + timeStr, Toast.LENGTH_SHORT).show();
+
+        String token = apiClient.getToken();
+        apiClient.clockOut(token, new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                runOnUiThread(() -> {
+                    loadAttendanceStats();
+                    loadAttendanceHistoryForHeatmap();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> {
+                    apiClient.savePendingOfflinePunch("OUT", nowIso);
+                    Toast.makeText(HomeActivity.this, "Clock Out recorded offline.", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void updateBreakUI(boolean onBreak) {
@@ -871,30 +981,22 @@ public class HomeActivity extends AppCompatActivity {
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a", Locale.US);
             if (tvPunchedInAt != null) {
                 tvPunchedInAt.setText("• Clocked In at " + sdf.format(checkInDateTime));
-                tvPunchedInAt.setTextColor(Color.parseColor("#059669"));
+                tvPunchedInAt.setTextColor(Color.parseColor("#16A34A"));
             }
         }
     }
 
     private void updateInstructionLabel() {
         if (tvPunchInstruction == null) return;
-        if (!isCheckedIn) {
-            if (isShiftCompletedToday) {
-                tvPunchInstruction.setText("Shift Completed for Today");
-                tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
-            } else if (!isWithinPunchInWindow()) {
-                tvPunchInstruction.setText("Shift starts at 09:00 AM • Opens at 08:55 AM");
-                tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
-            } else {
-                tvPunchInstruction.setText("Hold 2s to Punch In");
-                tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
-            }
-        } else if (isOnBreak) {
-            tvPunchInstruction.setText("Shift on break • Resume to continue");
-            tvPunchInstruction.setTextColor(Color.parseColor("#D97706"));
+        if (isCheckedIn) {
+            tvPunchInstruction.setText("Shift in Progress • Tap Clock Out when done");
+            tvPunchInstruction.setTextColor(Color.parseColor("#16A34A"));
+        } else if (isShiftCompletedToday) {
+            tvPunchInstruction.setText("Shift Completed for Today");
+            tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
         } else {
-            tvPunchInstruction.setText("Shift in Progress • Hold 2s to Punch Out");
-            tvPunchInstruction.setTextColor(Color.parseColor("#059669"));
+            tvPunchInstruction.setText("Tap Clock In to record your attendance");
+            tvPunchInstruction.setTextColor(Color.parseColor("#64748B"));
         }
     }
 
@@ -1007,6 +1109,13 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
+        if (btnClockIn != null) {
+            btnClockIn.setOnClickListener(v -> handleClockInTapped());
+        }
+        if (btnClockOut != null) {
+            btnClockOut.setOnClickListener(v -> handleClockOutTapped());
+        }
+
         if (btnNotifications != null) {
             btnNotifications.setOnClickListener(v -> {
                 apiClient.markLocalNotificationsAsRead();
@@ -2022,8 +2131,8 @@ public class HomeActivity extends AppCompatActivity {
 
                         SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss a", Locale.US);
                         if (tvPunchedInAt != null) {
-                            tvPunchedInAt.setText("• Punched In at " + sdf.format(checkInDateTime));
-                            tvPunchedInAt.setTextColor(Color.parseColor("#059669"));
+                            tvPunchedInAt.setText("• Clocked In at " + sdf.format(checkInDateTime));
+                            tvPunchedInAt.setTextColor(Color.parseColor("#16A34A"));
                         }
                     }
                     updateInstructionLabel();
@@ -2042,7 +2151,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void updateTimerDisplay(long h, long m, long s) {
-        String timeStr = String.format(Locale.getDefault(), "%02dh %02dm %02ds", h, m, s);
+        String timeStr = String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s);
         if (tvLiveTimer != null) {
             tvLiveTimer.setText(timeStr);
         }
