@@ -1283,11 +1283,40 @@ class AuthService {
     }
 
     // MARK: - Leaves API
+    func getLeaveBalanceObject(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/leaves/balance"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
+                   let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                } else {
+                    completion(.failure(.serverError("Server error", 500)))
+                }
+            }
+        }.resume()
+    }
+
     func getMyLeaves(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
         getJsonArray(endpoint: "/leaves/my", completion: completion)
     }
 
-    func applyLeave(type: String, startDate: String, endDate: String, reason: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+    func applyLeave(type: String, startDate: String, endDate: String, reason: String, isHalfDay: Bool = false, halfDaySession: String? = nil, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         let endpoint = "\(baseURL)/leaves"
         guard let url = URL(string: endpoint) else {
             completion(.failure(.invalidURL))
@@ -1300,28 +1329,64 @@ class AuthService {
         if let token = getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "type": type,
             "startDate": startDate,
-            "endDate": endDate,
-            "reason": reason
+            "endDate": isHalfDay ? startDate : endDate,
+            "reason": reason,
+            "isHalfDay": isHalfDay
         ]
+        if isHalfDay, let session = halfDaySession {
+            body["halfDaySession"] = session
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
                    let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
                     completion(.success(json))
+                } else if let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any], let msg = json["message"] as? String {
+                    completion(.failure(.networkError(msg)))
                 } else {
                     let fallback: [String: Any] = [
                         "id": UUID().uuidString,
                         "type": type,
                         "startDate": startDate,
-                        "endDate": endDate,
+                        "endDate": isHalfDay ? startDate : endDate,
                         "reason": reason,
+                        "isHalfDay": isHalfDay,
                         "status": "PENDING"
                     ]
                     completion(.success(fallback))
+                }
+            }
+        }.resume()
+    }
+
+    func withdrawLeave(id: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        let endpoint = "\(baseURL)/leaves/\(id)/withdraw"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let token = getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try? JSONSerialization.data(withJSONObject: [:])
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300 {
+                    completion(.success(["success": true]))
+                } else if let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any], let msg = json["message"] as? String {
+                    completion(.failure(.networkError(msg)))
+                } else if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                } else {
+                    completion(.failure(.serverError("Server error", 500)))
                 }
             }
         }.resume()

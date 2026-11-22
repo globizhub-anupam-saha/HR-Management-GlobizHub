@@ -322,6 +322,7 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvLeaveYear"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
@@ -362,21 +363,22 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="10 / 12"
+                            android:text="0"
                             android:textColor="#0056FD"
-                            android:textSize="17sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvCasualSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="days left"
-                            android:textColor="#94A3B8"
+                            android:text="days available"
+                            android:textColor="#64748B"
                             android:textSize="10sp" />
                     </LinearLayout>
 
-                    <!-- Sick Leave -->
+                    <!-- Medical Leave -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -391,7 +393,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Sick"
+                            android:text="Medical"
                             android:textColor="#64748B"
                             android:textSize="11sp"
                             android:textStyle="bold" />
@@ -401,17 +403,18 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="6 / 7"
-                            android:textColor="#10B981"
-                            android:textSize="17sp"
+                            android:text="0"
+                            android:textColor="#EF4444"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvSickSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="days left"
-                            android:textColor="#94A3B8"
+                            android:text="days available"
+                            android:textColor="#64748B"
                             android:textSize="10sp" />
                     </LinearLayout>
 
@@ -439,17 +442,18 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="15 / 18"
+                            android:text="0"
                             android:textColor="#F59E0B"
-                            android:textSize="17sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvEarnedSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="days left"
-                            android:textColor="#94A3B8"
+                            android:text="days available"
+                            android:textColor="#64748B"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -464,13 +468,13 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:text="+ Apply for Leave"
+                    android:text="Apply for Leave"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- 2. RECENT LEAVE REQUESTS -->
+            <!-- 2. LEAVE HISTORY -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -479,155 +483,93 @@
                 android:orientation="vertical"
                 android:padding="18dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Recent Requests"
-                    android:textColor="#0F172A"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_calendar_edit"
+                        android:tint="#0056FD" />
+
+                    <TextView
+                        android:id="@+id/tvLeaveHistoryTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Leave History"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/llLeaveHistoryEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="28dp"
+                    android:paddingBottom="28dp"
+                    android:visibility="gone">
+
+                    <FrameLayout
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_circle_soft_blue">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_calendar"
+                            android:tint="#0056FD" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="No Leave Requests"
+                        android:textColor="#0F172A"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="You haven't requested any time off yet."
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/btnEmptyApplyLeave"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_blue_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Request Time Off"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Dynamic Leave History List Container -->
                 <LinearLayout
                     android:id="@+id/llRecentLeavesList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                <!-- Request Item 1 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_day_pill_inactive"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Casual Leave • 1 Day"
-                            android:textColor="#0F172A"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:background="@drawable/bg_mint_pill"
-                            android:paddingStart="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingEnd="8dp"
-                            android:paddingBottom="3dp"
-                            android:text="Approved"
-                            android:textColor="#059669"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Oct 15, 2026 • Family Function"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Request Item 2 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_day_pill_inactive"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sick Leave • 2 Days"
-                            android:textColor="#0F172A"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:background="@drawable/bg_mint_pill"
-                            android:paddingStart="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingEnd="8dp"
-                            android:paddingBottom="3dp"
-                            android:text="Approved"
-                            android:textColor="#059669"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Sep 28 - Sep 29, 2026 • Medical Checkup"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Request Item 3 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_day_pill_inactive"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Earned Leave • 3 Days"
-                            android:textColor="#0F172A"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:background="@drawable/bg_pill_inactive"
-                            android:paddingStart="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingEnd="8dp"
-                            android:paddingBottom="3dp"
-                            android:text="Pending"
-                            android:textColor="#F59E0B"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Nov 12 - Nov 14, 2026 • Vacation"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-                </LinearLayout>
-                </LinearLayout>
+                    android:orientation="vertical" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

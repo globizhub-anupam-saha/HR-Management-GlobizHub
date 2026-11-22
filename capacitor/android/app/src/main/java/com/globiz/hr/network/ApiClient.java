@@ -1169,6 +1169,16 @@ public class ApiClient {
         });
     }
 
+    public void getLeaveBalanceObject(ApiCallback<JSONObject> callback) {
+        getLeaveBalanceObject(getToken(), callback);
+    }
+
+    public void getLeaveBalanceObject(String token, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            getJson("/leaves/balance", token, callback);
+        });
+    }
+
     public void getMyLeaves(ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/leaves/my", getToken(), callback);
@@ -1176,13 +1186,21 @@ public class ApiClient {
     }
 
     public void applyLeave(String type, String startDate, String endDate, String reason, ApiCallback<JSONObject> callback) {
+        applyLeave(type, startDate, endDate, reason, false, null, callback);
+    }
+
+    public void applyLeave(String type, String startDate, String endDate, String reason, boolean isHalfDay, String halfDaySession, ApiCallback<JSONObject> callback) {
         executor.execute(() -> {
             try {
                 JSONObject body = new JSONObject();
                 body.put("type", type);
                 body.put("startDate", startDate);
-                body.put("endDate", endDate);
+                body.put("endDate", isHalfDay ? startDate : endDate);
                 body.put("reason", reason);
+                body.put("isHalfDay", isHalfDay);
+                if (isHalfDay && halfDaySession != null && !halfDaySession.isEmpty()) {
+                    body.put("halfDaySession", halfDaySession);
+                }
 
                 postJson("/leaves", body, getToken(), new ApiCallback<JSONObject>() {
                     @Override
@@ -1197,8 +1215,9 @@ public class ApiClient {
                             fallback.put("id", String.valueOf(System.currentTimeMillis()));
                             fallback.put("type", type);
                             fallback.put("startDate", startDate);
-                            fallback.put("endDate", endDate);
+                            fallback.put("endDate", isHalfDay ? startDate : endDate);
                             fallback.put("reason", reason);
+                            fallback.put("isHalfDay", isHalfDay);
                             fallback.put("status", "PENDING");
                             postSuccess(callback, fallback);
                         } catch (Exception ignored) {
@@ -1209,6 +1228,12 @@ public class ApiClient {
             } catch (Exception e) {
                 postError(callback, e.getMessage(), 0);
             }
+        });
+    }
+
+    public void withdrawLeave(String leaveId, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/leaves/" + leaveId + "/withdraw", new JSONObject(), getToken(), callback);
         });
     }
 
