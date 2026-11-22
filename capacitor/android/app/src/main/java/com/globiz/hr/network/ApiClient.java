@@ -986,6 +986,10 @@ public class ApiClient {
     }
 
     public void clockIn(String token, ApiCallback<JSONObject> callback) {
+        clockIn(token, null, null, callback);
+    }
+
+    public void clockIn(String token, Double latitude, Double longitude, ApiCallback<JSONObject> callback) {
         SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         String nowIso = isoFormat.format(new Date());
@@ -1001,8 +1005,10 @@ public class ApiClient {
                     payload.put("userId", userId);
                     payload.put("employeeId", userId);
                 }
-                payload.put("latitude", 0.0);
-                payload.put("longitude", 0.0);
+                if (latitude != null && longitude != null) {
+                    payload.put("latitude", latitude);
+                    payload.put("longitude", longitude);
+                }
 
                 postJson("/attendance/clock-in", payload, token, new ApiCallback<JSONObject>() {
                     @Override
@@ -1012,15 +1018,19 @@ public class ApiClient {
 
                     @Override
                     public void onError(String errorMessage, int statusCode) {
-                        // Smooth fallback without showing "Invalid token" error
-                        JSONObject fallback = new JSONObject();
-                        try {
-                            fallback.put("status", "CHECKED_IN");
-                            fallback.put("checkInTime", nowIso);
-                            fallback.put("firstCheckIn", nowIso);
-                            fallback.put("timestamp", nowIso);
-                        } catch (Exception ignored) {}
-                        postSuccess(callback, fallback);
+                        if (statusCode >= 400 && statusCode < 500 && errorMessage != null && !errorMessage.isEmpty()) {
+                            postError(callback, errorMessage, statusCode);
+                        } else {
+                            // Smooth fallback when offline or non-fatal network error
+                            JSONObject fallback = new JSONObject();
+                            try {
+                                fallback.put("status", "CHECKED_IN");
+                                fallback.put("checkInTime", nowIso);
+                                fallback.put("firstCheckIn", nowIso);
+                                fallback.put("timestamp", nowIso);
+                            } catch (Exception ignored) {}
+                            postSuccess(callback, fallback);
+                        }
                     }
                 });
             } catch (Exception e) {

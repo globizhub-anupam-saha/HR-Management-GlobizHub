@@ -1,8 +1,11 @@
 import UIKit
 import UserNotifications
 import AVFoundation
+import CoreLocation
 
-class HomeViewController: UIViewController, UIScrollViewDelegate {
+class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationManagerDelegate {
+
+    private let locationManager = CLLocationManager()
 
     // MARK: - UI Elements
 
@@ -319,6 +322,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         setupBottomNavBar()
         setupHintPopup()
         updateGreeting()
+        requestSystemPermissions()
 
         NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
@@ -2522,7 +2526,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             self.syncTodayAttendanceRecord()
             self.renderMonthlyHeatmap()
 
-            AuthService.shared.clockIn { [weak self] result in
+            if locationManager.authorizationStatus == .notDetermined {
+                locationManager.requestWhenInUseAuthorization()
+            }
+            let coord = locationManager.location?.coordinate
+            let lat = coord?.latitude
+            let lng = coord?.longitude
+
+            AuthService.shared.clockIn(latitude: lat, longitude: lng) { [weak self] result in
                 guard let self = self else { return }
                 self.punchCircleButton.isEnabled = true
                 switch result {
@@ -2531,15 +2542,19 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                     self.syncTodayAttendanceRecord()
                     self.loadRealAttendanceHistoryForHeatmap()
                 case .failure(let err):
-                    let errStr = err.localizedDescription.lowercased()
-                    if errStr.contains("already") {
-                        self.loadAttendanceStats()
+                    if case .serverError(let message, _) = err, !message.isEmpty {
+                        self.showError(message)
                     } else {
-                        let isoFormatter = ISO8601DateFormatter()
-                        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                        let nowIso = isoFormatter.string(from: instantDate)
-                        AuthService.shared.savePendingOfflinePunch(type: "IN", isoTime: nowIso)
-                        self.showError("Punched In recorded offline. Saved locally and will sync when connected.")
+                        let errStr = err.localizedDescription.lowercased()
+                        if errStr.contains("already") {
+                            self.loadAttendanceStats()
+                        } else {
+                            let isoFormatter = ISO8601DateFormatter()
+                            isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                            let nowIso = isoFormatter.string(from: instantDate)
+                            AuthService.shared.savePendingOfflinePunch(type: "IN", isoTime: nowIso)
+                            self.showError("Punched In recorded offline. Saved locally and will sync when connected.")
+                        }
                     }
                 }
             }
@@ -2672,6 +2687,32 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     // MARK: - Capsule Shift Actions
+    // MARK: - Permissions & Location
+    private func requestSystemPermissions() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        if locationManager.authorizationStatus == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+        }
+        locationManager.startUpdatingLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        // Location updated and cached
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        // Graceful handling
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        if manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
+            manager.startUpdatingLocation()
+        }
+    }
+
     @objc private func handleClockInTapped() {
         guard !isCheckedIn else { return }
 
@@ -2697,7 +2738,14 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         self.syncTodayAttendanceRecord()
         self.renderMonthlyHeatmap()
 
-        AuthService.shared.clockIn { [weak self] result in
+        if locationManager.authorizationStatus == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+        }
+        let coord = locationManager.location?.coordinate
+        let lat = coord?.latitude
+        let lng = coord?.longitude
+
+        AuthService.shared.clockIn(latitude: lat, longitude: lng) { [weak self] result in
             guard let self = self else { return }
             switch result {
             case .success:
@@ -2705,15 +2753,19 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 self.syncTodayAttendanceRecord()
                 self.loadRealAttendanceHistoryForHeatmap()
             case .failure(let err):
-                let errStr = err.localizedDescription.lowercased()
-                if errStr.contains("already") {
-                    self.loadAttendanceStats()
+                if case .serverError(let message, _) = err, !message.isEmpty {
+                    self.showError(message)
                 } else {
-                    let isoFormatter = ISO8601DateFormatter()
-                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                    let nowIso = isoFormatter.string(from: now)
-                    AuthService.shared.savePendingOfflinePunch(type: "IN", isoTime: nowIso)
-                    self.showError("Clock In saved locally and will sync when connected.")
+                    let errStr = err.localizedDescription.lowercased()
+                    if errStr.contains("already") {
+                        self.loadAttendanceStats()
+                    } else {
+                        let isoFormatter = ISO8601DateFormatter()
+                        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                        let nowIso = isoFormatter.string(from: now)
+                        AuthService.shared.savePendingOfflinePunch(type: "IN", isoTime: nowIso)
+                        self.showError("Clock In saved locally and will sync when connected.")
+                    }
                 }
             }
         }

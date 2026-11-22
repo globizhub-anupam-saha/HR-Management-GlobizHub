@@ -1,5 +1,6 @@
 package com.globiz.hr;
 
+import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.AlarmManager;
@@ -9,6 +10,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -49,6 +53,7 @@ import android.view.TextureView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
@@ -306,6 +311,7 @@ public class HomeActivity extends AppCompatActivity {
         AppHeaderHelper.applyWindowInsets(this);
         setupHoldGesture();
         setupListeners();
+        requestAppPermissions();
     }
 
     private final Handler autoSyncHandler = new Handler(Looper.getMainLooper());
@@ -854,6 +860,66 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    private static final int PERMISSION_REQ_CODE = 1001;
+
+    private void requestAppPermissions() {
+        List<String> permissionsNeeded = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsNeeded.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+        if (!permissionsNeeded.isEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsNeeded.toArray(new String[0]), PERMISSION_REQ_CODE);
+        }
+    }
+
+    private interface LocationResultCallback {
+        void onLocationObtained(Double latitude, Double longitude);
+    }
+
+    private void getCurrentCoordinates(LocationResultCallback callback) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestAppPermissions();
+            callback.onLocationObtained(null, null);
+            return;
+        }
+
+        try {
+            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (lm == null) {
+                callback.onLocationObtained(null, null);
+                return;
+            }
+
+            Location bestLocation = null;
+            if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                bestLocation = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            }
+            if (bestLocation == null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                bestLocation = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+            if (bestLocation == null && lm.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
+                bestLocation = lm.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+            }
+
+            if (bestLocation != null) {
+                callback.onLocationObtained(bestLocation.getLatitude(), bestLocation.getLongitude());
+            } else {
+                callback.onLocationObtained(null, null);
+            }
+        } catch (Exception e) {
+            callback.onLocationObtained(null, null);
+        }
+    }
+
     private void handleClockInTapped() {
         if (isCheckedIn) return;
         if (btnClockIn != null) {
@@ -894,26 +960,30 @@ public class HomeActivity extends AppCompatActivity {
         Toast.makeText(HomeActivity.this, "Clocked In at " + timeStr + statusDesc, Toast.LENGTH_SHORT).show();
 
         String token = apiClient.getToken();
-        apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
-            @Override
-            public void onSuccess(JSONObject result) {
-                runOnUiThread(() -> {
-                    loadAttendanceStats();
-                    loadAttendanceHistoryForHeatmap();
-                });
-            }
-
-            @Override
-            public void onError(String errorMessage, int statusCode) {
-                runOnUiThread(() -> {
-                    if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+        getCurrentCoordinates((latitude, longitude) -> {
+            apiClient.clockIn(token, latitude, longitude, new ApiClient.ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    runOnUiThread(() -> {
                         loadAttendanceStats();
-                    } else {
-                        apiClient.savePendingOfflinePunch("IN", nowIso);
-                        Toast.makeText(HomeActivity.this, "Clock In recorded offline.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
+                        loadAttendanceHistoryForHeatmap();
+                    });
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    runOnUiThread(() -> {
+                        if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+                            loadAttendanceStats();
+                        } else if (errorMessage != null && !errorMessage.isEmpty()) {
+                            Toast.makeText(HomeActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                        } else {
+                            apiClient.savePendingOfflinePunch("IN", nowIso);
+                            Toast.makeText(HomeActivity.this, "Clock In recorded offline.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
         });
     }
 
@@ -2017,22 +2087,26 @@ public class HomeActivity extends AppCompatActivity {
             triggerSystemNotification("Attendance • Punched In", "Clocked in at " + timeStr + statusDesc + " on " + dateStr + ". Have a wonderful work day!");
             Toast.makeText(HomeActivity.this, "Punched In at " + timeStr + statusDesc, Toast.LENGTH_SHORT).show();
 
-            apiClient.clockIn(token, new ApiClient.ApiCallback<JSONObject>() {
-                @Override
-                public void onSuccess(JSONObject result) {
-                    loadAttendanceStats();
-                    loadAttendanceHistoryForHeatmap();
-                }
-
-                @Override
-                public void onError(String errorMessage, int statusCode) {
-                    if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+            getCurrentCoordinates((latitude, longitude) -> {
+                apiClient.clockIn(token, latitude, longitude, new ApiClient.ApiCallback<JSONObject>() {
+                    @Override
+                    public void onSuccess(JSONObject result) {
                         loadAttendanceStats();
-                    } else {
-                        apiClient.savePendingOfflinePunch("IN", isoFmt.format(checkInDateTime));
-                        Toast.makeText(HomeActivity.this, "Punched In offline. Saved locally and will sync when connected.", Toast.LENGTH_SHORT).show();
+                        loadAttendanceHistoryForHeatmap();
                     }
-                }
+
+                    @Override
+                    public void onError(String errorMessage, int statusCode) {
+                        if (errorMessage != null && errorMessage.toLowerCase().contains("already")) {
+                            loadAttendanceStats();
+                        } else if (errorMessage != null && !errorMessage.isEmpty()) {
+                            Toast.makeText(HomeActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                        } else {
+                            apiClient.savePendingOfflinePunch("IN", isoFmt.format(checkInDateTime));
+                            Toast.makeText(HomeActivity.this, "Punched In offline. Saved locally and will sync when connected.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             });
         } else {
             // Punch Out

@@ -941,7 +941,7 @@ class AuthService {
     }
 
     // MARK: - Clock In / Clock Out
-    func clockIn(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+    func clockIn(latitude: Double? = nil, longitude: Double? = nil, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let nowIso = isoFormatter.string(from: Date())
@@ -951,7 +951,7 @@ class AuthService {
         let isLate = (h > 9 || (h == 9 && m > 0))
         recordLocalClockIn(isoTime: nowIso, isLate: isLate)
         clearLocalBreakSessions()
-        postAttendance(endpoint: "/attendance/clock-in", completion: completion)
+        postAttendance(endpoint: "/attendance/clock-in", latitude: latitude, longitude: longitude, completion: completion)
     }
 
     func clockOut(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
@@ -996,7 +996,7 @@ class AuthService {
         }.resume()
     }
 
-    private func postAttendance(endpoint: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+    private func postAttendance(endpoint: String, latitude: Double? = nil, longitude: Double? = nil, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         guard let token = getToken() else {
             completion(.failure(.unauthorized))
             return
@@ -1023,7 +1023,11 @@ class AuthService {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        let bodyPayload: [String: Any] = ["timestamp": nowIso]
+        var bodyPayload: [String: Any] = ["timestamp": nowIso]
+        if let lat = latitude, let lng = longitude {
+            bodyPayload["latitude"] = lat
+            bodyPayload["longitude"] = lng
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: bodyPayload, options: [])
 
         let returnFallback = {
@@ -1052,6 +1056,9 @@ class AuthService {
                 }
                 if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
                     completion(.success(json))
+                } else if httpResponse.statusCode >= 400 && httpResponse.statusCode < 500 {
+                    let errMsg = (json["message"] as? String) ?? "Request failed (\(httpResponse.statusCode))"
+                    completion(.failure(.serverError(errMsg, httpResponse.statusCode)))
                 } else {
                     // Prevent 401 Invalid token error popup by using robust local attendance state
                     returnFallback()

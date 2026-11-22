@@ -70,6 +70,8 @@
 	<string>GlobizHR requires camera access for employee profile pictures and document verification.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GlobizHR requires location access to verify attendance check-in locations.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GlobizHR requires location access to verify attendance check-in locations.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>GlobizHR uses Face ID for fast and secure biometric login.</string>
 </dict>
