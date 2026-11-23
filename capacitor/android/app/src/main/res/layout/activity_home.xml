@@ -1146,33 +1146,50 @@
                     app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
                     app:strokeWidth="0dp"
-                    app:cardBackgroundColor="@android:color/transparent">
+                    app:cardBackgroundColor="#000000">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_admin_hero"
-                        android:orientation="vertical"
-                        android:padding="22dp">
+                        android:layout_height="160dp">
 
-                        <TextView
-                            android:id="@+id/tvAdminGreeting"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Welcome back, Admin!"
-                            android:textColor="#FFFFFF"
-                            android:textSize="22sp"
-                            android:textStyle="bold" />
+                        <ImageView
+                            android:id="@+id/ivAdminHeroWallpaper"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/admin_hero_wallpaper" />
 
-                        <TextView
-                            android:id="@+id/tvAdminSubtitle"
-                            android:layout_width="wrap_content"
+                        <View
+                            android:id="@+id/viewAdminHeroScrim"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_admin_hero_overlay" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Workspace Administrator • GlobizHub Inc."
-                            android:textColor="#C7D2FE"
-                            android:textSize="13sp" />
-                    </LinearLayout>
+                            android:orientation="vertical"
+                            android:padding="22dp">
+
+                            <TextView
+                                android:id="@+id/tvAdminGreeting"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Welcome back, Admin!"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvAdminSubtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Workspace Administrator • GlobizHub Inc."
+                                android:textColor="#E0E7FF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </FrameLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- 2. Admin 4 Real-Time Metrics (2x2 Grid) -->

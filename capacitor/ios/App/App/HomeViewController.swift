@@ -32,6 +32,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
 
     // Admin Dashboard Views
     private let adminHeroCard = UIView()
+    private let adminHeroImageView = UIImageView()
+    private let adminHeroOverlay = UIView()
     private let adminHeroGradient = CAGradientLayer()
     private let adminGreetingLabel = UILabel()
     private let adminSubtitleLabel = UILabel()
@@ -3761,24 +3763,27 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         // 1. Admin Hero Card
         adminHeroCard.layer.cornerRadius = 24
         adminHeroCard.layer.masksToBounds = true
+        adminHeroCard.backgroundColor = .black
         adminHeroCard.translatesAutoresizingMaskIntoConstraints = false
-        adminHeroCard.heightAnchor.constraint(greaterThanOrEqualToConstant: 180).isActive = true
+        adminHeroCard.heightAnchor.constraint(equalToConstant: 160).isActive = true
 
-        adminHeroGradient.colors = [
-            UIColor(red: 30/255, green: 27/255, blue: 75/255, alpha: 1.0).cgColor,
-            UIColor(red: 49/255, green: 46/255, blue: 129/255, alpha: 1.0).cgColor
-        ]
-        adminHeroGradient.startPoint = CGPoint(x: 0, y: 0)
-        adminHeroGradient.endPoint = CGPoint(x: 1, y: 1)
-        adminHeroCard.layer.insertSublayer(adminHeroGradient, at: 0)
+        adminHeroImageView.image = UIImage(named: "admin_hero_wallpaper")
+        adminHeroImageView.contentMode = .scaleAspectFill
+        adminHeroImageView.clipsToBounds = true
+        adminHeroImageView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        adminHeroImageView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        adminHeroImageView.translatesAutoresizingMaskIntoConstraints = false
+        adminHeroCard.addSubview(adminHeroImageView)
+
+        adminHeroOverlay.backgroundColor = UIColor(white: 0, alpha: 0.25)
+        adminHeroOverlay.translatesAutoresizingMaskIntoConstraints = false
+        adminHeroCard.addSubview(adminHeroOverlay)
 
         let heroContentStack = UIStackView()
         heroContentStack.axis = .vertical
-        heroContentStack.spacing = 8
+        heroContentStack.spacing = 4
         heroContentStack.translatesAutoresizingMaskIntoConstraints = false
         adminHeroCard.addSubview(heroContentStack)
-
-        heroContentStack.spacing = 6
 
         adminGreetingLabel.text = "Welcome back, Admin!"
         adminGreetingLabel.font = .systemFont(ofSize: 22, weight: .bold)
@@ -3787,14 +3792,24 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
 
         adminSubtitleLabel.text = "Workspace Administrator • GlobizHub Inc."
         adminSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        adminSubtitleLabel.textColor = UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
+        adminSubtitleLabel.textColor = UIColor(red: 224/255, green: 231/255, blue: 255/255, alpha: 1.0)
         heroContentStack.addArrangedSubview(adminSubtitleLabel)
 
         NSLayoutConstraint.activate([
-            heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 22),
-            heroContentStack.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor, constant: -22),
-            heroContentStack.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor, constant: 20),
-            heroContentStack.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor, constant: -20)
+            adminHeroImageView.topAnchor.constraint(equalTo: adminHeroCard.topAnchor),
+            adminHeroImageView.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor),
+            adminHeroImageView.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor),
+            adminHeroImageView.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor),
+
+            adminHeroOverlay.topAnchor.constraint(equalTo: adminHeroCard.topAnchor),
+            adminHeroOverlay.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor),
+            adminHeroOverlay.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor),
+            adminHeroOverlay.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor),
+
+            heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 24),
+            heroContentStack.bottomAnchor.constraint(lessThanOrEqualTo: adminHeroCard.bottomAnchor, constant: -24),
+            heroContentStack.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor, constant: 22),
+            heroContentStack.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor, constant: -22)
         ])
 
         adminStackView.addArrangedSubview(adminHeroCard)
