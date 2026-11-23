@@ -3832,6 +3832,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminLateTodayLabel.text = "2"
         let card4 = createStatCard(title: "Late Arrivals", iconName: "", iconColor: .clear, valueLabel: adminLateTodayLabel, subtext: "Clocked after 09:00", subtextColor: UIColor(red: 251/255, green: 191/255, blue: 36/255, alpha: 1.0), isGlass: true)
 
+        card1.isUserInteractionEnabled = true
+        card1.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAdminTapEmployees)))
+
+        card2.isUserInteractionEnabled = true
+        card2.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAdminTapAttendance)))
+
+        card3.isUserInteractionEnabled = true
+        card3.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAdminTapAttendance)))
+
+        card4.isUserInteractionEnabled = true
+        card4.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAdminTapAttendance)))
+
         row2.addArrangedSubview(card3)
         row2.addArrangedSubview(card4)
 
@@ -3948,6 +3960,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         btnBroadcastRow.addTarget(self, action: #selector(handleOpenBroadcastNotificationPage), for: .touchUpInside)
         adminStackView.addArrangedSubview(broadcastActionCard)
 
+        // 3b. Admin Operational Shortcuts Card
+        let shortcutsCard = setupAdminShortcutsCard()
+        adminStackView.addArrangedSubview(shortcutsCard)
+
         // 4. Pending Leave Requests Card
         adminPendingLeavesCard.backgroundColor = .white
         adminPendingLeavesCard.layer.cornerRadius = 20
@@ -4026,6 +4042,129 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
             content.addArrangedSubview(adminAnnouncementsStack)
         }
         adminStackView.addArrangedSubview(annCard)
+    }
+
+    private func setupAdminShortcutsCard() -> UIView {
+        let card = createSectionCard(title: "Admin Shortcuts", badgeText: "Quick Access", subtitle: "Direct access to key administrative portals")
+        guard let content = card.subviews.first(where: { $0 is UIStackView }) as? UIStackView else { return card }
+
+        let gridStack = UIStackView()
+        gridStack.axis = .vertical
+        gridStack.spacing = 8
+        gridStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let row1 = UIStackView()
+        row1.axis = .horizontal
+        row1.spacing = 8
+        row1.distribution = .fillEqually
+
+        let row2 = UIStackView()
+        row2.axis = .horizontal
+        row2.spacing = 8
+        row2.distribution = .fillEqually
+
+        let btnEmployees = makeAdminShortcutItem(title: "Employees", icon: "person.2.fill", color: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)) { [weak self] in
+            let vc = EmployeesViewController()
+            vc.modalPresentationStyle = .fullScreen
+            self?.present(vc, animated: true)
+        }
+
+        let btnPayroll = makeAdminShortcutItem(title: "Payroll", icon: "dollarsign.circle.fill", color: UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)) { [weak self] in
+            let vc = PayrollViewController()
+            vc.modalPresentationStyle = .fullScreen
+            self?.present(vc, animated: true)
+        }
+
+        let btnApprovals = makeAdminShortcutItem(title: "Approvals", icon: "calendar.badge.checkmark", color: UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)) { [weak self] in
+            let vc = ApprovalsViewController()
+            vc.modalPresentationStyle = .fullScreen
+            self?.present(vc, animated: true)
+        }
+
+        let btnSchedules = makeAdminShortcutItem(title: "Schedules", icon: "calendar", color: UIColor(red: 99/255, green: 102/255, blue: 241/255, alpha: 1.0)) { [weak self] in
+            let vc = ShiftsViewController()
+            vc.modalPresentationStyle = .fullScreen
+            self?.present(vc, animated: true)
+        }
+
+        let btnDocuments = makeAdminShortcutItem(title: "Documents", icon: "folder.fill", color: UIColor(red: 14/255, green: 165/255, blue: 233/255, alpha: 1.0)) { [weak self] in
+            let vc = DocumentsViewController()
+            vc.modalPresentationStyle = .fullScreen
+            self?.present(vc, animated: true)
+        }
+
+        let btnSettings = makeAdminShortcutItem(title: "Settings", icon: "gearshape.fill", color: UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)) { [weak self] in
+            let vc = SettingsViewController()
+            vc.modalPresentationStyle = .fullScreen
+            self?.present(vc, animated: true)
+        }
+
+        row1.addArrangedSubview(btnEmployees)
+        row1.addArrangedSubview(btnPayroll)
+        row1.addArrangedSubview(btnApprovals)
+
+        row2.addArrangedSubview(btnSchedules)
+        row2.addArrangedSubview(btnDocuments)
+        row2.addArrangedSubview(btnSettings)
+
+        gridStack.addArrangedSubview(row1)
+        gridStack.addArrangedSubview(row2)
+
+        content.addArrangedSubview(gridStack)
+        return card
+    }
+
+    private func makeAdminShortcutItem(title: String, icon: String, color: UIColor, action: @escaping () -> Void) -> UIView {
+        let btn = NavTabContainerView()
+        btn.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        btn.layer.cornerRadius = 14
+        btn.layer.borderWidth = 1
+        btn.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.heightAnchor.constraint(equalToConstant: 72).isActive = true
+        btn.onTap = action
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isUserInteractionEnabled = false
+        btn.addSubview(stack)
+
+        let iv = UIImageView(image: UIImage(systemName: icon))
+        iv.tintColor = color
+        iv.contentMode = .scaleAspectFit
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.widthAnchor.constraint(equalToConstant: 22).isActive = true
+        iv.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        stack.addArrangedSubview(iv)
+
+        let lbl = UILabel()
+        lbl.text = title
+        lbl.font = .systemFont(ofSize: 12, weight: .bold)
+        lbl.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        lbl.textAlignment = .center
+        stack.addArrangedSubview(lbl)
+
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: btn.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: btn.centerYAnchor)
+        ])
+
+        return btn
+    }
+
+    @objc private func handleAdminTapEmployees() {
+        let vc = EmployeesViewController()
+        vc.modalPresentationStyle = .fullScreen
+        present(vc, animated: true)
+    }
+
+    @objc private func handleAdminTapAttendance() {
+        let vc = AttendanceViewController()
+        vc.modalPresentationStyle = .fullScreen
+        present(vc, animated: true)
     }
 
     // MARK: - Super Admin Dashboard Setup & Real-time Integration

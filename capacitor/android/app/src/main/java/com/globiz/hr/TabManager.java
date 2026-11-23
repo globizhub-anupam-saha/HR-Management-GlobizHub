@@ -92,6 +92,7 @@ public class TabManager {
                 list.add(new TabItem("manage_schedules", "Manage Schedules", R.drawable.ic_calendar_edit, false, false));
                 list.add(new TabItem("leave_policies", "Leave Policies", R.drawable.ic_customize_switch, false, false));
                 list.add(new TabItem("documents_admin", "Documents (Admin)", R.drawable.ic_mod_files, false, false));
+                list.add(new TabItem("settings", "Settings", R.drawable.ic_settings_gear, false, false));
                 break;
 
             case EMPLOYEE:

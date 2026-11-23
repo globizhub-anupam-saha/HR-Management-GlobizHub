@@ -161,21 +161,22 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
 
     private func initModules() {
         allModules = [
-            MoreModule(id: "employees", title: "Employees", systemIcon: "person.2", iconColor: nil, allowedRoles: ["MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "attendance", title: "Clock ins/outs", systemIcon: "clock", iconColor: nil, allowedRoles: ["EMPLOYEE", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "employees", title: "Employees", systemIcon: "person.2", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "attendance", title: "Clock ins/outs", systemIcon: "clock", iconColor: nil, allowedRoles: ["EMPLOYEE", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
             MoreModule(id: "schedules", title: "Schedules", systemIcon: "calendar", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
             MoreModule(id: "leave", title: "Leave", systemIcon: "calendar.badge.clock", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "leave_approvals", title: "Leave Approvals", systemIcon: "calendar.badge.checkmark", iconColor: nil, allowedRoles: ["MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", iconColor: nil, allowedRoles: ["HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "leave_approvals", title: "Leave Approvals", systemIcon: "calendar.badge.checkmark", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
             MoreModule(id: "payslips", title: "My Payslips", systemIcon: "banknote", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "payroll", title: "Payroll Processing", systemIcon: "dollarsign.circle", iconColor: nil, allowedRoles: ["HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "payroll", title: "Payroll Processing", systemIcon: "dollarsign.circle", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
             MoreModule(id: "shifts", title: "Shifts", systemIcon: "briefcase", iconColor: nil, allowedRoles: ["EMPLOYEE"]),
-            MoreModule(id: "tasks", title: "Tasks", systemIcon: "checklist", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "tasks", title: "Tasks", systemIcon: "checklist", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
             MoreModule(id: "documents", title: "Documents", systemIcon: "folder", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", iconColor: nil, allowedRoles: ["HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", iconColor: nil, allowedRoles: ["HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "help", title: "Help & Support", systemIcon: "questionmark.circle", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"])
+            MoreModule(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "broadcast", title: "Broadcast Notification", systemIcon: "megaphone", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["ADMIN", "SUPER_ADMIN", "OWNER"]),
+            MoreModule(id: "help", title: "Help & Support", systemIcon: "questionmark.circle", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"])
         ]
     }
 
@@ -601,6 +602,10 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             let settingsVC = SettingsViewController()
             settingsVC.modalPresentationStyle = .fullScreen
             present(settingsVC, animated: true)
+        } else if module.id == "broadcast" {
+            let broadcastVC = BroadcastNotificationViewController()
+            broadcastVC.modalPresentationStyle = .fullScreen
+            present(broadcastVC, animated: true)
         } else if module.id == "leave_policies" {
             showLeavePoliciesAlert()
         } else if module.id == "leave_approvals" || module.id == "approvals" {

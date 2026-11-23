@@ -150,6 +150,8 @@ public class BottomNavHelper {
                 activity.startActivity(new Intent(activity, PayrollActivity.class));
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
+        } else if ("broadcast".equals(id)) {
+            activity.startActivity(new Intent(activity, BroadcastNotificationActivity.class));
         } else if ("leave_policies".equals(id)) {
             showLeavePoliciesDialog(activity);
         }

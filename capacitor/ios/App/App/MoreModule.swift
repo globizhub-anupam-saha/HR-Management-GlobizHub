@@ -39,21 +39,18 @@ struct MoreModule {
         let role = UserRole.from(string: roleStr)
 
         switch role {
-        case .superAdmin:
+        case .superAdmin, .admin:
             return id == "attendance"
+                || id == "employees"
+                || id == "approvals"
+                || id == "leave_approvals"
+                || id == "payroll"
                 || id == "tasks"
                 || id == "manage_schedules"
                 || id == "leave_policies"
                 || id == "documents_admin"
+                || id == "broadcast"
                 || id == "settings"
-                || id == "help"
-
-        case .admin:
-            return id == "tasks"
-                || id == "manage_schedules"
-                || id == "leave_policies"
-                || id == "payroll"
-                || id == "documents_admin"
                 || id == "help"
 
         case .employee:
@@ -249,6 +246,10 @@ class RoleNavigationManager {
             let settingsVC = SettingsViewController()
             settingsVC.modalPresentationStyle = .fullScreen
             vc.present(settingsVC, animated: false)
+        } else if id == "broadcast" {
+            let broadcastVC = BroadcastNotificationViewController()
+            broadcastVC.modalPresentationStyle = .fullScreen
+            vc.present(broadcastVC, animated: false)
         } else if id == "leave_policies" {
             showLeavePoliciesAlert(from: vc)
         }

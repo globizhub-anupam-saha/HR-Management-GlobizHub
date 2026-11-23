@@ -516,8 +516,31 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
         tvAdminPresentToday = findViewById(R.id.tvAdminPresentToday);
+        if (tvAdminPresentToday != null && tvAdminPresentToday.getParent() instanceof View) {
+            ((View) tvAdminPresentToday.getParent()).setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, AttendanceActivity.class)));
+        }
         tvAdminAbsentToday = findViewById(R.id.tvAdminAbsentToday);
+        if (tvAdminAbsentToday != null && tvAdminAbsentToday.getParent() instanceof View) {
+            ((View) tvAdminAbsentToday.getParent()).setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, AttendanceActivity.class)));
+        }
         tvAdminLateToday = findViewById(R.id.tvAdminLateToday);
+        if (tvAdminLateToday != null && tvAdminLateToday.getParent() instanceof View) {
+            ((View) tvAdminLateToday.getParent()).setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, AttendanceActivity.class)));
+        }
+
+        // Admin Operational Shortcuts
+        View btnScEmp = findViewById(R.id.btnAdminShortcutEmployees);
+        if (btnScEmp != null) btnScEmp.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, EmployeesActivity.class)));
+        View btnScPay = findViewById(R.id.btnAdminShortcutPayroll);
+        if (btnScPay != null) btnScPay.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, PayrollActivity.class)));
+        View btnScApp = findViewById(R.id.btnAdminShortcutApprovals);
+        if (btnScApp != null) btnScApp.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, ApprovalsActivity.class)));
+        View btnScSch = findViewById(R.id.btnAdminShortcutSchedules);
+        if (btnScSch != null) btnScSch.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, ShiftsActivity.class)));
+        View btnScDoc = findViewById(R.id.btnAdminShortcutDocuments);
+        if (btnScDoc != null) btnScDoc.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, DocumentsActivity.class)));
+        View btnScSet = findViewById(R.id.btnAdminShortcutSettings);
+        if (btnScSet != null) btnScSet.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, SettingsActivity.class)));
         cvAdminPendingLeavesCard = findViewById(R.id.cvAdminPendingLeavesCard);
         if (cvAdminPendingLeavesCard instanceof ViewGroup && ((ViewGroup) cvAdminPendingLeavesCard).getChildCount() > 0) {
             View header = ((ViewGroup) cvAdminPendingLeavesCard).getChildAt(0);

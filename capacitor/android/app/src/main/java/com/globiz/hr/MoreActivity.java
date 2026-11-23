@@ -105,21 +105,22 @@ public class MoreActivity extends AppCompatActivity {
 
     private void initModules() {
         allModules.clear();
-        allModules.add(new MoreModule("employees", "Employees", R.drawable.ic_users_group, 0xFF1E293B, "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("attendance", "Clock ins/outs", R.drawable.ic_clock, 0xFF1E293B, "EMPLOYEE", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("employees", "Employees", R.drawable.ic_users_group, 0xFF1E293B, "ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("attendance", "Clock ins/outs", R.drawable.ic_clock, 0xFF1E293B, "EMPLOYEE", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("schedules", "Schedules", R.drawable.ic_calendar, 0xFF1E293B, "EMPLOYEE", "MANAGER"));
         allModules.add(new MoreModule("leave", "Leave", R.drawable.ic_mod_leave, 0xFF1E293B, "EMPLOYEE", "MANAGER"));
-        allModules.add(new MoreModule("leave_approvals", "Leave Approvals", R.drawable.ic_check_circle, 0xFF1E293B, "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("leave_policies", "Leave Policies", R.drawable.ic_customize_switch, 0xFF1E293B, "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("leave_approvals", "Leave Approvals", R.drawable.ic_check_circle, 0xFF1E293B, "ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("leave_policies", "Leave Policies", R.drawable.ic_customize_switch, 0xFF1E293B, "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("payslips", "My Payslips", R.drawable.ic_chart_bar, 0xFF1E293B, "EMPLOYEE", "MANAGER"));
-        allModules.add(new MoreModule("payroll", "Payroll Processing", R.drawable.ic_trend_up, 0xFF1E293B, "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("payroll", "Payroll Processing", R.drawable.ic_trend_up, 0xFF1E293B, "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("shifts", "Shifts", R.drawable.ic_mod_time, 0xFF1E293B, "EMPLOYEE"));
-        allModules.add(new MoreModule("tasks", "Tasks", R.drawable.ic_mod_tasks, 0xFF1E293B, "EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("tasks", "Tasks", R.drawable.ic_mod_tasks, 0xFF1E293B, "EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("documents", "Documents", R.drawable.ic_mod_files, 0xFF1E293B, "EMPLOYEE", "MANAGER"));
-        allModules.add(new MoreModule("documents_admin", "Documents (Admin)", R.drawable.ic_mod_files, 0xFF1E293B, "HR_HEAD", "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("manage_schedules", "Manage Schedules", R.drawable.ic_calendar_edit, 0xFF1E293B, "HR_HEAD", "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("settings", "Settings", R.drawable.ic_settings_gear, 0xFF1E293B, "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("help", "Help & Support", R.drawable.ic_info, 0xFF1E293B, "EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("documents_admin", "Documents (Admin)", R.drawable.ic_mod_files, 0xFF1E293B, "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("manage_schedules", "Manage Schedules", R.drawable.ic_calendar_edit, 0xFF1E293B, "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("broadcast", "Broadcast Notification", R.drawable.ic_announcement, 0xFF1E293B, "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("settings", "Settings", R.drawable.ic_settings_gear, 0xFF1E293B, "ADMIN", "SUPER_ADMIN", "OWNER"));
+        allModules.add(new MoreModule("help", "Help & Support", R.drawable.ic_info, 0xFF1E293B, "EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
     }
 
     private void filterModulesByRole() {
@@ -258,6 +259,8 @@ public class MoreActivity extends AppCompatActivity {
             startActivity(new Intent(this, ShiftsActivity.class));
         } else if ("settings".equals(module.getId())) {
             startActivity(new Intent(this, SettingsActivity.class));
+        } else if ("broadcast".equals(module.getId())) {
+            startActivity(new Intent(this, BroadcastNotificationActivity.class));
         } else if ("leave_policies".equals(module.getId())) {
             showLeavePoliciesDialog();
         } else if ("leave_approvals".equals(module.getId()) || "approvals".equals(module.getId())) {

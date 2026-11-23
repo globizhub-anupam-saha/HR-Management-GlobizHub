@@ -43,22 +43,19 @@ public class MoreModule {
 
         switch (role) {
             case SUPER_ADMIN:
-                // Super Admin has master administration modules in More
+            case ADMIN:
+                // Admin and Super Admin have complete operational and management modules in More
                 return "attendance".equals(id)
+                        || "employees".equals(id)
+                        || "approvals".equals(id)
+                        || "leave_approvals".equals(id)
+                        || "payroll".equals(id)
                         || "tasks".equals(id)
                         || "manage_schedules".equals(id)
                         || "leave_policies".equals(id)
                         || "documents_admin".equals(id)
+                        || "broadcast".equals(id)
                         || "settings".equals(id)
-                        || "help".equals(id);
-
-            case ADMIN:
-                // Admin has management and operations modules in More
-                return "tasks".equals(id)
-                        || "manage_schedules".equals(id)
-                        || "leave_policies".equals(id)
-                        || "payroll".equals(id)
-                        || "documents_admin".equals(id)
                         || "help".equals(id);
 
             case EMPLOYEE:

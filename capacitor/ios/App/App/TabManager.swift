@@ -40,6 +40,7 @@ class TabManager {
             list.append(TabItem(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", isLocked: false, isEnabled: false))
+            list.append(TabItem(id: "settings", title: "Settings", systemIcon: "gearshape", isLocked: false, isEnabled: false))
 
         case .employee:
             list.append(TabItem(id: "attendance", title: "Attendance", systemIcon: "clock", isLocked: false, isEnabled: true))
