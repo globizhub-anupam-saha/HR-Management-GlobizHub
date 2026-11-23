@@ -168,6 +168,14 @@
             android:screenOrientation="portrait"
             android:exported="false" />
 
+        <!-- Employees Activity -->
+        <activity
+            android:name=".EmployeesActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
         <!-- Shifts & Schedules Activity -->
         <activity
             android:name=".ShiftsActivity"

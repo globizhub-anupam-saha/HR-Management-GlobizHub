@@ -1268,6 +1268,179 @@ class AuthService {
         }.resume()
     }
 
+    // MARK: - Employee Directory API
+    func getEmployees(status: String? = nil, search: String? = nil, departmentId: String? = nil, role: String? = nil, completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var components = URLComponents(string: "\(baseURL)/employees")
+        var queryItems: [URLQueryItem] = []
+        if let status = status, !status.isEmpty, status != "ALL" {
+            queryItems.append(URLQueryItem(name: "status", value: status))
+        } else {
+            queryItems.append(URLQueryItem(name: "status", value: "ALL"))
+        }
+        if let search = search, !search.trimmingCharacters(in: .whitespaces).isEmpty {
+            queryItems.append(URLQueryItem(name: "search", value: search.trimmingCharacters(in: .whitespaces)))
+        }
+        if let departmentId = departmentId, !departmentId.isEmpty {
+            queryItems.append(URLQueryItem(name: "departmentId", value: departmentId))
+        }
+        if let role = role, !role.isEmpty {
+            queryItems.append(URLQueryItem(name: "role", value: role))
+        }
+        if !queryItems.isEmpty {
+            components?.queryItems = queryItems
+        }
+        guard let url = components?.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse,
+                      let data = data,
+                      let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
+                    completion(.success([]))
+                    return
+                }
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    completion(.success(list))
+                } else {
+                    completion(.success([]))
+                }
+            }
+        }.resume()
+    }
+
+    func inviteEmployee(firstName: String, lastName: String, email: String, role: String, departmentId: String?, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/employees/invite"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "firstName": firstName.trimmingCharacters(in: .whitespaces),
+            "lastName": lastName.trimmingCharacters(in: .whitespaces),
+            "email": email.trimmingCharacters(in: .whitespaces).lowercased(),
+            "role": role
+        ]
+        if let dept = departmentId, !dept.isEmpty, dept != "none" {
+            body["departmentId"] = dept
+        }
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse,
+                      let data = data else {
+                    completion(.failure(.networkError("Invalid response")))
+                    return
+                }
+                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    completion(.success(json))
+                } else {
+                    let msg = json["message"] as? String ?? "Failed to invite employee"
+                    completion(.failure(.networkError(msg)))
+                }
+            }
+        }.resume()
+    }
+
+    func resendEmployeeInvite(employeeId: String, completion: @escaping (Result<Bool, AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/employees/\(employeeId)/resend-invite"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("Invalid response")))
+                    return
+                }
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    completion(.success(true))
+                } else {
+                    completion(.failure(.networkError("Failed to resend invite")))
+                }
+            }
+        }.resume()
+    }
+
+    func deleteEmployee(employeeId: String, completion: @escaping (Result<Bool, AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/employees/\(employeeId)"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(.networkError("Invalid response")))
+                    return
+                }
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    completion(.success(true))
+                } else {
+                    completion(.failure(.networkError("Failed to delete employee")))
+                }
+            }
+        }.resume()
+    }
+
     func getUserId() -> String {
         if let token = getToken(),
            let payloadData = decodeJwtPayload(token),

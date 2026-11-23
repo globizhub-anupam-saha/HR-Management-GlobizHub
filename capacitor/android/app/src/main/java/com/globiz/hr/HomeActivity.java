@@ -509,6 +509,12 @@ public class HomeActivity extends AppCompatActivity {
         tvAdminSubtitle = findViewById(R.id.tvAdminSubtitle);
         btnOpenBroadcastNotificationPage = findViewById(R.id.btnOpenBroadcastNotificationPage);
         tvAdminTotalEmployees = findViewById(R.id.tvAdminTotalEmployees);
+        if (tvAdminTotalEmployees != null) {
+            View card = (View) tvAdminTotalEmployees.getParent();
+            if (card != null) {
+                card.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, EmployeesActivity.class)));
+            }
+        }
         tvAdminPresentToday = findViewById(R.id.tvAdminPresentToday);
         tvAdminAbsentToday = findViewById(R.id.tvAdminAbsentToday);
         tvAdminLateToday = findViewById(R.id.tvAdminLateToday);

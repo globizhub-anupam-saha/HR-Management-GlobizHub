@@ -263,7 +263,7 @@ public class MoreActivity extends AppCompatActivity {
         } else if ("leave_approvals".equals(module.getId())) {
             BottomNavHelper.showApprovalsDialog(this);
         } else if ("employees".equals(module.getId())) {
-            BottomNavHelper.showEmployeesDialog(this);
+            startActivity(new Intent(this, EmployeesActivity.class));
         } else if ("payroll".equals(module.getId())) {
             BottomNavHelper.showPayrollDialog(this);
         } else if ("attendance".equals(module.getId())) {

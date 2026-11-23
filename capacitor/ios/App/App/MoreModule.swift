@@ -210,7 +210,13 @@ class RoleNavigationManager {
                 vc.present(moreVC, animated: false)
             }
         } else if id == "employees" {
-            showEmployeesAlert(from: vc)
+            if vc is EmployeesViewController {
+                scrollHandler?()
+            } else {
+                let empVC = EmployeesViewController()
+                empVC.modalPresentationStyle = .fullScreen
+                vc.present(empVC, animated: false)
+            }
         } else if id == "approvals" {
             if let home = vc as? HomeViewController {
                 home.handleAdminScrollToApprovals()

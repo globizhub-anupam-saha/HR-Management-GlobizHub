@@ -1241,6 +1241,42 @@ public class ApiClient {
         });
     }
 
+    public void getEmployees(String status, String search, String departmentId, String role, ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            StringBuilder query = new StringBuilder("/employees?status=" + (status != null && !status.isEmpty() ? status : "ALL"));
+            try {
+                if (search != null && !search.trim().isEmpty()) {
+                    query.append("&search=").append(java.net.URLEncoder.encode(search.trim(), "UTF-8"));
+                }
+                if (departmentId != null && !departmentId.isEmpty()) {
+                    query.append("&departmentId=").append(java.net.URLEncoder.encode(departmentId, "UTF-8"));
+                }
+                if (role != null && !role.isEmpty()) {
+                    query.append("&role=").append(java.net.URLEncoder.encode(role, "UTF-8"));
+                }
+            } catch (Exception ignored) {}
+            getJsonArray(query.toString(), getToken(), callback);
+        });
+    }
+
+    public void inviteEmployee(JSONObject payload, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/employees/invite", payload, getToken(), callback);
+        });
+    }
+
+    public void resendEmployeeInvite(String employeeId, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/employees/" + employeeId + "/resend-invite", new JSONObject(), getToken(), callback);
+        });
+    }
+
+    public void deleteEmployee(String employeeId, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            deleteJson("/employees/" + employeeId, getToken(), callback);
+        });
+    }
+
     public void getMyTasks(ApiCallback<JSONArray> callback) {
         getMyTasks(getToken(), callback);
     }
@@ -1828,6 +1864,47 @@ public class ApiClient {
             return "Resource not found.";
         }
         return "An error occurred (" + statusCode + "). Please try again.";
+    }
+
+    private void deleteJson(String endpoint, String bearerToken, ApiCallback<JSONObject> callback) {
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(BASE_URL + endpoint);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("DELETE");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(15000);
+
+            if (bearerToken != null && !bearerToken.isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
+            }
+
+            int statusCode = conn.getResponseCode();
+            InputStream stream = (statusCode >= 200 && statusCode < 300)
+                    ? conn.getInputStream()
+                    : conn.getErrorStream();
+
+            String responseString = readStream(stream);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                JSONObject json = (responseString != null && responseString.startsWith("{"))
+                        ? new JSONObject(responseString)
+                        : new JSONObject().put("success", true);
+                postSuccess(callback, json);
+            } else {
+                String errorMsg = parseErrorMessage(responseString, statusCode);
+                postError(callback, errorMsg, statusCode);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "DELETE failed for " + endpoint, e);
+            postError(callback, "Network connection error.", 0);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     // MARK: - Offline Punch Queue & Synchronization

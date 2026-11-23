@@ -136,7 +136,10 @@ public class BottomNavHelper {
         } else if ("settings".equals(id)) {
             activity.startActivity(new Intent(activity, SettingsActivity.class));
         } else if ("employees".equals(id)) {
-            showEmployeesDialog(activity);
+            if (!(activity instanceof EmployeesActivity)) {
+                activity.startActivity(new Intent(activity, EmployeesActivity.class));
+                if (!(activity instanceof HomeActivity)) activity.finish();
+            }
         } else if ("approvals".equals(id) || "leave_approvals".equals(id)) {
             if (activity instanceof HomeActivity) {
                 ((HomeActivity) activity).scrollToAdminApprovals();

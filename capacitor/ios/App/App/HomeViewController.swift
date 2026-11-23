@@ -4906,7 +4906,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
     }
 
     @objc func handleAdminTeamDirectory() {
-        RoleNavigationManager.showEmployeesAlert(from: self)
+        let empVC = EmployeesViewController()
+        empVC.modalPresentationStyle = .fullScreen
+        present(empVC, animated: true)
     }
 
     @objc private func handleSuperAdminRecalculate() {
