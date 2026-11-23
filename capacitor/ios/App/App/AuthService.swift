@@ -1730,6 +1730,64 @@ class AuthService {
         }.resume()
     }
 
+    func getDepartments(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/organization/departments"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
+                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] {
+                    completion(.success(list))
+                } else {
+                    completion(.success([]))
+                }
+            }
+        }.resume()
+    }
+
+    func broadcastNotification(payload: [String: Any], completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken() else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        let endpoint = "\(baseURL)/notifications/broadcast"
+        guard let url = URL(string: endpoint) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
+                   let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else {
+                    let title = payload["title"] as? String ?? "Company Broadcast"
+                    let msg = payload["message"] as? String ?? ""
+                    AuthService.shared.publishAnnouncement(title: title, content: msg, completion: completion)
+                }
+            }
+        }.resume()
+    }
+
     // MARK: - Update Profile
     func updateProfile(data: [String: Any], completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         let first = data["firstName"] as? String

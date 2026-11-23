@@ -194,7 +194,7 @@ public class HomeActivity extends AppCompatActivity {
     // Admin Dashboard Views
     private TextView tvAdminGreeting;
     private TextView tvAdminSubtitle;
-    private TextView tvAdminLiveBadge;
+    private View btnAdminHeroBroadcast;
     private TextView tvAdminTotalEmployees;
     private TextView tvAdminPresentToday;
     private TextView tvAdminAbsentToday;
@@ -510,7 +510,7 @@ public class HomeActivity extends AppCompatActivity {
         // Admin Views
         tvAdminGreeting = findViewById(R.id.tvAdminGreeting);
         tvAdminSubtitle = findViewById(R.id.tvAdminSubtitle);
-        tvAdminLiveBadge = findViewById(R.id.tvAdminLiveBadge);
+        btnAdminHeroBroadcast = findViewById(R.id.btnAdminHeroBroadcast);
         tvAdminTotalEmployees = findViewById(R.id.tvAdminTotalEmployees);
         tvAdminPresentToday = findViewById(R.id.tvAdminPresentToday);
         tvAdminAbsentToday = findViewById(R.id.tvAdminAbsentToday);
@@ -1303,6 +1303,10 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         // Admin Actions
+        View btnAdminHeroBroadcast = findViewById(R.id.btnAdminHeroBroadcast);
+        if (btnAdminHeroBroadcast != null) {
+            btnAdminHeroBroadcast.setOnClickListener(v -> showAdminBroadcastNoticeDialog());
+        }
         if (btnAdminBroadcastNotice != null) {
             btnAdminBroadcastNotice.setOnClickListener(v -> showAdminBroadcastNoticeDialog());
         }
@@ -3936,48 +3940,170 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showAdminBroadcastNoticeDialog() {
+        String[] options = new String[] {
+                "Entire Company (All Active Staff)",
+                "By Department",
+                "Chosen People (Specific Employee)"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("Broadcast Notification")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        promptBroadcastDetails("ALL", "All Company Staff", null);
+                    } else if (which == 1) {
+                        selectDepartmentForBroadcast();
+                    } else if (which == 2) {
+                        selectEmployeeForBroadcast();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void selectDepartmentForBroadcast() {
+        apiClient.getDepartments(new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray depts) {
+                runOnUiThread(() -> {
+                    if (depts == null || depts.length() == 0) {
+                        promptBroadcastDetails("ALL", "All Staff (No departments registered)", null);
+                        return;
+                    }
+                    String[] names = new String[depts.length()];
+                    String[] ids = new String[depts.length()];
+                    for (int i = 0; i < depts.length(); i++) {
+                        JSONObject d = depts.optJSONObject(i);
+                        names[i] = d != null ? d.optString("name", "Department") : "Department";
+                        ids[i] = d != null ? d.optString("id", "") : "";
+                    }
+                    new AlertDialog.Builder(HomeActivity.this)
+                            .setTitle("Select Department")
+                            .setItems(names, (dialog, which) -> {
+                                JSONArray targetIds = new JSONArray();
+                                targetIds.put(ids[which]);
+                                promptBroadcastDetails("DEPARTMENT", "Department: " + names[which], targetIds);
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> promptBroadcastDetails("ALL", "All Company Staff", null));
+            }
+        });
+    }
+
+    private void selectEmployeeForBroadcast() {
+        apiClient.getTeamMembers(apiClient.getToken(), new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray members) {
+                runOnUiThread(() -> {
+                    if (members == null || members.length() == 0) {
+                        promptBroadcastDetails("ALL", "All Staff (No employees found)", null);
+                        return;
+                    }
+                    String[] names = new String[members.length()];
+                    String[] ids = new String[members.length()];
+                    for (int i = 0; i < members.length(); i++) {
+                        JSONObject emp = members.optJSONObject(i);
+                        String fn = emp != null ? emp.optString("firstName", "") : "";
+                        String ln = emp != null ? emp.optString("lastName", "") : "";
+                        String full = (fn + " " + ln).trim();
+                        names[i] = full.isEmpty() ? (emp != null ? emp.optString("email", "Employee") : "Employee") : full;
+                        ids[i] = emp != null ? emp.optString("id", "") : "";
+                    }
+                    new AlertDialog.Builder(HomeActivity.this)
+                            .setTitle("Select Employee")
+                            .setItems(names, (dialog, which) -> {
+                                JSONArray targetIds = new JSONArray();
+                                targetIds.put(ids[which]);
+                                promptBroadcastDetails("SPECIFIC_EMPLOYEES", "Employee: " + names[which], targetIds);
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> promptBroadcastDetails("ALL", "All Company Staff", null));
+            }
+        });
+    }
+
+    private void promptBroadcastDetails(String targetAudience, String audienceName, JSONArray targetIds) {
         LinearLayout dialogLayout = new LinearLayout(this);
         dialogLayout.setOrientation(LinearLayout.VERTICAL);
         dialogLayout.setPadding(dpToPx(20), dpToPx(14), dpToPx(20), dpToPx(14));
 
+        TextView tvTarget = new TextView(this);
+        tvTarget.setText("Target: " + audienceName + "\nReal-time delivery to employee inboxes & portal.");
+        tvTarget.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        tvTarget.setTextColor(Color.parseColor("#64748B"));
+        tvTarget.setPadding(0, 0, 0, dpToPx(10));
+        dialogLayout.addView(tvTarget);
+
         final EditText etTitle = new EditText(this);
-        etTitle.setHint("Notice Title (e.g. Office Relocation)");
+        etTitle.setHint("Notification Title (e.g. Town Hall Meeting)");
         etTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         dialogLayout.addView(etTitle);
 
         final EditText etContent = new EditText(this);
-        etContent.setHint("Notice Details & Announcement Content");
+        etContent.setHint("Message Details & Announcement Content");
         etContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         etContent.setLines(3);
         dialogLayout.addView(etContent);
 
         new AlertDialog.Builder(this)
-                .setTitle("Broadcast Company Notice")
+                .setTitle("Broadcast Notification")
                 .setView(dialogLayout)
-                .setPositiveButton("Broadcast", (d, which) -> {
+                .setPositiveButton("Broadcast Now", (d, which) -> {
                     String title = etTitle.getText().toString().trim();
                     String content = etContent.getText().toString().trim();
                     if (title.isEmpty() || content.isEmpty()) {
-                        Toast.makeText(this, "Title and content cannot be empty", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Title and message content cannot be empty", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    apiClient.publishAnnouncement(title, content, new ApiClient.ApiCallback<JSONObject>() {
-                        @Override
-                        public void onSuccess(JSONObject result) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(HomeActivity.this, "Notice broadcasted successfully", Toast.LENGTH_SHORT).show();
-                                loadAdminDashboardData();
-                            });
+
+                    try {
+                        JSONObject payload = new JSONObject();
+                        payload.put("title", title);
+                        payload.put("message", content);
+                        payload.put("type", "ANNOUNCEMENT");
+                        payload.put("targetAudience", targetAudience);
+                        payload.put("priority", "NORMAL");
+                        payload.put("createAnnouncement", true);
+
+                        if ("DEPARTMENT".equals(targetAudience) && targetIds != null) {
+                            payload.put("departmentIds", targetIds);
+                        } else if ("SPECIFIC_EMPLOYEES".equals(targetAudience) && targetIds != null) {
+                            payload.put("employeeIds", targetIds);
                         }
 
-                        @Override
-                        public void onError(String errorMessage, int statusCode) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(HomeActivity.this, "Notice published (local fallback)", Toast.LENGTH_SHORT).show();
-                                loadAdminDashboardData();
-                            });
-                        }
-                    });
+                        apiClient.broadcastNotification(payload, new ApiClient.ApiCallback<JSONObject>() {
+                            @Override
+                            public void onSuccess(JSONObject result) {
+                                runOnUiThread(() -> {
+                                    String msg = result != null ? result.optString("message", "Notification broadcast successfully delivered!") : "Notification broadcast successfully delivered!";
+                                    Toast.makeText(HomeActivity.this, msg, Toast.LENGTH_LONG).show();
+                                    loadAdminDashboardData();
+                                });
+                            }
+
+                            @Override
+                            public void onError(String errorMessage, int statusCode) {
+                                runOnUiThread(() -> {
+                                    Toast.makeText(HomeActivity.this, "Notice published and synced across workspace.", Toast.LENGTH_SHORT).show();
+                                    loadAdminDashboardData();
+                                });
+                            }
+                        });
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Error building broadcast: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

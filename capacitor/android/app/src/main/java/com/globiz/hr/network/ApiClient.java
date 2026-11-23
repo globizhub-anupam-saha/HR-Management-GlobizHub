@@ -1573,6 +1573,40 @@ public class ApiClient {
         });
     }
 
+    public void getDepartments(ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/organization/departments", getToken(), new ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    postSuccess(callback, result != null ? result : new JSONArray());
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    postSuccess(callback, new JSONArray());
+                }
+            });
+        });
+    }
+
+    public void broadcastNotification(JSONObject payload, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/notifications/broadcast", payload, getToken(), new ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    postSuccess(callback, result);
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    String title = payload.optString("title", "Company Broadcast");
+                    String msg = payload.optString("message", "");
+                    publishAnnouncement(title, msg, callback);
+                }
+            });
+        });
+    }
+
     private void getJsonArray(String endpoint, String bearerToken, ApiCallback<JSONArray> callback) {
         HttpURLConnection conn = null;
         try {

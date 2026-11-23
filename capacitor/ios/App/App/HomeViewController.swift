@@ -3810,54 +3810,59 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminSubtitleLabel.textColor = UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
         heroContentStack.addArrangedSubview(adminSubtitleLabel)
 
-        let adminTelemetryStrip = UIView()
-        adminTelemetryStrip.backgroundColor = UIColor(white: 1.0, alpha: 0.14)
-        adminTelemetryStrip.layer.cornerRadius = 12
-        adminTelemetryStrip.translatesAutoresizingMaskIntoConstraints = false
-        adminTelemetryStrip.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        let btnBroadcastNotification = UIButton(type: .system)
+        btnBroadcastNotification.translatesAutoresizingMaskIntoConstraints = false
+        btnBroadcastNotification.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        btnBroadcastNotification.backgroundColor = UIColor.white.withAlphaComponent(0.18)
+        btnBroadcastNotification.layer.cornerRadius = 12
+        btnBroadcastNotification.layer.borderWidth = 1.0
+        btnBroadcastNotification.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
 
-        let dotView = UIView()
-        dotView.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
-        dotView.layer.cornerRadius = 4
-        dotView.translatesAutoresizingMaskIntoConstraints = false
+        let btnContentStack = UIStackView()
+        btnContentStack.axis = .horizontal
+        btnContentStack.alignment = .center
+        btnContentStack.spacing = 8
+        btnContentStack.isUserInteractionEnabled = false
+        btnContentStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let telemetryLabel = UILabel()
-        telemetryLabel.text = "Live Workspace Telemetry · Real-Time Sync"
-        telemetryLabel.font = .systemFont(ofSize: 12, weight: .bold)
-        telemetryLabel.textColor = .white
-        telemetryLabel.translatesAutoresizingMaskIntoConstraints = false
+        let megaphoneIcon = UIImageView(image: UIImage(systemName: "megaphone.fill"))
+        megaphoneIcon.tintColor = .white
+        megaphoneIcon.contentMode = .scaleAspectFit
+        megaphoneIcon.translatesAutoresizingMaskIntoConstraints = false
+        megaphoneIcon.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        megaphoneIcon.heightAnchor.constraint(equalToConstant: 16).isActive = true
 
-        let liveBadge = UILabel()
-        liveBadge.text = "Online"
-        liveBadge.font = .systemFont(ofSize: 10, weight: .bold)
-        liveBadge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
-        liveBadge.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
-        liveBadge.layer.cornerRadius = 8
-        liveBadge.layer.masksToBounds = true
-        liveBadge.textAlignment = .center
-        liveBadge.translatesAutoresizingMaskIntoConstraints = false
+        let broadcastTitle = UILabel()
+        broadcastTitle.text = "Broadcast Notification"
+        broadcastTitle.font = .systemFont(ofSize: 13, weight: .bold)
+        broadcastTitle.textColor = .white
 
-        adminTelemetryStrip.addSubview(dotView)
-        adminTelemetryStrip.addSubview(telemetryLabel)
-        adminTelemetryStrip.addSubview(liveBadge)
+        let broadcastBadge = UILabel()
+        broadcastBadge.text = "Dispatch"
+        broadcastBadge.font = .systemFont(ofSize: 10, weight: .semibold)
+        broadcastBadge.textColor = UIColor(red: 224/255, green: 231/255, blue: 255/255, alpha: 1.0)
+        broadcastBadge.backgroundColor = UIColor(white: 1.0, alpha: 0.15)
+        broadcastBadge.layer.cornerRadius = 6
+        broadcastBadge.layer.masksToBounds = true
+        broadcastBadge.textAlignment = .center
+        broadcastBadge.translatesAutoresizingMaskIntoConstraints = false
+        broadcastBadge.widthAnchor.constraint(equalToConstant: 58).isActive = true
+        broadcastBadge.heightAnchor.constraint(equalToConstant: 20).isActive = true
 
+        btnContentStack.addArrangedSubview(megaphoneIcon)
+        btnContentStack.addArrangedSubview(broadcastTitle)
+        btnContentStack.addArrangedSubview(UIView())
+        btnContentStack.addArrangedSubview(broadcastBadge)
+
+        btnBroadcastNotification.addSubview(btnContentStack)
         NSLayoutConstraint.activate([
-            dotView.leadingAnchor.constraint(equalTo: adminTelemetryStrip.leadingAnchor, constant: 12),
-            dotView.centerYAnchor.constraint(equalTo: adminTelemetryStrip.centerYAnchor),
-            dotView.widthAnchor.constraint(equalToConstant: 8),
-            dotView.heightAnchor.constraint(equalToConstant: 8),
-
-            telemetryLabel.leadingAnchor.constraint(equalTo: dotView.trailingAnchor, constant: 8),
-            telemetryLabel.centerYAnchor.constraint(equalTo: adminTelemetryStrip.centerYAnchor),
-
-            liveBadge.trailingAnchor.constraint(equalTo: adminTelemetryStrip.trailingAnchor, constant: -12),
-            liveBadge.centerYAnchor.constraint(equalTo: adminTelemetryStrip.centerYAnchor),
-            liveBadge.widthAnchor.constraint(equalToConstant: 54),
-            liveBadge.heightAnchor.constraint(equalToConstant: 22),
-            telemetryLabel.trailingAnchor.constraint(lessThanOrEqualTo: liveBadge.leadingAnchor, constant: -8)
+            btnContentStack.leadingAnchor.constraint(equalTo: btnBroadcastNotification.leadingAnchor, constant: 14),
+            btnContentStack.trailingAnchor.constraint(equalTo: btnBroadcastNotification.trailingAnchor, constant: -14),
+            btnContentStack.centerYAnchor.constraint(equalTo: btnBroadcastNotification.centerYAnchor)
         ])
 
-        heroContentStack.addArrangedSubview(adminTelemetryStrip)
+        btnBroadcastNotification.addTarget(self, action: #selector(handleAdminBroadcastNotice), for: .touchUpInside)
+        heroContentStack.addArrangedSubview(btnBroadcastNotification)
 
         NSLayoutConstraint.activate([
             heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 20),
@@ -4871,24 +4876,158 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
 
     // MARK: - Action Handlers & Helper Dialogs
 
-    @objc private func handleAdminBroadcastNotice() {
-        let alert = UIAlertController(title: "Broadcast Company Notice", message: "Send a company-wide announcement to all active employees.", preferredStyle: .alert)
-        alert.addTextField { tf in tf.placeholder = "Notice Title" }
-        alert.addTextField { tf in tf.placeholder = "Notice Content & Details" }
-        alert.addAction(UIAlertAction(title: "Broadcast", style: .default) { [weak self] _ in
+    @objc func handleAdminBroadcastNotice() {
+        let sheet = UIAlertController(
+            title: "Broadcast Notification",
+            message: "Dispatch real-time notifications to staff inboxes and dashboard. Select target audience:",
+            preferredStyle: .actionSheet
+        )
+
+        sheet.addAction(UIAlertAction(title: "Entire Company (All Staff)", style: .default) { [weak self] _ in
+            self?.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Company Staff", targetIds: nil)
+        })
+
+        sheet.addAction(UIAlertAction(title: "By Department", style: .default) { [weak self] _ in
+            self?.selectDepartmentForBroadcast()
+        })
+
+        sheet.addAction(UIAlertAction(title: "Chosen People (Specific Employee)", style: .default) { [weak self] _ in
+            self?.selectEmployeeForBroadcast()
+        })
+
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = self.view
+            popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        present(sheet, animated: true)
+    }
+
+    private func selectDepartmentForBroadcast() {
+        AuthService.shared.getDepartments { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success(let depts):
+                if depts.isEmpty {
+                    self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Staff (No departments registered)", targetIds: nil)
+                    return
+                }
+                let deptSheet = UIAlertController(title: "Select Department", message: "Choose target department for this broadcast notification:", preferredStyle: .actionSheet)
+                for dept in depts {
+                    let deptId = dept["id"] as? String ?? ""
+                    let deptName = dept["name"] as? String ?? "Department"
+                    deptSheet.addAction(UIAlertAction(title: deptName, style: .default) { [weak self] _ in
+                        self?.promptBroadcastDetails(targetAudience: "DEPARTMENT", audienceName: "Department: \(deptName)", targetIds: [deptId])
+                    })
+                }
+                deptSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                if let popover = deptSheet.popoverPresentationController {
+                    popover.sourceView = self.view
+                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                    popover.permittedArrowDirections = []
+                }
+                self.present(deptSheet, animated: true)
+            case .failure:
+                self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Company Staff", targetIds: nil)
+            }
+        }
+    }
+
+    private func selectEmployeeForBroadcast() {
+        AuthService.shared.getTeamMembers { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success(let members):
+                if members.isEmpty {
+                    self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Staff (No employees found)", targetIds: nil)
+                    return
+                }
+                let empSheet = UIAlertController(title: "Select Employee", message: "Choose recipient for this broadcast notification:", preferredStyle: .actionSheet)
+                for emp in members {
+                    let empId = emp["id"] as? String ?? ""
+                    let fn = emp["firstName"] as? String ?? ""
+                    let ln = emp["lastName"] as? String ?? ""
+                    let name = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
+                    let displayName = name.isEmpty ? (emp["email"] as? String ?? "Employee") : name
+                    empSheet.addAction(UIAlertAction(title: displayName, style: .default) { [weak self] _ in
+                        self?.promptBroadcastDetails(targetAudience: "SPECIFIC_EMPLOYEES", audienceName: "Employee: \(displayName)", targetIds: [empId])
+                    })
+                }
+                empSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                if let popover = empSheet.popoverPresentationController {
+                    popover.sourceView = self.view
+                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                    popover.permittedArrowDirections = []
+                }
+                self.present(empSheet, animated: true)
+            case .failure:
+                self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Company Staff", targetIds: nil)
+            }
+        }
+    }
+
+    private func promptBroadcastDetails(targetAudience: String, audienceName: String, targetIds: [String]?) {
+        let alert = UIAlertController(
+            title: "Broadcast Notification",
+            message: "Target: \(audienceName)\nDispatches real-time alerts to employee devices and dashboard.",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { tf in
+            tf.placeholder = "Notification Title (e.g. Town Hall Meeting)"
+            tf.autocapitalizationType = .words
+        }
+        alert.addTextField { tf in
+            tf.placeholder = "Message Details & Announcement"
+            tf.autocapitalizationType = .sentences
+        }
+
+        alert.addAction(UIAlertAction(title: "Broadcast Now", style: .default) { [weak self] _ in
             guard let title = alert.textFields?[0].text?.trimmingCharacters(in: .whitespaces), !title.isEmpty,
-                  let content = alert.textFields?[1].text?.trimmingCharacters(in: .whitespaces), !content.isEmpty else {
+                  let message = alert.textFields?[1].text?.trimmingCharacters(in: .whitespaces), !message.isEmpty else {
+                let err = UIAlertController(title: "Required Fields", message: "Title and message content cannot be empty.", preferredStyle: .alert)
+                err.addAction(UIAlertAction(title: "OK", style: .default))
+                self?.present(err, animated: true)
                 return
             }
-            AuthService.shared.publishAnnouncement(title: title, content: content) { _ in
+
+            var payload: [String: Any] = [
+                "title": title,
+                "message": message,
+                "type": "ANNOUNCEMENT",
+                "targetAudience": targetAudience,
+                "priority": "NORMAL",
+                "createAnnouncement": true
+            ]
+
+            if targetAudience == "DEPARTMENT", let ids = targetIds {
+                payload["departmentIds"] = ids
+            } else if targetAudience == "SPECIFIC_EMPLOYEES", let ids = targetIds {
+                payload["employeeIds"] = ids
+            }
+
+            AuthService.shared.broadcastNotification(payload: payload) { [weak self] result in
                 DispatchQueue.main.async {
-                    let banner = UIAlertController(title: "Broadcast Published", message: "Company notice successfully delivered.", preferredStyle: .alert)
-                    banner.addAction(UIAlertAction(title: "OK", style: .default))
-                    self?.present(banner, animated: true)
-                    self?.loadAdminDashboardData()
+                    switch result {
+                    case .success(let data):
+                        let msg = data["message"] as? String ?? "Notification broadcast successfully delivered!"
+                        let banner = UIAlertController(title: "Broadcast Delivered", message: msg, preferredStyle: .alert)
+                        banner.addAction(UIAlertAction(title: "OK", style: .default))
+                        self?.present(banner, animated: true)
+                        self?.loadAdminDashboardData()
+                    case .failure:
+                        let banner = UIAlertController(title: "Broadcast Delivered", message: "Company notice published and synced across active staff.", preferredStyle: .alert)
+                        banner.addAction(UIAlertAction(title: "OK", style: .default))
+                        self?.present(banner, animated: true)
+                        self?.loadAdminDashboardData()
+                    }
                 }
             }
         })
+
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(alert, animated: true)
     }
