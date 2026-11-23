@@ -111,7 +111,7 @@ public class BroadcastNotificationActivity extends AppCompatActivity {
         spNotificationCategory.setAdapter(catAdapter);
 
         // Populate Urgency Spinner
-        String[] urgencies = new String[]{"Normal Priority", "⚠️ Urgent (Bypasses Mute)"};
+        String[] urgencies = new String[]{"Normal Priority", "Urgent (Bypasses Mute)"};
         ArrayAdapter<String> urgAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, urgencies);
         spNotificationUrgency.setAdapter(urgAdapter);
     }

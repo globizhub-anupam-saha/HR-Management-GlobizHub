@@ -5779,7 +5779,7 @@ class BroadcastNotificationViewController: UIViewController, UITextFieldDelegate
     private let selectedCountBadge = UILabel()
 
     private let categorySegment = UISegmentedControl(items: ["Announcement", "Alert", "Policy", "General"])
-    private let urgencySegment = UISegmentedControl(items: ["Normal Priority", "⚠️ Urgent"])
+    private let urgencySegment = UISegmentedControl(items: ["Normal Priority", "Urgent"])
     private let titleField = UITextField()
     private let messageTextView = UITextView()
     private let placeholderLabel = UILabel()
