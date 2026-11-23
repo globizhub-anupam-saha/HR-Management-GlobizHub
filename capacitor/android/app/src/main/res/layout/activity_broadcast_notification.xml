@@ -365,7 +365,7 @@
                 android:layout_height="44dp"
                 android:layout_marginTop="6dp"
                 android:background="@drawable/selector_pill_input"
-                android:hint="e.g. Town Hall Meeting, Office Relocation"
+                android:hint="e.g. Town Hall Meeting, New Leave Policy, System Maintenance"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:textColor="#0F172A"
@@ -388,7 +388,7 @@
                 android:layout_marginTop="6dp"
                 android:background="@drawable/selector_pill_input"
                 android:gravity="top|start"
-                android:hint="Describe the announcement details clearly so employees know what actions are expected..."
+                android:hint="Describe the update clearly so employees know what actions or information are expected..."
                 android:padding="12dp"
                 android:textColor="#0F172A"
                 android:textSize="13sp" />
@@ -428,7 +428,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Also publish to the Dashboard Announcements card for all staff"
+                        android:text="Also publish to the Dashboard Announcements card for all employees"
                         android:textColor="#64748B"
                         android:textSize="11sp" />
                 </LinearLayout>

@@ -217,12 +217,23 @@ public class BroadcastNotificationActivity extends AppCompatActivity {
 
     private void updateDeliveryEstimate() {
         if ("ALL".equals(targetAudience)) {
-            int count = Math.max(employees.size(), 2);
-            tvDeliveryEstimate.setText("Delivery estimate: " + count + " active staff");
+            String count = employees.isEmpty() ? "All active" : String.valueOf(employees.size());
+            tvDeliveryEstimate.setText("Delivery estimate: " + count + " employees");
         } else if ("DEPARTMENT".equals(targetAudience)) {
-            tvDeliveryEstimate.setText("Delivery estimate: " + selectedDeptIds.size() + " department(s)");
+            int count = 0;
+            for (JSONObject emp : employees) {
+                String dId = emp.optString("departmentId", "");
+                if (dId.isEmpty()) {
+                    JSONObject dObj = emp.optJSONObject("department");
+                    if (dObj != null) dId = dObj.optString("id", "");
+                }
+                if (selectedDeptIds.contains(dId)) {
+                    count++;
+                }
+            }
+            tvDeliveryEstimate.setText("Delivery estimate: " + count + " employees in " + selectedDeptIds.size() + " department(s)");
         } else {
-            tvDeliveryEstimate.setText("Delivery estimate: " + selectedEmpIds.size() + " staff member(s)");
+            tvDeliveryEstimate.setText("Delivery estimate: " + selectedEmpIds.size() + " selected employee(s)");
         }
     }
 
@@ -442,9 +453,15 @@ public class BroadcastNotificationActivity extends AppCompatActivity {
                         btnDispatchNotification.setText("Dispatch Notification");
 
                         String msg = result != null ? result.optString("message", "Notification broadcast successfully delivered!") : "Notification broadcast successfully delivered!";
-                        Toast.makeText(BroadcastNotificationActivity.this, msg, Toast.LENGTH_LONG).show();
-                        setResult(RESULT_OK);
-                        finish();
+                        new androidx.appcompat.app.AlertDialog.Builder(BroadcastNotificationActivity.this)
+                                .setTitle("Broadcast Delivered")
+                                .setMessage(msg)
+                                .setPositiveButton("OK", (dialog, which) -> {
+                                    setResult(RESULT_OK);
+                                    finish();
+                                })
+                                .setCancelable(false)
+                                .show();
                     });
                 }
 
@@ -455,9 +472,11 @@ public class BroadcastNotificationActivity extends AppCompatActivity {
                         btnDispatchNotification.setEnabled(true);
                         btnDispatchNotification.setText("Dispatch Notification");
 
-                        Toast.makeText(BroadcastNotificationActivity.this, "Notice published and synced with workspace.", Toast.LENGTH_SHORT).show();
-                        setResult(RESULT_OK);
-                        finish();
+                        new androidx.appcompat.app.AlertDialog.Builder(BroadcastNotificationActivity.this)
+                                .setTitle("Broadcast Failed")
+                                .setMessage(errorMessage != null ? errorMessage : "Failed to broadcast notification.")
+                                .setPositiveButton("OK", null)
+                                .show();
                     });
                 }
             });

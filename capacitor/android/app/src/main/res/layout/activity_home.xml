@@ -1156,23 +1156,9 @@
                         android:padding="22dp">
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_capsule_selected"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingBottom="4dp"
-                            android:text="Admin Workspace"
-                            android:textColor="#312E81"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-
-                        <TextView
                             android:id="@+id/tvAdminGreeting"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
                             android:text="Welcome back, Admin!"
                             android:textColor="#FFFFFF"
                             android:textSize="22sp"

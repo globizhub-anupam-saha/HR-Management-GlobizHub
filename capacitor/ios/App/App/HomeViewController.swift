@@ -3778,27 +3778,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         heroContentStack.translatesAutoresizingMaskIntoConstraints = false
         adminHeroCard.addSubview(heroContentStack)
 
-        let pillContainer = UIView()
-        pillContainer.backgroundColor = UIColor(white: 1.0, alpha: 0.16)
-        pillContainer.layer.cornerRadius = 12
-        pillContainer.translatesAutoresizingMaskIntoConstraints = false
-
-        let pillLabel = UILabel()
-        pillLabel.text = "Admin Workspace"
-        pillLabel.font = .systemFont(ofSize: 11, weight: .bold)
-        pillLabel.textColor = UIColor(red: 199/255, green: 210/255, blue: 254/255, alpha: 1.0)
-        pillLabel.translatesAutoresizingMaskIntoConstraints = false
-        pillContainer.addSubview(pillLabel)
-
-        NSLayoutConstraint.activate([
-            pillLabel.topAnchor.constraint(equalTo: pillContainer.topAnchor, constant: 4),
-            pillLabel.bottomAnchor.constraint(equalTo: pillContainer.bottomAnchor, constant: -4),
-            pillLabel.leadingAnchor.constraint(equalTo: pillContainer.leadingAnchor, constant: 10),
-            pillLabel.trailingAnchor.constraint(equalTo: pillContainer.trailingAnchor, constant: -10)
-        ])
-
-        let pillRow = UIStackView(arrangedSubviews: [pillContainer, UIView()])
-        heroContentStack.addArrangedSubview(pillRow)
+        heroContentStack.spacing = 6
 
         adminGreetingLabel.text = "Welcome back, Admin!"
         adminGreetingLabel.font = .systemFont(ofSize: 22, weight: .bold)
@@ -3811,8 +3791,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         heroContentStack.addArrangedSubview(adminSubtitleLabel)
 
         NSLayoutConstraint.activate([
-            heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 20),
-            heroContentStack.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor, constant: -20),
+            heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 22),
+            heroContentStack.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor, constant: -22),
             heroContentStack.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor, constant: 20),
             heroContentStack.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor, constant: -20)
         ])
@@ -6389,7 +6369,7 @@ class BroadcastNotificationViewController: UIViewController, UITextFieldDelegate
         tLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         contentStack.addArrangedSubview(tLbl)
 
-        titleField.placeholder = "e.g. Town Hall Meeting, Office Relocation"
+        titleField.placeholder = "e.g. Town Hall Meeting, New Leave Policy, System Maintenance"
         titleField.font = .systemFont(ofSize: 13)
         titleField.backgroundColor = .white
         titleField.layer.cornerRadius = 10
@@ -6422,7 +6402,7 @@ class BroadcastNotificationViewController: UIViewController, UITextFieldDelegate
         messageTextView.translatesAutoresizingMaskIntoConstraints = false
         msgBox.addSubview(messageTextView)
 
-        placeholderLabel.text = "Describe the announcement details clearly so employees know what actions are expected..."
+        placeholderLabel.text = "Describe the update clearly so employees know what actions or information are expected..."
         placeholderLabel.font = .systemFont(ofSize: 13)
         placeholderLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
         placeholderLabel.numberOfLines = 0
@@ -6478,7 +6458,7 @@ class BroadcastNotificationViewController: UIViewController, UITextFieldDelegate
         labelStack.addArrangedSubview(tLbl)
 
         let sLbl = UILabel()
-        sLbl.text = "Also publish to the Dashboard Announcements card for all staff"
+        sLbl.text = "Also publish to the Dashboard Announcements card for all employees"
         sLbl.font = .systemFont(ofSize: 11, weight: .regular)
         sLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
         sLbl.numberOfLines = 2
@@ -6561,12 +6541,16 @@ class BroadcastNotificationViewController: UIViewController, UITextFieldDelegate
 
     private func updateDeliveryEstimate() {
         if targetAudience == "ALL" {
-            let count = max(employees.count, 2)
-            deliveryEstimateLabel.text = "Delivery estimate: \(count) active staff"
+            let count = employees.isEmpty ? "All active" : "\(employees.count)"
+            deliveryEstimateLabel.text = "Delivery estimate: \(count) employees"
         } else if targetAudience == "DEPARTMENT" {
-            deliveryEstimateLabel.text = "Delivery estimate: \(selectedDeptIds.count) department(s)"
+            let count = employees.filter { emp in
+                let dId = (emp["departmentId"] as? String) ?? ((emp["department"] as? [String: Any])?["id"] as? String ?? "")
+                return selectedDeptIds.contains(dId)
+            }.count
+            deliveryEstimateLabel.text = "Delivery estimate: \(count) employees in \(selectedDeptIds.count) department(s)"
         } else {
-            deliveryEstimateLabel.text = "Delivery estimate: \(selectedEmpIds.count) employee(s)"
+            deliveryEstimateLabel.text = "Delivery estimate: \(selectedEmpIds.count) selected employee(s)"
         }
     }
 
