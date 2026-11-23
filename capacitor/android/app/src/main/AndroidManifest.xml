@@ -184,6 +184,14 @@
             android:screenOrientation="portrait"
             android:exported="false" />
 
+        <!-- Payroll Processing Activity -->
+        <activity
+            android:name=".PayrollActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
         <!-- Shifts & Schedules Activity -->
         <activity
             android:name=".ShiftsActivity"

@@ -608,9 +608,13 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             approvalsVC.modalPresentationStyle = .fullScreen
             present(approvalsVC, animated: true)
         } else if module.id == "employees" {
-            RoleNavigationManager.showEmployeesAlert(from: self)
+            let empVC = EmployeesViewController()
+            empVC.modalPresentationStyle = .fullScreen
+            present(empVC, animated: true)
         } else if module.id == "payroll" {
-            RoleNavigationManager.showPayrollAlert(from: self)
+            let payrollVC = PayrollViewController()
+            payrollVC.modalPresentationStyle = .fullScreen
+            present(payrollVC, animated: true)
         } else if module.id == "attendance" {
             let attendanceVC = AttendanceViewController()
             attendanceVC.modalPresentationStyle = .fullScreen

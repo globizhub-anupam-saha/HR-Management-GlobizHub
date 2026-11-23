@@ -114,6 +114,8 @@ class SplashViewController: UIViewController {
             nextVC = ApprovalsViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteEmployees") {
             nextVC = EmployeesViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRoutePayroll") {
+            nextVC = PayrollViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteMore") {
             nextVC = MoreViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRoutePayslipsModal") {

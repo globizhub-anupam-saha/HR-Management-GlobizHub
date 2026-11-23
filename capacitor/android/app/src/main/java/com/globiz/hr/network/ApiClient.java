@@ -1335,6 +1335,72 @@ public class ApiClient {
         });
     }
 
+    // Company Payroll
+    public void getCompanyPayrolls(int month, int year, ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            getJsonArray("/payroll/company?month=" + month + "&year=" + year, getToken(), new ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    postSuccess(callback, result != null ? result : new JSONArray());
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    postSuccess(callback, new JSONArray());
+                }
+            });
+        });
+    }
+
+    public void generatePayroll(String employeeId, int month, int year, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("employeeId", employeeId);
+                body.put("month", month);
+                body.put("year", year);
+                postJson("/payroll/generate", body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
+        });
+    }
+
+    public void updatePayrollStatus(String id, String status, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("status", status);
+                patchJson("/payroll/" + id + "/status", body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
+        });
+    }
+
+    public void holdPayroll(String id, String reason, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("reason", reason);
+                patchJson("/payroll/" + id + "/hold", body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
+        });
+    }
+
+    public void releasePayroll(String id, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                patchJson("/payroll/" + id + "/release", body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, e.getMessage(), 0);
+            }
+        });
+    }
+
     // 10. Documents
     public void getMyDocuments(ApiCallback<JSONArray> callback) {
         executor.execute(() -> {

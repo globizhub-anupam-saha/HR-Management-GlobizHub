@@ -226,7 +226,13 @@ class RoleNavigationManager {
                 vc.present(approvalsVC, animated: false)
             }
         } else if id == "payroll" {
-            showPayrollAlert(from: vc)
+            if vc is PayrollViewController {
+                scrollHandler?()
+            } else {
+                let payrollVC = PayrollViewController()
+                payrollVC.modalPresentationStyle = .fullScreen
+                vc.present(payrollVC, animated: false)
+            }
         } else if id == "payslips" {
             let payslipsVC = PayslipsViewController()
             payslipsVC.modalPresentationStyle = .fullScreen
