@@ -40,6 +40,7 @@
 		A1B2C32D1FED79650016851F /* AccountSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C32E1FED79650016851F /* AccountSettingsViewController.swift */; };
 		A1B2C32F1FED79650016851F /* HelpSupportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3301FED79650016851F /* HelpSupportViewController.swift */; };
 		A1B2C3331FED79650016851F /* EmployeesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3341FED79650016851F /* EmployeesViewController.swift */; };
+		A1B2C3351FED79650016851F /* ApprovalsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3361FED79650016851F /* ApprovalsViewController.swift */; };
 		A1B2C3211FED79650016851F /* bg_video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3221FED79650016851F /* bg_video.mp4 */; };
 /* End PBXBuildFile section */
 
@@ -79,6 +80,7 @@
 		A1B2C32E1FED79650016851F /* AccountSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsViewController.swift; sourceTree = "<group>"; };
 		A1B2C3301FED79650016851F /* HelpSupportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpSupportViewController.swift; sourceTree = "<group>"; };
 		A1B2C3341FED79650016851F /* EmployeesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmployeesViewController.swift; sourceTree = "<group>"; };
+		A1B2C3361FED79650016851F /* ApprovalsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalsViewController.swift; sourceTree = "<group>"; };
 		A1B2C3221FED79650016851F /* bg_video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = bg_video.mp4; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -139,6 +141,7 @@
 				A1B2C32E1FED79650016851F /* AccountSettingsViewController.swift */,
 				A1B2C3301FED79650016851F /* HelpSupportViewController.swift */,
 				A1B2C3341FED79650016851F /* EmployeesViewController.swift */,
+				A1B2C3361FED79650016851F /* ApprovalsViewController.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -261,6 +264,7 @@
 				A1B2C32D1FED79650016851F /* AccountSettingsViewController.swift in Sources */,
 				A1B2C32F1FED79650016851F /* HelpSupportViewController.swift in Sources */,
 				A1B2C3331FED79650016851F /* EmployeesViewController.swift in Sources */,
+				A1B2C3351FED79650016851F /* ApprovalsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

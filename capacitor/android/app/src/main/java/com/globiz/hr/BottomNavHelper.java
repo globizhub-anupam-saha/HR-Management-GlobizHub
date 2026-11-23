@@ -141,10 +141,9 @@ public class BottomNavHelper {
                 if (!(activity instanceof HomeActivity)) activity.finish();
             }
         } else if ("approvals".equals(id) || "leave_approvals".equals(id)) {
-            if (activity instanceof HomeActivity) {
-                ((HomeActivity) activity).scrollToAdminApprovals();
-            } else {
-                showApprovalsDialog(activity);
+            if (!(activity instanceof ApprovalsActivity)) {
+                activity.startActivity(new Intent(activity, ApprovalsActivity.class));
+                if (!(activity instanceof HomeActivity)) activity.finish();
             }
         } else if ("payroll".equals(id)) {
             showPayrollDialog(activity);

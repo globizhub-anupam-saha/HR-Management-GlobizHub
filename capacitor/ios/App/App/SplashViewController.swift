@@ -110,6 +110,10 @@ class SplashViewController: UIViewController {
             nextVC = LeaveViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteSchedule") || ProcessInfo.processInfo.arguments.contains("-testRouteTasks") {
             nextVC = TasksViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteApprovals") {
+            nextVC = ApprovalsViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testRouteEmployees") {
+            nextVC = EmployeesViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteMore") {
             nextVC = MoreViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRoutePayslipsModal") {

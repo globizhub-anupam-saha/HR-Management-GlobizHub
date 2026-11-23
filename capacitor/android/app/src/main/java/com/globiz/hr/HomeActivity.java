@@ -519,6 +519,12 @@ public class HomeActivity extends AppCompatActivity {
         tvAdminAbsentToday = findViewById(R.id.tvAdminAbsentToday);
         tvAdminLateToday = findViewById(R.id.tvAdminLateToday);
         cvAdminPendingLeavesCard = findViewById(R.id.cvAdminPendingLeavesCard);
+        if (cvAdminPendingLeavesCard instanceof ViewGroup && ((ViewGroup) cvAdminPendingLeavesCard).getChildCount() > 0) {
+            View header = ((ViewGroup) cvAdminPendingLeavesCard).getChildAt(0);
+            if (header != null) {
+                header.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, ApprovalsActivity.class)));
+            }
+        }
         tvAdminPendingLeavesBadge = findViewById(R.id.tvAdminPendingLeavesBadge);
         llAdminPendingLeavesList = findViewById(R.id.llAdminPendingLeavesList);
         llAdminAuditList = findViewById(R.id.llAdminAuditList);
@@ -1348,12 +1354,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     public void scrollToAdminApprovals() {
-        if (cvAdminPendingLeavesCard != null) {
-            ScrollView sv = findViewById(R.id.scrollView);
-            if (sv != null) {
-                sv.smoothScrollTo(0, cvAdminPendingLeavesCard.getTop());
-            }
-        }
+        startActivity(new Intent(this, ApprovalsActivity.class));
     }
 
     private void showTeamRosterDialog() {

@@ -1484,11 +1484,18 @@ public class ApiClient {
     }
 
     public void updateLeaveStatus(String id, String status, ApiCallback<JSONObject> callback) {
+        updateLeaveStatus(id, status, null, callback);
+    }
+
+    public void updateLeaveStatus(String id, String status, String rejectionReason, ApiCallback<JSONObject> callback) {
         executor.execute(() -> {
             try {
                 JSONObject body = new JSONObject();
                 body.put("status", status);
-                postJson("/leaves/" + id + "/status", body, getToken(), new ApiCallback<JSONObject>() {
+                if (rejectionReason != null && !rejectionReason.trim().isEmpty()) {
+                    body.put("rejectionReason", rejectionReason.trim());
+                }
+                patchJson("/leaves/" + id + "/status", body, getToken(), new ApiCallback<JSONObject>() {
                     @Override
                     public void onSuccess(JSONObject result) {
                         postSuccess(callback, result);
@@ -1496,14 +1503,24 @@ public class ApiClient {
 
                     @Override
                     public void onError(String errorMessage, int statusCode) {
-                        try {
-                            JSONObject fallback = new JSONObject();
-                            fallback.put("id", id);
-                            fallback.put("status", status);
-                            postSuccess(callback, fallback);
-                        } catch (Exception ignored) {
-                            postError(callback, errorMessage, statusCode);
-                        }
+                        postJson("/leaves/" + id + "/status", body, getToken(), new ApiCallback<JSONObject>() {
+                            @Override
+                            public void onSuccess(JSONObject postResult) {
+                                postSuccess(callback, postResult);
+                            }
+
+                            @Override
+                            public void onError(String postError, int postStatusCode) {
+                                try {
+                                    JSONObject fallback = new JSONObject();
+                                    fallback.put("id", id);
+                                    fallback.put("status", status);
+                                    postSuccess(callback, fallback);
+                                } catch (Exception ignored) {
+                                    postError(callback, errorMessage, statusCode);
+                                }
+                            }
+                        });
                     }
                 });
             } catch (Exception e) {

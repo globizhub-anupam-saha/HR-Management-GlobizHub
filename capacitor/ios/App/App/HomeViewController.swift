@@ -3983,6 +3983,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminPendingBadgeLabel.heightAnchor.constraint(equalToConstant: 24).isActive = true
         leavesHeaderRow.addArrangedSubview(adminPendingBadgeLabel)
 
+        let tapLeavesHeader = UITapGestureRecognizer(target: self, action: #selector(handleAdminScrollToApprovals))
+        leavesHeaderRow.isUserInteractionEnabled = true
+        leavesHeaderRow.addGestureRecognizer(tapLeavesHeader)
         leavesInnerStack.addArrangedSubview(leavesHeaderRow)
 
         adminPendingLeavesStack.axis = .vertical
@@ -4901,8 +4904,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
     }
 
     @objc func handleAdminScrollToApprovals() {
-        let frame = adminPendingLeavesCard.convert(adminPendingLeavesCard.bounds, to: scrollView)
-        scrollView.scrollRectToVisible(frame, animated: true)
+        let approvalsVC = ApprovalsViewController()
+        approvalsVC.modalPresentationStyle = .fullScreen
+        present(approvalsVC, animated: true)
     }
 
     @objc func handleAdminTeamDirectory() {

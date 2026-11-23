@@ -260,8 +260,8 @@ public class MoreActivity extends AppCompatActivity {
             startActivity(new Intent(this, SettingsActivity.class));
         } else if ("leave_policies".equals(module.getId())) {
             showLeavePoliciesDialog();
-        } else if ("leave_approvals".equals(module.getId())) {
-            BottomNavHelper.showApprovalsDialog(this);
+        } else if ("leave_approvals".equals(module.getId()) || "approvals".equals(module.getId())) {
+            startActivity(new Intent(this, ApprovalsActivity.class));
         } else if ("employees".equals(module.getId())) {
             startActivity(new Intent(this, EmployeesActivity.class));
         } else if ("payroll".equals(module.getId())) {

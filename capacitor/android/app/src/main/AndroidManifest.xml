@@ -176,6 +176,14 @@
             android:screenOrientation="portrait"
             android:exported="false" />
 
+        <!-- Leave Approvals Activity -->
+        <activity
+            android:name=".ApprovalsActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
         <!-- Shifts & Schedules Activity -->
         <activity
             android:name=".ShiftsActivity"

@@ -603,8 +603,10 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             present(settingsVC, animated: true)
         } else if module.id == "leave_policies" {
             showLeavePoliciesAlert()
-        } else if module.id == "leave_approvals" {
-            RoleNavigationManager.showApprovalsAlert(from: self)
+        } else if module.id == "leave_approvals" || module.id == "approvals" {
+            let approvalsVC = ApprovalsViewController()
+            approvalsVC.modalPresentationStyle = .fullScreen
+            present(approvalsVC, animated: true)
         } else if module.id == "employees" {
             RoleNavigationManager.showEmployeesAlert(from: self)
         } else if module.id == "payroll" {

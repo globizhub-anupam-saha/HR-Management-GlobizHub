@@ -1798,7 +1798,7 @@ class AuthService {
         }.resume()
     }
 
-    func updateLeaveStatus(id: String, status: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+    func updateLeaveStatus(id: String, status: String, rejectionReason: String? = nil, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
         guard let token = getToken() else {
             completion(.failure(.unauthorized))
             return
@@ -1813,7 +1813,10 @@ class AuthService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let body = ["status": status]
+        var body: [String: Any] = ["status": status]
+        if let reason = rejectionReason, !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            body["rejectionReason"] = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
