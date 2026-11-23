@@ -3813,10 +3813,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         row1.distribution = .fillEqually
 
         adminTotalEmployeesLabel.text = "24"
-        let card1 = createStatCard(title: "Employees", iconName: "person.2.fill", iconColor: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), valueLabel: adminTotalEmployeesLabel, subtext: "Active in Workspace", isGlass: true)
+        let card1 = createStatCard(title: "Employees", iconName: "", iconColor: .clear, valueLabel: adminTotalEmployeesLabel, subtext: "Active in Workspace", subtextColor: UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0), isGlass: true)
 
         adminPresentTodayLabel.text = "18"
-        let card2 = createStatCard(title: "Present Today", iconName: "checkmark.circle.fill", iconColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), valueLabel: adminPresentTodayLabel, subtext: "On Duty Today", subtextColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), isGlass: true)
+        let card2 = createStatCard(title: "Present Today", iconName: "", iconColor: .clear, valueLabel: adminPresentTodayLabel, subtext: "On Duty Today", subtextColor: UIColor(red: 52/255, green: 211/255, blue: 153/255, alpha: 1.0), isGlass: true)
 
         row1.addArrangedSubview(card1)
         row1.addArrangedSubview(card2)
@@ -3827,10 +3827,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         row2.distribution = .fillEqually
 
         adminAbsentTodayLabel.text = "4"
-        let card3 = createStatCard(title: "Absent", iconName: "xmark.circle.fill", iconColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), valueLabel: adminAbsentTodayLabel, subtext: "Not Clocked In", subtextColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), isGlass: true)
+        let card3 = createStatCard(title: "Absent", iconName: "", iconColor: .clear, valueLabel: adminAbsentTodayLabel, subtext: "Not Clocked In", subtextColor: UIColor(red: 248/255, green: 113/255, blue: 113/255, alpha: 1.0), isGlass: true)
 
         adminLateTodayLabel.text = "2"
-        let card4 = createStatCard(title: "Late Arrivals", iconName: "clock.fill", iconColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), valueLabel: adminLateTodayLabel, subtext: "Clocked after 09:00", subtextColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), isGlass: true)
+        let card4 = createStatCard(title: "Late Arrivals", iconName: "", iconColor: .clear, valueLabel: adminLateTodayLabel, subtext: "Clocked after 09:00", subtextColor: UIColor(red: 251/255, green: 191/255, blue: 36/255, alpha: 1.0), isGlass: true)
 
         row2.addArrangedSubview(card3)
         row2.addArrangedSubview(card4)
@@ -4958,18 +4958,18 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         card.translatesAutoresizingMaskIntoConstraints = false
 
         if isGlass {
-            let blurEffect = UIBlurEffect(style: .systemUltraThinMaterialLight)
+            let blurEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
             let blurView = UIVisualEffectView(effect: blurEffect)
             blurView.translatesAutoresizingMaskIntoConstraints = false
             card.addSubview(blurView)
 
             let glassTint = UIView()
-            glassTint.backgroundColor = UIColor(white: 1.0, alpha: 0.72)
+            glassTint.backgroundColor = UIColor(white: 1.0, alpha: 0.14)
             glassTint.translatesAutoresizingMaskIntoConstraints = false
             card.addSubview(glassTint)
 
             card.layer.borderWidth = 1
-            card.layer.borderColor = UIColor(white: 1.0, alpha: 0.45).cgColor
+            card.layer.borderColor = UIColor(white: 1.0, alpha: 0.25).cgColor
 
             NSLayoutConstraint.activate([
                 blurView.topAnchor.constraint(equalTo: card.topAnchor),
@@ -4994,39 +4994,43 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         col.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(col)
 
-        let topRow = UIStackView()
-        topRow.axis = .horizontal
-        topRow.alignment = .center
-
         let titleLbl = UILabel()
         titleLbl.text = title
         titleLbl.font = .systemFont(ofSize: 12, weight: .bold)
-        titleLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        topRow.addArrangedSubview(titleLbl)
+        titleLbl.textColor = isGlass ? UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0) : UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
 
-        let iconWrap = UIView()
-        iconWrap.backgroundColor = iconColor.withAlphaComponent(0.12)
-        iconWrap.layer.cornerRadius = 14
-        iconWrap.translatesAutoresizingMaskIntoConstraints = false
-        iconWrap.widthAnchor.constraint(equalToConstant: 28).isActive = true
-        iconWrap.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        if isGlass {
+            col.addArrangedSubview(titleLbl)
+        } else {
+            let topRow = UIStackView()
+            topRow.axis = .horizontal
+            topRow.alignment = .center
+            topRow.addArrangedSubview(titleLbl)
 
-        let iv = UIImageView(image: UIImage(systemName: iconName))
-        iv.tintColor = iconColor
-        iv.contentMode = .scaleAspectFit
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iconWrap.addSubview(iv)
-        NSLayoutConstraint.activate([
-            iv.centerXAnchor.constraint(equalTo: iconWrap.centerXAnchor),
-            iv.centerYAnchor.constraint(equalTo: iconWrap.centerYAnchor),
-            iv.widthAnchor.constraint(equalToConstant: 14),
-            iv.heightAnchor.constraint(equalToConstant: 14)
-        ])
-        topRow.addArrangedSubview(iconWrap)
-        col.addArrangedSubview(topRow)
+            let iconWrap = UIView()
+            iconWrap.backgroundColor = iconColor.withAlphaComponent(0.12)
+            iconWrap.layer.cornerRadius = 14
+            iconWrap.translatesAutoresizingMaskIntoConstraints = false
+            iconWrap.widthAnchor.constraint(equalToConstant: 28).isActive = true
+            iconWrap.heightAnchor.constraint(equalToConstant: 28).isActive = true
 
-        valueLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        valueLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+            let iv = UIImageView(image: UIImage(systemName: iconName))
+            iv.tintColor = iconColor
+            iv.contentMode = .scaleAspectFit
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            iconWrap.addSubview(iv)
+            NSLayoutConstraint.activate([
+                iv.centerXAnchor.constraint(equalTo: iconWrap.centerXAnchor),
+                iv.centerYAnchor.constraint(equalTo: iconWrap.centerYAnchor),
+                iv.widthAnchor.constraint(equalToConstant: 14),
+                iv.heightAnchor.constraint(equalToConstant: 14)
+            ])
+            topRow.addArrangedSubview(iconWrap)
+            col.addArrangedSubview(topRow)
+        }
+
+        valueLabel.font = .systemFont(ofSize: isGlass ? 26 : 22, weight: .bold)
+        valueLabel.textColor = isGlass ? .white : UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
         col.addArrangedSubview(valueLabel)
 
         let subLbl = UILabel()
@@ -5035,11 +5039,12 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         subLbl.textColor = subtextColor
         col.addArrangedSubview(subLbl)
 
+        let pad: CGFloat = isGlass ? 16 : 14
         NSLayoutConstraint.activate([
-            col.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
-            col.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14),
-            col.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            col.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14)
+            col.topAnchor.constraint(equalTo: card.topAnchor, constant: pad),
+            col.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -pad),
+            col.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: pad),
+            col.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -pad)
         ])
         return card
     }
