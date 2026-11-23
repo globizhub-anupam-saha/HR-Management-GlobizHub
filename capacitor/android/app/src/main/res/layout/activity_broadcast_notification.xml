@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8FAFC"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <!-- Top Navigation Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="10dp"
+            android:src="@drawable/ic_chevron_left"
+            app:tint="#0056FD" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Broadcast Notification"
+            android:textColor="#0F172A"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Target Audience Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Target Audience"
+                    android:textColor="#0F172A"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDeliveryEstimate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delivery estimate: calculating..."
+                    android:textColor="#0056FD"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- 3 Audience Cards Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <!-- 1. Entire Company -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAudienceAll"
+                    android:layout_width="0dp"
+                    android:layout_height="80dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#EFF6FF"
+                    app:cardCornerRadius="12dp"
+                    app:strokeColor="#0056FD"
+                    app:strokeWidth="1.5dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Entire Company"
+                            android:textColor="#0F172A"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="All active staff"
+                            android:textColor="#64748B"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 2. By Department -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAudienceDept"
+                    android:layout_width="0dp"
+                    android:layout_height="80dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="12dp"
+                    app:strokeColor="#E2E8F0"
+                    app:strokeWidth="1.5dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="By Department"
+                            android:textColor="#0F172A"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Filter by team"
+                            android:textColor="#64748B"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 3. Chosen People -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAudienceStaff"
+                    android:layout_width="0dp"
+                    android:layout_height="80dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="12dp"
+                    app:strokeColor="#E2E8F0"
+                    app:strokeWidth="1.5dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Chosen People"
+                            android:textColor="#0F172A"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Pick specific staff"
+                            android:textColor="#64748B"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Department Selector Container (Conditional) -->
+            <LinearLayout
+                android:id="@+id/llDepartmentContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_attendance_card"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Select Target Department(s):"
+                        android:textColor="#0F172A"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnSelectAllDepts"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Select All"
+                        android:textColor="#0056FD"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llDepartmentList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- Staff Selector Container (Conditional) -->
+            <LinearLayout
+                android:id="@+id/llEmployeeContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_attendance_card"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Select Chosen Employees:"
+                        android:textColor="#0F172A"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSelectedStaffCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_badge_dispatch"
+                        android:paddingStart="8dp"
+                        android:paddingTop="3dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="3dp"
+                        android:text="0 Selected"
+                        android:textColor="#0056FD"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/etEmployeeSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/selector_pill_input"
+                    android:hint="Search by name, email, or dept..."
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#0F172A"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:id="@+id/llEmployeeList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- Notification Category -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Notification Category"
+                android:textColor="#0F172A"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spNotificationCategory"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/selector_pill_input"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+
+            <!-- Urgency Level -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Urgency Level"
+                android:textColor="#0F172A"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spNotificationUrgency"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/selector_pill_input"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+
+            <!-- Notification Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Notification Title *"
+                android:textColor="#0F172A"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etBroadcastTitle"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/selector_pill_input"
+                android:hint="e.g. Town Hall Meeting, Office Relocation"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="#0F172A"
+                android:textSize="13sp" />
+
+            <!-- Message Details -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Message Details *"
+                android:textColor="#0F172A"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etBroadcastMessage"
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/selector_pill_input"
+                android:gravity="top|start"
+                android:hint="Describe the announcement details clearly so employees know what actions are expected..."
+                android:padding="12dp"
+                android:textColor="#0F172A"
+                android:textSize="13sp" />
+
+            <!-- Dashboard Announcement Toggle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_attendance_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <CheckBox
+                    android:id="@+id/cbCreateAnnouncement"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dashboard Announcement"
+                        android:textColor="#0F172A"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Also publish to the Dashboard Announcements card for all staff"
+                        android:textColor="#64748B"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Dispatch Button -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="32dp">
+
+                <Button
+                    android:id="@+id/btnDispatchNotification"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_blue_button"
+                    android:text="Dispatch Notification"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/pbDispatch"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="#FFFFFF"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

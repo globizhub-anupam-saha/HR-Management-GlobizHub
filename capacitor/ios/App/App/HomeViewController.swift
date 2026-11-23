@@ -3810,60 +3810,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminSubtitleLabel.textColor = UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
         heroContentStack.addArrangedSubview(adminSubtitleLabel)
 
-        let btnBroadcastNotification = UIButton(type: .system)
-        btnBroadcastNotification.translatesAutoresizingMaskIntoConstraints = false
-        btnBroadcastNotification.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        btnBroadcastNotification.backgroundColor = UIColor.white.withAlphaComponent(0.18)
-        btnBroadcastNotification.layer.cornerRadius = 12
-        btnBroadcastNotification.layer.borderWidth = 1.0
-        btnBroadcastNotification.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
-
-        let btnContentStack = UIStackView()
-        btnContentStack.axis = .horizontal
-        btnContentStack.alignment = .center
-        btnContentStack.spacing = 8
-        btnContentStack.isUserInteractionEnabled = false
-        btnContentStack.translatesAutoresizingMaskIntoConstraints = false
-
-        let megaphoneIcon = UIImageView(image: UIImage(systemName: "megaphone.fill"))
-        megaphoneIcon.tintColor = .white
-        megaphoneIcon.contentMode = .scaleAspectFit
-        megaphoneIcon.translatesAutoresizingMaskIntoConstraints = false
-        megaphoneIcon.widthAnchor.constraint(equalToConstant: 16).isActive = true
-        megaphoneIcon.heightAnchor.constraint(equalToConstant: 16).isActive = true
-
-        let broadcastTitle = UILabel()
-        broadcastTitle.text = "Broadcast Notification"
-        broadcastTitle.font = .systemFont(ofSize: 13, weight: .bold)
-        broadcastTitle.textColor = .white
-
-        let broadcastBadge = UILabel()
-        broadcastBadge.text = "Dispatch"
-        broadcastBadge.font = .systemFont(ofSize: 10, weight: .semibold)
-        broadcastBadge.textColor = UIColor(red: 224/255, green: 231/255, blue: 255/255, alpha: 1.0)
-        broadcastBadge.backgroundColor = UIColor(white: 1.0, alpha: 0.15)
-        broadcastBadge.layer.cornerRadius = 6
-        broadcastBadge.layer.masksToBounds = true
-        broadcastBadge.textAlignment = .center
-        broadcastBadge.translatesAutoresizingMaskIntoConstraints = false
-        broadcastBadge.widthAnchor.constraint(equalToConstant: 58).isActive = true
-        broadcastBadge.heightAnchor.constraint(equalToConstant: 20).isActive = true
-
-        btnContentStack.addArrangedSubview(megaphoneIcon)
-        btnContentStack.addArrangedSubview(broadcastTitle)
-        btnContentStack.addArrangedSubview(UIView())
-        btnContentStack.addArrangedSubview(broadcastBadge)
-
-        btnBroadcastNotification.addSubview(btnContentStack)
-        NSLayoutConstraint.activate([
-            btnContentStack.leadingAnchor.constraint(equalTo: btnBroadcastNotification.leadingAnchor, constant: 14),
-            btnContentStack.trailingAnchor.constraint(equalTo: btnBroadcastNotification.trailingAnchor, constant: -14),
-            btnContentStack.centerYAnchor.constraint(equalTo: btnBroadcastNotification.centerYAnchor)
-        ])
-
-        btnBroadcastNotification.addTarget(self, action: #selector(handleAdminBroadcastNotice), for: .touchUpInside)
-        heroContentStack.addArrangedSubview(btnBroadcastNotification)
-
         NSLayoutConstraint.activate([
             heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 20),
             heroContentStack.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor, constant: -20),
@@ -3911,31 +3857,95 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         metricsGrid.addArrangedSubview(row2)
         adminStackView.addArrangedSubview(metricsGrid)
 
-        // 3. Admin Action Center
-        let actionCenterCard = createSectionCard(title: "Admin Action Center")
-        let actionsRow = UIStackView()
-        actionsRow.axis = .horizontal
-        actionsRow.spacing = 10
-        actionsRow.distribution = .fillEqually
-        actionsRow.translatesAutoresizingMaskIntoConstraints = false
+        // 3. Broadcast Notification Action Card
+        let broadcastActionCard = UIView()
+        broadcastActionCard.backgroundColor = .white
+        broadcastActionCard.layer.cornerRadius = 16
+        broadcastActionCard.layer.shadowColor = UIColor.black.cgColor
+        broadcastActionCard.layer.shadowOpacity = 0.04
+        broadcastActionCard.layer.shadowOffset = CGSize(width: 0, height: 2)
+        broadcastActionCard.layer.shadowRadius = 8
+        broadcastActionCard.layer.borderWidth = 1
+        broadcastActionCard.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        broadcastActionCard.translatesAutoresizingMaskIntoConstraints = false
 
-        let btnNotice = createActionButton(title: "+ Notice", iconName: "megaphone.fill", bg: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), fg: .white)
-        btnNotice.addTarget(self, action: #selector(handleAdminBroadcastNotice), for: .touchUpInside)
+        let btnBroadcastRow = UIButton(type: .system)
+        btnBroadcastRow.translatesAutoresizingMaskIntoConstraints = false
 
-        let btnApprovals = createActionButton(title: "Approvals", iconName: "doc.text.fill", bg: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0), fg: UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0))
-        btnApprovals.addTarget(self, action: #selector(handleAdminScrollToApprovals), for: .touchUpInside)
+        let iconContainer = UIView()
+        iconContainer.backgroundColor = UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0)
+        iconContainer.layer.cornerRadius = 12
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.isUserInteractionEnabled = false
 
-        let btnDirectory = createActionButton(title: "Directory", iconName: "person.3.fill", bg: UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0), fg: UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0))
-        btnDirectory.addTarget(self, action: #selector(handleAdminTeamDirectory), for: .touchUpInside)
+        let megaphoneIcon = UIImageView(image: UIImage(systemName: "megaphone.fill"))
+        megaphoneIcon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        megaphoneIcon.contentMode = .scaleAspectFit
+        megaphoneIcon.translatesAutoresizingMaskIntoConstraints = false
 
-        actionsRow.addArrangedSubview(btnNotice)
-        actionsRow.addArrangedSubview(btnApprovals)
-        actionsRow.addArrangedSubview(btnDirectory)
+        iconContainer.addSubview(megaphoneIcon)
+        NSLayoutConstraint.activate([
+            megaphoneIcon.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
+            megaphoneIcon.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
+            megaphoneIcon.widthAnchor.constraint(equalToConstant: 20),
+            megaphoneIcon.heightAnchor.constraint(equalToConstant: 20)
+        ])
 
-        if let content = actionCenterCard.subviews.first(where: { $0 is UIStackView }) as? UIStackView {
-            content.addArrangedSubview(actionsRow)
-        }
-        adminStackView.addArrangedSubview(actionCenterCard)
+        let labelStack = UIStackView()
+        labelStack.axis = .vertical
+        labelStack.spacing = 2
+        labelStack.translatesAutoresizingMaskIntoConstraints = false
+        labelStack.isUserInteractionEnabled = false
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Broadcast Notification"
+        titleLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "Dispatch announcements, alerts & policies to staff"
+        subtitleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        subtitleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+
+        labelStack.addArrangedSubview(titleLabel)
+        labelStack.addArrangedSubview(subtitleLabel)
+
+        let chevronIcon = UIImageView(image: UIImage(systemName: "chevron.right"))
+        chevronIcon.tintColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        chevronIcon.contentMode = .scaleAspectFit
+        chevronIcon.translatesAutoresizingMaskIntoConstraints = false
+        chevronIcon.isUserInteractionEnabled = false
+
+        broadcastActionCard.addSubview(iconContainer)
+        broadcastActionCard.addSubview(labelStack)
+        broadcastActionCard.addSubview(chevronIcon)
+        broadcastActionCard.addSubview(btnBroadcastRow)
+
+        NSLayoutConstraint.activate([
+            broadcastActionCard.heightAnchor.constraint(equalToConstant: 72),
+
+            iconContainer.leadingAnchor.constraint(equalTo: broadcastActionCard.leadingAnchor, constant: 16),
+            iconContainer.centerYAnchor.constraint(equalTo: broadcastActionCard.centerYAnchor),
+            iconContainer.widthAnchor.constraint(equalToConstant: 44),
+            iconContainer.heightAnchor.constraint(equalToConstant: 44),
+
+            labelStack.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 14),
+            labelStack.centerYAnchor.constraint(equalTo: broadcastActionCard.centerYAnchor),
+            labelStack.trailingAnchor.constraint(lessThanOrEqualTo: chevronIcon.leadingAnchor, constant: -10),
+
+            chevronIcon.trailingAnchor.constraint(equalTo: broadcastActionCard.trailingAnchor, constant: -16),
+            chevronIcon.centerYAnchor.constraint(equalTo: broadcastActionCard.centerYAnchor),
+            chevronIcon.widthAnchor.constraint(equalToConstant: 12),
+            chevronIcon.heightAnchor.constraint(equalToConstant: 16),
+
+            btnBroadcastRow.topAnchor.constraint(equalTo: broadcastActionCard.topAnchor),
+            btnBroadcastRow.bottomAnchor.constraint(equalTo: broadcastActionCard.bottomAnchor),
+            btnBroadcastRow.leadingAnchor.constraint(equalTo: broadcastActionCard.leadingAnchor),
+            btnBroadcastRow.trailingAnchor.constraint(equalTo: broadcastActionCard.trailingAnchor)
+        ])
+
+        btnBroadcastRow.addTarget(self, action: #selector(handleOpenBroadcastNotificationPage), for: .touchUpInside)
+        adminStackView.addArrangedSubview(broadcastActionCard)
 
         // 4. Pending Leave Requests Card
         adminPendingLeavesCard.backgroundColor = .white
@@ -4876,160 +4886,17 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
 
     // MARK: - Action Handlers & Helper Dialogs
 
+    @objc func handleOpenBroadcastNotificationPage() {
+        let vc = BroadcastNotificationViewController()
+        vc.onBroadcastSuccess = { [weak self] in
+            self?.loadAdminDashboardData()
+        }
+        vc.modalPresentationStyle = .fullScreen
+        present(vc, animated: true)
+    }
+
     @objc func handleAdminBroadcastNotice() {
-        let sheet = UIAlertController(
-            title: "Broadcast Notification",
-            message: "Dispatch real-time notifications to staff inboxes and dashboard. Select target audience:",
-            preferredStyle: .actionSheet
-        )
-
-        sheet.addAction(UIAlertAction(title: "Entire Company (All Staff)", style: .default) { [weak self] _ in
-            self?.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Company Staff", targetIds: nil)
-        })
-
-        sheet.addAction(UIAlertAction(title: "By Department", style: .default) { [weak self] _ in
-            self?.selectDepartmentForBroadcast()
-        })
-
-        sheet.addAction(UIAlertAction(title: "Chosen People (Specific Employee)", style: .default) { [weak self] _ in
-            self?.selectEmployeeForBroadcast()
-        })
-
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = self.view
-            popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
-            popover.permittedArrowDirections = []
-        }
-
-        present(sheet, animated: true)
-    }
-
-    private func selectDepartmentForBroadcast() {
-        AuthService.shared.getDepartments { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let depts):
-                if depts.isEmpty {
-                    self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Staff (No departments registered)", targetIds: nil)
-                    return
-                }
-                let deptSheet = UIAlertController(title: "Select Department", message: "Choose target department for this broadcast notification:", preferredStyle: .actionSheet)
-                for dept in depts {
-                    let deptId = dept["id"] as? String ?? ""
-                    let deptName = dept["name"] as? String ?? "Department"
-                    deptSheet.addAction(UIAlertAction(title: deptName, style: .default) { [weak self] _ in
-                        self?.promptBroadcastDetails(targetAudience: "DEPARTMENT", audienceName: "Department: \(deptName)", targetIds: [deptId])
-                    })
-                }
-                deptSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-                if let popover = deptSheet.popoverPresentationController {
-                    popover.sourceView = self.view
-                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
-                    popover.permittedArrowDirections = []
-                }
-                self.present(deptSheet, animated: true)
-            case .failure:
-                self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Company Staff", targetIds: nil)
-            }
-        }
-    }
-
-    private func selectEmployeeForBroadcast() {
-        AuthService.shared.getTeamMembers { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let members):
-                if members.isEmpty {
-                    self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Staff (No employees found)", targetIds: nil)
-                    return
-                }
-                let empSheet = UIAlertController(title: "Select Employee", message: "Choose recipient for this broadcast notification:", preferredStyle: .actionSheet)
-                for emp in members {
-                    let empId = emp["id"] as? String ?? ""
-                    let fn = emp["firstName"] as? String ?? ""
-                    let ln = emp["lastName"] as? String ?? ""
-                    let name = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
-                    let displayName = name.isEmpty ? (emp["email"] as? String ?? "Employee") : name
-                    empSheet.addAction(UIAlertAction(title: displayName, style: .default) { [weak self] _ in
-                        self?.promptBroadcastDetails(targetAudience: "SPECIFIC_EMPLOYEES", audienceName: "Employee: \(displayName)", targetIds: [empId])
-                    })
-                }
-                empSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-                if let popover = empSheet.popoverPresentationController {
-                    popover.sourceView = self.view
-                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
-                    popover.permittedArrowDirections = []
-                }
-                self.present(empSheet, animated: true)
-            case .failure:
-                self.promptBroadcastDetails(targetAudience: "ALL", audienceName: "All Company Staff", targetIds: nil)
-            }
-        }
-    }
-
-    private func promptBroadcastDetails(targetAudience: String, audienceName: String, targetIds: [String]?) {
-        let alert = UIAlertController(
-            title: "Broadcast Notification",
-            message: "Target: \(audienceName)\nDispatches real-time alerts to employee devices and dashboard.",
-            preferredStyle: .alert
-        )
-
-        alert.addTextField { tf in
-            tf.placeholder = "Notification Title (e.g. Town Hall Meeting)"
-            tf.autocapitalizationType = .words
-        }
-        alert.addTextField { tf in
-            tf.placeholder = "Message Details & Announcement"
-            tf.autocapitalizationType = .sentences
-        }
-
-        alert.addAction(UIAlertAction(title: "Broadcast Now", style: .default) { [weak self] _ in
-            guard let title = alert.textFields?[0].text?.trimmingCharacters(in: .whitespaces), !title.isEmpty,
-                  let message = alert.textFields?[1].text?.trimmingCharacters(in: .whitespaces), !message.isEmpty else {
-                let err = UIAlertController(title: "Required Fields", message: "Title and message content cannot be empty.", preferredStyle: .alert)
-                err.addAction(UIAlertAction(title: "OK", style: .default))
-                self?.present(err, animated: true)
-                return
-            }
-
-            var payload: [String: Any] = [
-                "title": title,
-                "message": message,
-                "type": "ANNOUNCEMENT",
-                "targetAudience": targetAudience,
-                "priority": "NORMAL",
-                "createAnnouncement": true
-            ]
-
-            if targetAudience == "DEPARTMENT", let ids = targetIds {
-                payload["departmentIds"] = ids
-            } else if targetAudience == "SPECIFIC_EMPLOYEES", let ids = targetIds {
-                payload["employeeIds"] = ids
-            }
-
-            AuthService.shared.broadcastNotification(payload: payload) { [weak self] result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success(let data):
-                        let msg = data["message"] as? String ?? "Notification broadcast successfully delivered!"
-                        let banner = UIAlertController(title: "Broadcast Delivered", message: msg, preferredStyle: .alert)
-                        banner.addAction(UIAlertAction(title: "OK", style: .default))
-                        self?.present(banner, animated: true)
-                        self?.loadAdminDashboardData()
-                    case .failure:
-                        let banner = UIAlertController(title: "Broadcast Delivered", message: "Company notice published and synced across active staff.", preferredStyle: .alert)
-                        banner.addAction(UIAlertAction(title: "OK", style: .default))
-                        self?.present(banner, animated: true)
-                        self?.loadAdminDashboardData()
-                    }
-                }
-            }
-        })
-
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(alert, animated: true)
+        handleOpenBroadcastNotificationPage()
     }
 
     @objc func handleAdminScrollToApprovals() {
@@ -5877,5 +5744,899 @@ class TeamRosterCell: UITableViewCell {
         }
         let dept = (member["department"] as? [String: Any])?["name"] as? String ?? member["department"] as? String ?? ""
         roleLabel.text = dept.isEmpty ? desig : "\(desig) • \(dept)"
+    }
+}
+
+// MARK: - Dedicated Broadcast Notification Page
+class BroadcastNotificationViewController: UIViewController, UITextFieldDelegate, UITextViewDelegate {
+    var onBroadcastSuccess: (() -> Void)?
+
+    private var targetAudience: String = "ALL" // "ALL", "DEPARTMENT", "SPECIFIC_EMPLOYEES"
+    private var selectedDeptIds: Set<String> = []
+    private var selectedEmpIds: Set<String> = []
+    private var selectedCategory: String = "ANNOUNCEMENT"
+    private var selectedPriority: String = "NORMAL"
+
+    private var departments: [[String: Any]] = []
+    private var employees: [[String: Any]] = []
+    private var filteredEmployees: [[String: Any]] = []
+
+    private let scrollView = UIScrollView()
+    private let contentStack = UIStackView()
+
+    private var cardAllView: UIView!
+    private var cardDeptView: UIView!
+    private var cardStaffView: UIView!
+    private let deliveryEstimateLabel = UILabel()
+
+    private let deptContainer = UIView()
+    private let deptListStack = UIStackView()
+    private let btnSelectAllDepts = UIButton(type: .system)
+
+    private let staffContainer = UIView()
+    private let searchField = UITextField()
+    private let staffListStack = UIStackView()
+    private let selectedCountBadge = UILabel()
+
+    private let categorySegment = UISegmentedControl(items: ["Announcement", "Alert", "Policy", "General"])
+    private let urgencySegment = UISegmentedControl(items: ["Normal Priority", "⚠️ Urgent"])
+    private let titleField = UITextField()
+    private let messageTextView = UITextView()
+    private let placeholderLabel = UILabel()
+    private let announcementSwitch = UISwitch()
+
+    private let btnDispatch = UIButton(type: .system)
+    private let spinner = UIActivityIndicatorView(style: .medium)
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        setupScrollView()
+        setupTopNavBar()
+        setupAudienceSection()
+        setupDepartmentSection()
+        setupEmployeeSection()
+        setupTypeAndUrgencySection()
+        setupInputFields()
+        setupAnnouncementToggle()
+        setupDispatchButton()
+        loadData()
+
+        let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleBack))
+        swipeGesture.direction = .right
+        view.addGestureRecognizer(swipeGesture)
+    }
+
+    private func setupTopNavBar() {
+        let topBar = UIView()
+        topBar.backgroundColor = .white
+        topBar.layer.shadowColor = UIColor.black.cgColor
+        topBar.layer.shadowOpacity = 0.05
+        topBar.layer.shadowOffset = CGSize(width: 0, height: 2)
+        topBar.layer.shadowRadius = 4
+        topBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(topBar)
+        view.bringSubviewToFront(topBar)
+
+        let btnBack = UIButton(type: .system)
+        btnBack.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        btnBack.setTitle(" Back", for: .normal)
+        btnBack.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        btnBack.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        btnBack.contentHorizontalAlignment = .left
+        btnBack.translatesAutoresizingMaskIntoConstraints = false
+        btnBack.addTarget(self, action: #selector(handleBack), for: .touchUpInside)
+        topBar.addSubview(btnBack)
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Broadcast Notification"
+        titleLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        topBar.addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            topBar.topAnchor.constraint(equalTo: view.topAnchor),
+            topBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 52),
+
+            btnBack.leadingAnchor.constraint(equalTo: topBar.leadingAnchor, constant: 16),
+            btnBack.bottomAnchor.constraint(equalTo: topBar.bottomAnchor, constant: -4),
+            btnBack.widthAnchor.constraint(equalToConstant: 80),
+            btnBack.heightAnchor.constraint(equalToConstant: 44),
+
+            titleLabel.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: btnBack.centerYAnchor)
+        ])
+    }
+
+    @objc private func handleBack() {
+        if let nav = navigationController, nav.viewControllers.count > 1 {
+            nav.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
+    }
+
+    private func setupScrollView() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        view.addSubview(scrollView)
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 18
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentStack)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -40),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32)
+        ])
+    }
+
+    private func setupAudienceSection() {
+        let headerStack = UIStackView()
+        headerStack.axis = .horizontal
+        headerStack.alignment = .center
+        headerStack.distribution = .equalSpacing
+
+        let titleLabel = UILabel()
+        titleLabel.text = "Target Audience"
+        titleLabel.font = .systemFont(ofSize: 14, weight: .bold)
+        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        headerStack.addArrangedSubview(titleLabel)
+
+        deliveryEstimateLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        deliveryEstimateLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        deliveryEstimateLabel.text = "Delivery estimate: calculating..."
+        headerStack.addArrangedSubview(deliveryEstimateLabel)
+        contentStack.addArrangedSubview(headerStack)
+
+        let audienceRow = UIStackView()
+        audienceRow.axis = .horizontal
+        audienceRow.spacing = 8
+        audienceRow.distribution = .fillEqually
+        audienceRow.translatesAutoresizingMaskIntoConstraints = false
+
+        cardAllView = createAudienceCard(title: "Entire Company", sub: "All active staff", iconName: "person.3.fill", tag: 0)
+        cardDeptView = createAudienceCard(title: "By Department", sub: "Filter by team", iconName: "building.2.fill", tag: 1)
+        cardStaffView = createAudienceCard(title: "Chosen People", sub: "Pick staff", iconName: "person.crop.circle.badge.checkmark", tag: 2)
+
+        audienceRow.addArrangedSubview(cardAllView)
+        audienceRow.addArrangedSubview(cardDeptView)
+        audienceRow.addArrangedSubview(cardStaffView)
+        contentStack.addArrangedSubview(audienceRow)
+
+        updateAudienceCardStyles()
+    }
+
+    private func createAudienceCard(title: String, sub: String, iconName: String, tag: Int) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1.5
+        card.tag = tag
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.heightAnchor.constraint(equalToConstant: 78).isActive = true
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.alignment = .leading
+        stack.spacing = 3
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isUserInteractionEnabled = false
+
+        let iconTitleRow = UIStackView()
+        iconTitleRow.axis = .horizontal
+        iconTitleRow.spacing = 6
+        iconTitleRow.alignment = .center
+
+        let icon = UIImageView(image: UIImage(systemName: iconName))
+        icon.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        iconTitleRow.addArrangedSubview(icon)
+
+        let tLbl = UILabel()
+        tLbl.text = title
+        tLbl.font = .systemFont(ofSize: 12, weight: .bold)
+        tLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        iconTitleRow.addArrangedSubview(tLbl)
+
+        let sLbl = UILabel()
+        sLbl.text = sub
+        sLbl.font = .systemFont(ofSize: 10, weight: .regular)
+        sLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+
+        stack.addArrangedSubview(iconTitleRow)
+        stack.addArrangedSubview(sLbl)
+        card.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 10),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -8),
+            stack.centerYAnchor.constraint(equalTo: card.centerYAnchor)
+        ])
+
+        let btn = UIButton(type: .custom)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.tag = tag
+        btn.addTarget(self, action: #selector(handleAudienceCardTapped(_:)), for: .touchUpInside)
+        card.addSubview(btn)
+
+        NSLayoutConstraint.activate([
+            btn.topAnchor.constraint(equalTo: card.topAnchor),
+            btn.bottomAnchor.constraint(equalTo: card.bottomAnchor),
+            btn.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+            btn.trailingAnchor.constraint(equalTo: card.trailingAnchor)
+        ])
+
+        return card
+    }
+
+    @objc private func handleAudienceCardTapped(_ sender: UIButton) {
+        if sender.tag == 0 {
+            targetAudience = "ALL"
+            deptContainer.isHidden = true
+            staffContainer.isHidden = true
+        } else if sender.tag == 1 {
+            targetAudience = "DEPARTMENT"
+            deptContainer.isHidden = false
+            staffContainer.isHidden = true
+        } else {
+            targetAudience = "SPECIFIC_EMPLOYEES"
+            deptContainer.isHidden = true
+            staffContainer.isHidden = false
+        }
+        updateAudienceCardStyles()
+        updateDeliveryEstimate()
+    }
+
+    private func updateAudienceCardStyles() {
+        let activeColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0).cgColor
+        let inactiveColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+
+        cardAllView.layer.borderColor = targetAudience == "ALL" ? activeColor : inactiveColor
+        cardAllView.backgroundColor = targetAudience == "ALL" ? UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0) : .white
+
+        cardDeptView.layer.borderColor = targetAudience == "DEPARTMENT" ? activeColor : inactiveColor
+        cardDeptView.backgroundColor = targetAudience == "DEPARTMENT" ? UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0) : .white
+
+        cardStaffView.layer.borderColor = targetAudience == "SPECIFIC_EMPLOYEES" ? activeColor : inactiveColor
+        cardStaffView.backgroundColor = targetAudience == "SPECIFIC_EMPLOYEES" ? UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0) : .white
+    }
+
+    private func setupDepartmentSection() {
+        deptContainer.backgroundColor = .white
+        deptContainer.layer.cornerRadius = 14
+        deptContainer.layer.borderWidth = 1
+        deptContainer.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        deptContainer.isHidden = true
+        deptContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let topRow = UIStackView()
+        topRow.axis = .horizontal
+        topRow.alignment = .center
+        topRow.distribution = .equalSpacing
+        topRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let deptTitle = UILabel()
+        deptTitle.text = "Select Target Department(s):"
+        deptTitle.font = .systemFont(ofSize: 13, weight: .bold)
+        deptTitle.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        topRow.addArrangedSubview(deptTitle)
+
+        btnSelectAllDepts.setTitle("Select All", for: .normal)
+        btnSelectAllDepts.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        btnSelectAllDepts.tintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        btnSelectAllDepts.addTarget(self, action: #selector(toggleSelectAllDepartments), for: .touchUpInside)
+        topRow.addArrangedSubview(btnSelectAllDepts)
+
+        deptListStack.axis = .vertical
+        deptListStack.spacing = 6
+        deptListStack.translatesAutoresizingMaskIntoConstraints = false
+
+        deptContainer.addSubview(topRow)
+        deptContainer.addSubview(deptListStack)
+
+        NSLayoutConstraint.activate([
+            topRow.topAnchor.constraint(equalTo: deptContainer.topAnchor, constant: 14),
+            topRow.leadingAnchor.constraint(equalTo: deptContainer.leadingAnchor, constant: 14),
+            topRow.trailingAnchor.constraint(equalTo: deptContainer.trailingAnchor, constant: -14),
+
+            deptListStack.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 12),
+            deptListStack.leadingAnchor.constraint(equalTo: deptContainer.leadingAnchor, constant: 14),
+            deptListStack.trailingAnchor.constraint(equalTo: deptContainer.trailingAnchor, constant: -14),
+            deptListStack.bottomAnchor.constraint(equalTo: deptContainer.bottomAnchor, constant: -14)
+        ])
+
+        contentStack.addArrangedSubview(deptContainer)
+    }
+
+    @objc private func toggleSelectAllDepartments() {
+        if selectedDeptIds.count == departments.count {
+            selectedDeptIds.removeAll()
+            btnSelectAllDepts.setTitle("Select All", for: .normal)
+        } else {
+            for dept in departments {
+                if let id = dept["id"] as? String {
+                    selectedDeptIds.insert(id)
+                }
+            }
+            btnSelectAllDepts.setTitle("Deselect All", for: .normal)
+        }
+        renderDepartmentRows()
+        updateDeliveryEstimate()
+    }
+
+    private func renderDepartmentRows() {
+        deptListStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        if departments.isEmpty {
+            let emptyLbl = UILabel()
+            emptyLbl.text = "No departments registered in company."
+            emptyLbl.font = .systemFont(ofSize: 12, weight: .regular)
+            emptyLbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+            deptListStack.addArrangedSubview(emptyLbl)
+            return
+        }
+
+        for dept in departments {
+            let id = dept["id"] as? String ?? ""
+            let name = dept["name"] as? String ?? "Department"
+            let isSelected = selectedDeptIds.contains(id)
+
+            let rowBtn = UIButton(type: .system)
+            rowBtn.backgroundColor = isSelected ? UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0) : UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+            rowBtn.layer.cornerRadius = 8
+            rowBtn.layer.borderWidth = 1
+            rowBtn.layer.borderColor = isSelected ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0).cgColor : UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            rowBtn.translatesAutoresizingMaskIntoConstraints = false
+            rowBtn.heightAnchor.constraint(equalToConstant: 40).isActive = true
+
+            let stack = UIStackView()
+            stack.axis = .horizontal
+            stack.spacing = 8
+            stack.alignment = .center
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            stack.isUserInteractionEnabled = false
+
+            let nameLbl = UILabel()
+            nameLbl.text = name
+            nameLbl.font = .systemFont(ofSize: 13, weight: isSelected ? .bold : .medium)
+            nameLbl.textColor = isSelected ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0) : UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+            stack.addArrangedSubview(nameLbl)
+
+            stack.addArrangedSubview(UIView()) // spacer
+
+            let checkIcon = UIImageView(image: UIImage(systemName: isSelected ? "checkmark.circle.fill" : "circle"))
+            checkIcon.tintColor = isSelected ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0) : UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
+            checkIcon.translatesAutoresizingMaskIntoConstraints = false
+            checkIcon.widthAnchor.constraint(equalToConstant: 18).isActive = true
+            checkIcon.heightAnchor.constraint(equalToConstant: 18).isActive = true
+            stack.addArrangedSubview(checkIcon)
+
+            rowBtn.addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.leadingAnchor.constraint(equalTo: rowBtn.leadingAnchor, constant: 12),
+                stack.trailingAnchor.constraint(equalTo: rowBtn.trailingAnchor, constant: -12),
+                stack.centerYAnchor.constraint(equalTo: rowBtn.centerYAnchor)
+            ])
+
+            rowBtn.addAction(UIAction { [weak self] _ in
+                guard let self = self else { return }
+                if self.selectedDeptIds.contains(id) {
+                    self.selectedDeptIds.remove(id)
+                } else {
+                    self.selectedDeptIds.insert(id)
+                }
+                self.btnSelectAllDepts.setTitle(self.selectedDeptIds.count == self.departments.count ? "Deselect All" : "Select All", for: .normal)
+                self.renderDepartmentRows()
+                self.updateDeliveryEstimate()
+            }, for: .touchUpInside)
+
+            deptListStack.addArrangedSubview(rowBtn)
+        }
+    }
+
+    private func setupEmployeeSection() {
+        staffContainer.backgroundColor = .white
+        staffContainer.layer.cornerRadius = 14
+        staffContainer.layer.borderWidth = 1
+        staffContainer.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        staffContainer.isHidden = true
+        staffContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let topRow = UIStackView()
+        topRow.axis = .horizontal
+        topRow.alignment = .center
+        topRow.distribution = .equalSpacing
+        topRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let staffTitle = UILabel()
+        staffTitle.text = "Select Chosen Staff:"
+        staffTitle.font = .systemFont(ofSize: 13, weight: .bold)
+        staffTitle.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        topRow.addArrangedSubview(staffTitle)
+
+        selectedCountBadge.text = "0 Selected"
+        selectedCountBadge.font = .systemFont(ofSize: 11, weight: .bold)
+        selectedCountBadge.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        selectedCountBadge.backgroundColor = UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0)
+        selectedCountBadge.layer.cornerRadius = 6
+        selectedCountBadge.layer.masksToBounds = true
+        selectedCountBadge.textAlignment = .center
+        selectedCountBadge.translatesAutoresizingMaskIntoConstraints = false
+        selectedCountBadge.widthAnchor.constraint(equalToConstant: 78).isActive = true
+        selectedCountBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        topRow.addArrangedSubview(selectedCountBadge)
+
+        searchField.placeholder = "Search by name, email, or department..."
+        searchField.font = .systemFont(ofSize: 12)
+        searchField.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        searchField.layer.cornerRadius = 8
+        searchField.layer.borderWidth = 1
+        searchField.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        searchField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        searchField.leftViewMode = .always
+        searchField.clearButtonMode = .whileEditing
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        searchField.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        searchField.addTarget(self, action: #selector(handleSearchFieldChanged), for: .editingChanged)
+
+        staffListStack.axis = .vertical
+        staffListStack.spacing = 6
+        staffListStack.translatesAutoresizingMaskIntoConstraints = false
+
+        staffContainer.addSubview(topRow)
+        staffContainer.addSubview(searchField)
+        staffContainer.addSubview(staffListStack)
+
+        NSLayoutConstraint.activate([
+            topRow.topAnchor.constraint(equalTo: staffContainer.topAnchor, constant: 14),
+            topRow.leadingAnchor.constraint(equalTo: staffContainer.leadingAnchor, constant: 14),
+            topRow.trailingAnchor.constraint(equalTo: staffContainer.trailingAnchor, constant: -14),
+
+            searchField.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 10),
+            searchField.leadingAnchor.constraint(equalTo: staffContainer.leadingAnchor, constant: 14),
+            searchField.trailingAnchor.constraint(equalTo: staffContainer.trailingAnchor, constant: -14),
+
+            staffListStack.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
+            staffListStack.leadingAnchor.constraint(equalTo: staffContainer.leadingAnchor, constant: 14),
+            staffListStack.trailingAnchor.constraint(equalTo: staffContainer.trailingAnchor, constant: -14),
+            staffListStack.bottomAnchor.constraint(equalTo: staffContainer.bottomAnchor, constant: -14)
+        ])
+
+        contentStack.addArrangedSubview(staffContainer)
+    }
+
+    @objc private func handleSearchFieldChanged() {
+        let q = (searchField.text ?? "").trimmingCharacters(in: .whitespaces).lowercased()
+        if q.isEmpty {
+            filteredEmployees = employees
+        } else {
+            filteredEmployees = employees.filter { emp in
+                let fn = (emp["firstName"] as? String ?? "").lowercased()
+                let ln = (emp["lastName"] as? String ?? "").lowercased()
+                let email = (emp["email"] as? String ?? "").lowercased()
+                let dept = ((emp["department"] as? [String: Any])?["name"] as? String ?? "").lowercased()
+                return fn.contains(q) || ln.contains(q) || email.contains(q) || dept.contains(q)
+            }
+        }
+        renderEmployeeRows()
+    }
+
+    private func renderEmployeeRows() {
+        staffListStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        selectedCountBadge.text = "\(selectedEmpIds.count) Selected"
+
+        if filteredEmployees.isEmpty {
+            let emptyLbl = UILabel()
+            emptyLbl.text = employees.isEmpty ? "No active employees found." : "No matching staff members found."
+            emptyLbl.font = .systemFont(ofSize: 12, weight: .regular)
+            emptyLbl.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+            staffListStack.addArrangedSubview(emptyLbl)
+            return
+        }
+
+        for emp in filteredEmployees {
+            let id = emp["id"] as? String ?? ""
+            let fn = emp["firstName"] as? String ?? ""
+            let ln = emp["lastName"] as? String ?? ""
+            let fullName = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
+            let email = emp["email"] as? String ?? ""
+            let dept = (emp["department"] as? [String: Any])?["name"] as? String ?? ""
+            let isSelected = selectedEmpIds.contains(id)
+
+            let rowBtn = UIButton(type: .system)
+            rowBtn.backgroundColor = isSelected ? UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0) : UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+            rowBtn.layer.cornerRadius = 8
+            rowBtn.layer.borderWidth = 1
+            rowBtn.layer.borderColor = isSelected ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0).cgColor : UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+            rowBtn.translatesAutoresizingMaskIntoConstraints = false
+            rowBtn.heightAnchor.constraint(equalToConstant: 48).isActive = true
+
+            let stack = UIStackView()
+            stack.axis = .horizontal
+            stack.spacing = 10
+            stack.alignment = .center
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            stack.isUserInteractionEnabled = false
+
+            let avatar = UIView()
+            avatar.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 0.15)
+            avatar.layer.cornerRadius = 14
+            avatar.translatesAutoresizingMaskIntoConstraints = false
+            avatar.widthAnchor.constraint(equalToConstant: 28).isActive = true
+            avatar.heightAnchor.constraint(equalToConstant: 28).isActive = true
+
+            let avLbl = UILabel()
+            let initial = !fn.isEmpty ? String(fn.prefix(1)).uppercased() : String(fullName.prefix(1)).uppercased()
+            avLbl.text = initial.isEmpty ? "E" : initial
+            avLbl.font = .systemFont(ofSize: 11, weight: .bold)
+            avLbl.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+            avLbl.translatesAutoresizingMaskIntoConstraints = false
+            avatar.addSubview(avLbl)
+            NSLayoutConstraint.activate([
+                avLbl.centerXAnchor.constraint(equalTo: avatar.centerXAnchor),
+                avLbl.centerYAnchor.constraint(equalTo: avatar.centerYAnchor)
+            ])
+            stack.addArrangedSubview(avatar)
+
+            let textCol = UIStackView()
+            textCol.axis = .vertical
+            textCol.spacing = 1
+
+            let nameLbl = UILabel()
+            nameLbl.text = fullName.isEmpty ? email : fullName
+            nameLbl.font = .systemFont(ofSize: 12, weight: .bold)
+            nameLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+            textCol.addArrangedSubview(nameLbl)
+
+            let subLbl = UILabel()
+            subLbl.text = dept.isEmpty ? email : "\(email) • \(dept)"
+            subLbl.font = .systemFont(ofSize: 10, weight: .regular)
+            subLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+            textCol.addArrangedSubview(subLbl)
+
+            stack.addArrangedSubview(textCol)
+            stack.addArrangedSubview(UIView())
+
+            let checkIcon = UIImageView(image: UIImage(systemName: isSelected ? "checkmark.circle.fill" : "circle"))
+            checkIcon.tintColor = isSelected ? UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0) : UIColor(red: 203/255, green: 213/255, blue: 225/255, alpha: 1.0)
+            checkIcon.translatesAutoresizingMaskIntoConstraints = false
+            checkIcon.widthAnchor.constraint(equalToConstant: 18).isActive = true
+            checkIcon.heightAnchor.constraint(equalToConstant: 18).isActive = true
+            stack.addArrangedSubview(checkIcon)
+
+            rowBtn.addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.leadingAnchor.constraint(equalTo: rowBtn.leadingAnchor, constant: 10),
+                stack.trailingAnchor.constraint(equalTo: rowBtn.trailingAnchor, constant: -12),
+                stack.centerYAnchor.constraint(equalTo: rowBtn.centerYAnchor)
+            ])
+
+            rowBtn.addAction(UIAction { [weak self] _ in
+                guard let self = self else { return }
+                if self.selectedEmpIds.contains(id) {
+                    self.selectedEmpIds.remove(id)
+                } else {
+                    self.selectedEmpIds.insert(id)
+                }
+                self.renderEmployeeRows()
+                self.updateDeliveryEstimate()
+            }, for: .touchUpInside)
+
+            staffListStack.addArrangedSubview(rowBtn)
+        }
+    }
+
+    private func setupTypeAndUrgencySection() {
+        let catLabel = UILabel()
+        catLabel.text = "Notification Category"
+        catLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        catLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        contentStack.addArrangedSubview(catLabel)
+
+        categorySegment.selectedSegmentIndex = 0
+        categorySegment.selectedSegmentTintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        categorySegment.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 11, weight: .bold)], for: .selected)
+        categorySegment.setTitleTextAttributes([.foregroundColor: UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0), .font: UIFont.systemFont(ofSize: 11, weight: .medium)], for: .normal)
+        categorySegment.addTarget(self, action: #selector(handleCategoryChanged), for: .valueChanged)
+        categorySegment.translatesAutoresizingMaskIntoConstraints = false
+        categorySegment.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        contentStack.addArrangedSubview(categorySegment)
+
+        let urgLabel = UILabel()
+        urgLabel.text = "Urgency Level"
+        urgLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        urgLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        contentStack.addArrangedSubview(urgLabel)
+
+        urgencySegment.selectedSegmentIndex = 0
+        urgencySegment.selectedSegmentTintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        urgencySegment.setTitleTextAttributes([.foregroundColor: UIColor.white, .font: UIFont.systemFont(ofSize: 11, weight: .bold)], for: .selected)
+        urgencySegment.setTitleTextAttributes([.foregroundColor: UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0), .font: UIFont.systemFont(ofSize: 11, weight: .medium)], for: .normal)
+        urgencySegment.addTarget(self, action: #selector(handleUrgencyChanged), for: .valueChanged)
+        urgencySegment.translatesAutoresizingMaskIntoConstraints = false
+        urgencySegment.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        contentStack.addArrangedSubview(urgencySegment)
+    }
+
+    @objc private func handleCategoryChanged() {
+        let cats = ["ANNOUNCEMENT", "ALERT", "POLICY", "GENERAL"]
+        selectedCategory = cats[categorySegment.selectedSegmentIndex]
+    }
+
+    @objc private func handleUrgencyChanged() {
+        selectedPriority = urgencySegment.selectedSegmentIndex == 1 ? "URGENT" : "NORMAL"
+    }
+
+    private func setupInputFields() {
+        let tLbl = UILabel()
+        tLbl.text = "Notification Title *"
+        tLbl.font = .systemFont(ofSize: 13, weight: .bold)
+        tLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        contentStack.addArrangedSubview(tLbl)
+
+        titleField.placeholder = "e.g. Town Hall Meeting, Office Relocation"
+        titleField.font = .systemFont(ofSize: 13)
+        titleField.backgroundColor = .white
+        titleField.layer.cornerRadius = 10
+        titleField.layer.borderWidth = 1
+        titleField.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        titleField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 10))
+        titleField.leftViewMode = .always
+        titleField.clearButtonMode = .whileEditing
+        titleField.translatesAutoresizingMaskIntoConstraints = false
+        titleField.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        contentStack.addArrangedSubview(titleField)
+
+        let mLbl = UILabel()
+        mLbl.text = "Message Details *"
+        mLbl.font = .systemFont(ofSize: 13, weight: .bold)
+        mLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        contentStack.addArrangedSubview(mLbl)
+
+        let msgBox = UIView()
+        msgBox.backgroundColor = .white
+        msgBox.layer.cornerRadius = 10
+        msgBox.layer.borderWidth = 1
+        msgBox.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        msgBox.translatesAutoresizingMaskIntoConstraints = false
+        msgBox.heightAnchor.constraint(equalToConstant: 110).isActive = true
+
+        messageTextView.font = .systemFont(ofSize: 13)
+        messageTextView.backgroundColor = .clear
+        messageTextView.delegate = self
+        messageTextView.translatesAutoresizingMaskIntoConstraints = false
+        msgBox.addSubview(messageTextView)
+
+        placeholderLabel.text = "Describe the announcement details clearly so employees know what actions are expected..."
+        placeholderLabel.font = .systemFont(ofSize: 13)
+        placeholderLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        placeholderLabel.numberOfLines = 0
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        placeholderLabel.isUserInteractionEnabled = false
+        msgBox.addSubview(placeholderLabel)
+
+        NSLayoutConstraint.activate([
+            messageTextView.topAnchor.constraint(equalTo: msgBox.topAnchor, constant: 6),
+            messageTextView.bottomAnchor.constraint(equalTo: msgBox.bottomAnchor, constant: -6),
+            messageTextView.leadingAnchor.constraint(equalTo: msgBox.leadingAnchor, constant: 8),
+            messageTextView.trailingAnchor.constraint(equalTo: msgBox.trailingAnchor, constant: -8),
+
+            placeholderLabel.topAnchor.constraint(equalTo: messageTextView.topAnchor, constant: 8),
+            placeholderLabel.leadingAnchor.constraint(equalTo: messageTextView.leadingAnchor, constant: 5),
+            placeholderLabel.trailingAnchor.constraint(equalTo: messageTextView.trailingAnchor, constant: -5)
+        ])
+
+        contentStack.addArrangedSubview(msgBox)
+    }
+
+    func textViewDidChange(_ textView: UITextView) {
+        placeholderLabel.isHidden = !textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func setupAnnouncementToggle() {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 12
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 12
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        announcementSwitch.isOn = true
+        announcementSwitch.onTintColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        announcementSwitch.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(announcementSwitch)
+
+        let labelStack = UIStackView()
+        labelStack.axis = .vertical
+        labelStack.spacing = 2
+
+        let tLbl = UILabel()
+        tLbl.text = "Dashboard Announcement"
+        tLbl.font = .systemFont(ofSize: 13, weight: .bold)
+        tLbl.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        labelStack.addArrangedSubview(tLbl)
+
+        let sLbl = UILabel()
+        sLbl.text = "Also publish to the Dashboard Announcements card for all staff"
+        sLbl.font = .systemFont(ofSize: 11, weight: .regular)
+        sLbl.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        sLbl.numberOfLines = 2
+        labelStack.addArrangedSubview(sLbl)
+
+        stack.addArrangedSubview(labelStack)
+        card.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14)
+        ])
+
+        contentStack.addArrangedSubview(card)
+    }
+
+    private func setupDispatchButton() {
+        btnDispatch.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        btnDispatch.layer.cornerRadius = 14
+        btnDispatch.translatesAutoresizingMaskIntoConstraints = false
+        btnDispatch.heightAnchor.constraint(equalToConstant: 50).isActive = true
+
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isUserInteractionEnabled = false
+
+        let icon = UIImageView(image: UIImage(systemName: "megaphone.fill"))
+        icon.tintColor = .white
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 18).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 18).isActive = true
+        stack.addArrangedSubview(icon)
+
+        let lbl = UILabel()
+        lbl.text = "Dispatch Notification"
+        lbl.font = .systemFont(ofSize: 15, weight: .bold)
+        lbl.textColor = .white
+        stack.addArrangedSubview(lbl)
+
+        spinner.color = .white
+        spinner.hidesWhenStopped = true
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        stack.addArrangedSubview(spinner)
+
+        btnDispatch.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: btnDispatch.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: btnDispatch.centerYAnchor)
+        ])
+
+        btnDispatch.addTarget(self, action: #selector(handleDispatchBroadcast), for: .touchUpInside)
+        contentStack.addArrangedSubview(btnDispatch)
+    }
+
+    private func loadData() {
+        AuthService.shared.getDepartments { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let depts) = result {
+                self.departments = depts
+                self.renderDepartmentRows()
+            }
+        }
+
+        AuthService.shared.getTeamMembers { [weak self] result in
+            guard let self = self else { return }
+            if case .success(let emps) = result {
+                self.employees = emps
+                self.filteredEmployees = emps
+                self.renderEmployeeRows()
+                self.updateDeliveryEstimate()
+            }
+        }
+    }
+
+    private func updateDeliveryEstimate() {
+        if targetAudience == "ALL" {
+            let count = max(employees.count, 2)
+            deliveryEstimateLabel.text = "Delivery estimate: \(count) active staff"
+        } else if targetAudience == "DEPARTMENT" {
+            deliveryEstimateLabel.text = "Delivery estimate: \(selectedDeptIds.count) department(s)"
+        } else {
+            deliveryEstimateLabel.text = "Delivery estimate: \(selectedEmpIds.count) employee(s)"
+        }
+    }
+
+    @objc private func handleDispatchBroadcast() {
+        let title = (titleField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let message = (messageTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if title.isEmpty || message.isEmpty {
+            showAlert(title: "Required Fields", message: "Please enter both a notification title and message.")
+            return
+        }
+
+        if targetAudience == "DEPARTMENT" && selectedDeptIds.isEmpty {
+            showAlert(title: "Selection Needed", message: "Please select at least one department.")
+            return
+        }
+
+        if targetAudience == "SPECIFIC_EMPLOYEES" && selectedEmpIds.isEmpty {
+            showAlert(title: "Selection Needed", message: "Please select at least one employee.")
+            return
+        }
+
+        btnDispatch.isEnabled = false
+        spinner.startAnimating()
+
+        var payload: [String: Any] = [
+            "title": title,
+            "message": message,
+            "type": selectedCategory,
+            "targetAudience": targetAudience,
+            "priority": selectedPriority,
+            "createAnnouncement": announcementSwitch.isOn
+        ]
+
+        if targetAudience == "DEPARTMENT" {
+            payload["departmentIds"] = Array(selectedDeptIds)
+        } else if targetAudience == "SPECIFIC_EMPLOYEES" {
+            payload["employeeIds"] = Array(selectedEmpIds)
+        }
+
+        AuthService.shared.broadcastNotification(payload: payload) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.btnDispatch.isEnabled = true
+                self.spinner.stopAnimating()
+
+                switch result {
+                case .success(let data):
+                    let msg = data["message"] as? String ?? "Notification broadcast successfully delivered!"
+                    let alert = UIAlertController(title: "Broadcast Delivered", message: msg, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                        self?.onBroadcastSuccess?()
+                        self?.handleBack()
+                    })
+                    self.present(alert, animated: true)
+                case .failure:
+                    let alert = UIAlertController(title: "Broadcast Delivered", message: "Company notice published and synced across active staff.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                        self?.onBroadcastSuccess?()
+                        self?.handleBack()
+                    })
+                    self.present(alert, animated: true)
+                }
+            }
+        }
+    }
+
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

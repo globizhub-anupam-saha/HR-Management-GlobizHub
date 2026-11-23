@@ -88,6 +88,14 @@
             android:screenOrientation="portrait"
             android:exported="false" />
 
+        <!-- Broadcast Notification Activity -->
+        <activity
+            android:name=".BroadcastNotificationActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
         <!-- Delete Account Activity -->
         <activity
             android:name=".DeleteAccountActivity"

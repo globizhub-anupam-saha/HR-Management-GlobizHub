@@ -194,14 +194,11 @@ public class HomeActivity extends AppCompatActivity {
     // Admin Dashboard Views
     private TextView tvAdminGreeting;
     private TextView tvAdminSubtitle;
-    private View btnAdminHeroBroadcast;
+    private View btnOpenBroadcastNotificationPage;
     private TextView tvAdminTotalEmployees;
     private TextView tvAdminPresentToday;
     private TextView tvAdminAbsentToday;
     private TextView tvAdminLateToday;
-    private View btnAdminBroadcastNotice;
-    private View btnAdminLeaveApprovals;
-    private View btnAdminTeamDirectory;
     private View cvAdminPendingLeavesCard;
     private TextView tvAdminPendingLeavesBadge;
     private LinearLayout llAdminPendingLeavesList;
@@ -510,14 +507,11 @@ public class HomeActivity extends AppCompatActivity {
         // Admin Views
         tvAdminGreeting = findViewById(R.id.tvAdminGreeting);
         tvAdminSubtitle = findViewById(R.id.tvAdminSubtitle);
-        btnAdminHeroBroadcast = findViewById(R.id.btnAdminHeroBroadcast);
+        btnOpenBroadcastNotificationPage = findViewById(R.id.btnOpenBroadcastNotificationPage);
         tvAdminTotalEmployees = findViewById(R.id.tvAdminTotalEmployees);
         tvAdminPresentToday = findViewById(R.id.tvAdminPresentToday);
         tvAdminAbsentToday = findViewById(R.id.tvAdminAbsentToday);
         tvAdminLateToday = findViewById(R.id.tvAdminLateToday);
-        btnAdminBroadcastNotice = findViewById(R.id.btnAdminBroadcastNotice);
-        btnAdminLeaveApprovals = findViewById(R.id.btnAdminLeaveApprovals);
-        btnAdminTeamDirectory = findViewById(R.id.btnAdminTeamDirectory);
         cvAdminPendingLeavesCard = findViewById(R.id.cvAdminPendingLeavesCard);
         tvAdminPendingLeavesBadge = findViewById(R.id.tvAdminPendingLeavesBadge);
         llAdminPendingLeavesList = findViewById(R.id.llAdminPendingLeavesList);
@@ -1303,18 +1297,11 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         // Admin Actions
-        View btnAdminHeroBroadcast = findViewById(R.id.btnAdminHeroBroadcast);
-        if (btnAdminHeroBroadcast != null) {
-            btnAdminHeroBroadcast.setOnClickListener(v -> showAdminBroadcastNoticeDialog());
-        }
-        if (btnAdminBroadcastNotice != null) {
-            btnAdminBroadcastNotice.setOnClickListener(v -> showAdminBroadcastNoticeDialog());
-        }
-        if (btnAdminLeaveApprovals != null) {
-            btnAdminLeaveApprovals.setOnClickListener(v -> scrollToAdminApprovals());
-        }
-        if (btnAdminTeamDirectory != null) {
-            btnAdminTeamDirectory.setOnClickListener(v -> showTeamRosterDialog());
+        if (btnOpenBroadcastNotificationPage != null) {
+            btnOpenBroadcastNotificationPage.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, BroadcastNotificationActivity.class);
+                startActivity(intent);
+            });
         }
 
         // Super Admin Controls
