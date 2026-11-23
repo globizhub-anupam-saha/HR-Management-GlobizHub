@@ -267,7 +267,9 @@ class AuthService {
     }
 
     func saveCachedProfile(_ dict: [String: Any]) {
-        UserDefaults.standard.set(dict, forKey: cachedProfileKey)
+        if let data = try? JSONSerialization.data(withJSONObject: dict, options: []) {
+            UserDefaults.standard.set(data, forKey: cachedProfileKey)
+        }
         let fn = dict["firstName"] as? String ?? ""
         let ln = dict["lastName"] as? String ?? ""
         let phone = dict["phone"] as? String ?? ""
@@ -284,6 +286,10 @@ class AuthService {
     }
 
     func getCachedProfile() -> [String: Any]? {
+        if let data = UserDefaults.standard.data(forKey: cachedProfileKey),
+           let obj = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+            return obj
+        }
         return UserDefaults.standard.dictionary(forKey: cachedProfileKey)
     }
 
@@ -503,51 +509,44 @@ class AuthService {
                     if let token = token {
                         let role = (json["role"] as? String) ?? ((json["user"] as? [String: Any])?["role"] as? String) ?? resolvedRole
                         self.saveAuth(token: token, email: cleanEmail, role: role)
+
+                        if let userObj = json["user"] as? [String: Any] {
+                            let fn = userObj["firstName"] as? String ?? ""
+                            let ln = userObj["lastName"] as? String ?? ""
+                            var desig = ""
+                            if let dObj = userObj["designation"] as? [String: Any] {
+                                desig = dObj["name"] as? String ?? ""
+                            } else if let dStr = userObj["designation"] as? String {
+                                desig = dStr
+                            }
+                            let org = userObj["companyName"] as? String ?? "Globizhub"
+                            self.saveUserProfile(firstName: fn, designation: desig, organization: org)
+                            self.saveLastName(ln)
+                        }
                     }
                     completion(.success(json))
                     return
                 }
 
-                // If remote server returned 401 Unauthorized or network error, provide seamless role-based authentication fallback
-                let fallbackToken = self.generateRoleToken(email: cleanEmail.isEmpty ? "employee@globizhub.com" : cleanEmail, role: resolvedRole)
-                self.saveAuth(token: fallbackToken, email: cleanEmail, role: resolvedRole)
-
-                let fallbackName: String
-                let fallbackLast: String
-                let fallbackDesig: String
-
-                if cleanEmail.contains("manash") || cleanEmail.contains("seal") {
-                    fallbackName = "Manash"
-                    fallbackLast = "Seal"
-                    fallbackDesig = resolvedRole == "ADMIN" ? "HR Administrator" : "Operations & Tech Lead"
-                } else if resolvedRole == "SUPER_ADMIN" {
-                    fallbackName = "Super Admin"
-                    fallbackLast = ""
-                    fallbackDesig = "Super Administrator"
-                } else if resolvedRole == "ADMIN" {
-                    fallbackName = "Admin"
-                    fallbackLast = ""
-                    fallbackDesig = "HR Administrator"
-                } else {
-                    fallbackName = self.getFirstName()
-                    fallbackLast = self.getLastName()
-                    fallbackDesig = "Operations & Tech Lead"
+                if let httpResponse = response as? HTTPURLResponse {
+                    var errorMsg = "Invalid credentials"
+                    if let data = data, let errJson = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any] {
+                        if let msg = errJson["message"] as? String, !msg.isEmpty {
+                            errorMsg = msg
+                        } else if let err = errJson["error"] as? String, !err.isEmpty {
+                            errorMsg = err
+                        }
+                    }
+                    completion(.failure(.serverError(errorMsg, httpResponse.statusCode)))
+                    return
                 }
 
-                self.saveUserProfile(firstName: fallbackName, designation: fallbackDesig, organization: "GlobizHub Inc.")
-                self.saveLastName(fallbackLast)
+                if let error = error {
+                    completion(.failure(.networkError(error.localizedDescription)))
+                    return
+                }
 
-                let syntheticJson: [String: Any] = [
-                    "access_token": fallbackToken,
-                    "role": resolvedRole,
-                    "user": [
-                        "email": cleanEmail,
-                        "role": resolvedRole,
-                        "firstName": fallbackName,
-                        "lastName": fallbackLast
-                    ]
-                ]
-                completion(.success(syntheticJson))
+                completion(.failure(.serverError("Authentication failed", 500)))
             }
         }.resume()
     }

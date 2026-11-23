@@ -35,7 +35,6 @@ public class SignInActivity extends AppCompatActivity {
     private CheckBox cbRememberDevice;
     private View btnDoSignIn;
     private TextView tvSignInButtonText;
-    private ImageView ivSignInArrow;
     private ProgressBar pbSignInLoading;
     private TextView tvSignUpFooter;
 
@@ -57,7 +56,6 @@ public class SignInActivity extends AppCompatActivity {
         cbRememberDevice = findViewById(R.id.cbRememberDevice);
         btnDoSignIn = findViewById(R.id.btnDoSignIn);
         tvSignInButtonText = findViewById(R.id.tvSignInButtonText);
-        ivSignInArrow = findViewById(R.id.ivSignInArrow);
         pbSignInLoading = findViewById(R.id.pbSignInLoading);
         tvSignUpFooter = findViewById(R.id.tvSignUpFooter);
         TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
@@ -195,12 +193,10 @@ public class SignInActivity extends AppCompatActivity {
         if (loading) {
             btnDoSignIn.setEnabled(false);
             if (tvSignInButtonText != null) tvSignInButtonText.setVisibility(View.INVISIBLE);
-            if (ivSignInArrow != null) ivSignInArrow.setVisibility(View.INVISIBLE);
             if (pbSignInLoading != null) pbSignInLoading.setVisibility(View.VISIBLE);
         } else {
             btnDoSignIn.setEnabled(true);
             if (tvSignInButtonText != null) tvSignInButtonText.setVisibility(View.VISIBLE);
-            if (ivSignInArrow != null) ivSignInArrow.setVisibility(View.VISIBLE);
             if (pbSignInLoading != null) pbSignInLoading.setVisibility(View.GONE);
         }
     }

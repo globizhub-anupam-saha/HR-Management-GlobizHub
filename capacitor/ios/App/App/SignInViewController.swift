@@ -1,7 +1,7 @@
 import UIKit
 import Capacitor
 
-class SignInViewController: UIViewController {
+class SignInViewController: UIViewController, UITextFieldDelegate {
 
     var prefillEmail: String?
 
@@ -221,16 +221,6 @@ class SignInViewController: UIViewController {
         return lbl
     }()
 
-    private let signInButtonArrow: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.contentMode = .scaleAspectFit
-        let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .bold)
-        iv.image = UIImage(systemName: "arrow.right", withConfiguration: config)
-        iv.tintColor = .white
-        return iv
-    }()
-
     private let signInSpinner: UIActivityIndicatorView = {
         let aiv = UIActivityIndicatorView(style: .medium)
         aiv.translatesAutoresizingMaskIntoConstraints = false
@@ -274,6 +264,11 @@ class SignInViewController: UIViewController {
         setupLayout()
         setupActions()
 
+        emailTextField.delegate = self
+        emailTextField.returnKeyType = .next
+        passwordTextField.delegate = self
+        passwordTextField.returnKeyType = .go
+
         if let prefillEmail = prefillEmail, !prefillEmail.isEmpty {
             emailTextField.text = prefillEmail
             passwordTextField.becomeFirstResponder()
@@ -281,8 +276,12 @@ class SignInViewController: UIViewController {
 
         if let idx = ProcessInfo.processInfo.arguments.firstIndex(of: "-testLoginEmail"), idx + 1 < ProcessInfo.processInfo.arguments.count {
             let testEmail = ProcessInfo.processInfo.arguments[idx + 1]
+            var testPassword = "Demo@123"
+            if let pIdx = ProcessInfo.processInfo.arguments.firstIndex(of: "-testLoginPassword"), pIdx + 1 < ProcessInfo.processInfo.arguments.count {
+                testPassword = ProcessInfo.processInfo.arguments[pIdx + 1]
+            }
             emailTextField.text = testEmail
-            passwordTextField.text = "12345678"
+            passwordTextField.text = testPassword
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.didTapSignIn()
             }
@@ -388,7 +387,6 @@ class SignInViewController: UIViewController {
         formWrapperView.addSubview(signInButton)
         signInButton.addSubview(signInButtonStack)
         signInButtonStack.addArrangedSubview(signInButtonLabel)
-        signInButtonStack.addArrangedSubview(signInButtonArrow)
         signInButton.addSubview(signInSpinner)
 
         formWrapperView.addSubview(footerLabel)
@@ -590,5 +588,15 @@ class SignInViewController: UIViewController {
             signInButton.isEnabled = true
             signInSpinner.stopAnimating()
         }
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == emailTextField {
+            passwordTextField.becomeFirstResponder()
+        } else if textField == passwordTextField {
+            textField.resignFirstResponder()
+            didTapSignIn()
+        }
+        return true
     }
 }

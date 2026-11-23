@@ -694,54 +694,32 @@ public class ApiClient {
                         }
                         if (role.isEmpty()) role = resolvedRole;
                         saveToken(token, cleanEmail, role);
+
+                        if (result.has("user")) {
+                            JSONObject u = result.optJSONObject("user");
+                            if (u != null) {
+                                String fn = u.optString("firstName", "");
+                                String ln = u.optString("lastName", "");
+                                String des = "";
+                                if (u.has("designation")) {
+                                    Object dObj = u.opt("designation");
+                                    if (dObj instanceof JSONObject) {
+                                        des = ((JSONObject) dObj).optString("name", "");
+                                    } else if (dObj instanceof String) {
+                                        des = (String) dObj;
+                                    }
+                                }
+                                String org = u.optString("companyName", "Globizhub");
+                                saveUserProfile(fn, des, org);
+                                saveLastName(ln);
+                            }
+                        }
                         postSuccess(callback, result);
                     }
 
                     @Override
                     public void onError(String errorMessage, int statusCode) {
-                        // Seamless role-based authentication fallback if remote server rejects test account or is unreachable
-                        try {
-                            String token = generateRoleToken(cleanEmail.isEmpty() ? "employee@globizhub.com" : cleanEmail, resolvedRole);
-                            saveToken(token, cleanEmail, resolvedRole);
-
-                            String fallbackName;
-                            String fallbackLast;
-                            String fallbackDesig;
-
-                            if (cleanEmail.contains("manash") || cleanEmail.contains("seal")) {
-                                fallbackName = "Manash";
-                                fallbackLast = "Seal";
-                                fallbackDesig = "ADMIN".equalsIgnoreCase(resolvedRole) ? "HR Administrator" : "Operations & Tech Lead";
-                            } else if ("SUPER_ADMIN".equalsIgnoreCase(resolvedRole)) {
-                                fallbackName = "Super Admin";
-                                fallbackLast = "";
-                                fallbackDesig = "Super Administrator";
-                            } else if ("ADMIN".equalsIgnoreCase(resolvedRole)) {
-                                fallbackName = "Admin";
-                                fallbackLast = "";
-                                fallbackDesig = "HR Administrator";
-                            } else {
-                                fallbackName = getFirstName();
-                                fallbackLast = getLastName();
-                                fallbackDesig = "Operations & Tech Lead";
-                            }
-
-                            saveUserProfile(fallbackName, fallbackDesig, "GlobizHub Inc.");
-                            saveLastName(fallbackLast);
-
-                            JSONObject synth = new JSONObject();
-                            synth.put("access_token", token);
-                            synth.put("role", resolvedRole);
-                            JSONObject u = new JSONObject();
-                            u.put("email", cleanEmail);
-                            u.put("role", resolvedRole);
-                            u.put("firstName", fallbackName);
-                            synth.put("user", u);
-
-                            postSuccess(callback, synth);
-                        } catch (Exception ex) {
-                            postError(callback, errorMessage, statusCode);
-                        }
+                        postError(callback, errorMessage != null && !errorMessage.isEmpty() ? errorMessage : "Invalid credentials", statusCode);
                     }
                 });
             } catch (Exception e) {

@@ -140,6 +140,9 @@ class SplashViewController: UIViewController {
             nextVC = HelpSupportViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteDeleteAccount") {
             nextVC = DeleteAccountViewController()
+        } else if ProcessInfo.processInfo.arguments.contains("-testLoginEmail") {
+            AuthService.shared.clearAuth()
+            nextVC = SignInViewController()
         } else if ProcessInfo.processInfo.arguments.contains("-testRouteHome") || AuthService.shared.isLoggedIn {
             nextVC = HomeViewController()
         } else {

@@ -184,7 +184,7 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Sign In Button with Right Arrow & Loading Spinner -->
+        <!-- Sign In Button & Loading Spinner -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="52dp"
@@ -208,14 +208,6 @@
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
-
-                <ImageView
-                    android:id="@+id/ivSignInArrow"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_arrow_right_white"
-                    android:contentDescription="Arrow Right" />
             </LinearLayout>
 
             <ProgressBar

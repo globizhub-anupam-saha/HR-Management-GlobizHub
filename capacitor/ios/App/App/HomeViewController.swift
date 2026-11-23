@@ -357,12 +357,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         let currentRole = AuthService.shared.getRole()
         let userRole = UserRole.from(string: currentRole)
         switch userRole {
-        case .superAdmin:
-            employeeStackView.isHidden = true
-            adminStackView.isHidden = true
-            superAdminStackView.isHidden = false
-            loadSuperAdminDashboardData()
-        case .admin:
+        case .superAdmin, .admin:
             employeeStackView.isHidden = true
             adminStackView.isHidden = false
             superAdminStackView.isHidden = true
@@ -4254,10 +4249,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
                 self?.dismissSkeleton()
                 switch result {
                 case .success(let stats):
-                    let total = stats["totalEmployees"] as? Int ?? 24
-                    let present = stats["presentToday"] as? Int ?? 18
-                    let absent = stats["absentToday"] as? Int ?? 4
-                    let late = stats["lateToday"] as? Int ?? 2
+                    let total = stats["totalEmployees"] as? Int ?? 0
+                    let present = stats["presentToday"] as? Int ?? 0
+                    let absent = stats["absentToday"] as? Int ?? 0
+                    let late = stats["lateToday"] as? Int ?? 0
 
                     self?.adminTotalEmployeesLabel.text = "\(total)"
                     self?.adminPresentTodayLabel.text = "\(present)"
@@ -4481,8 +4476,44 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
 
         for log in logs.prefix(6) {
             let action = log["action"] as? String ?? (log["event"] as? String ?? "AUDIT_EVENT")
-            let details = log["details"] as? String ?? (log["message"] as? String ?? "Activity logged")
-            let actor = log["userName"] as? String ?? (log["actorName"] as? String ?? "Employee")
+            var actorName = "System"
+            if let actorObj = log["actor"] as? [String: Any] {
+                let fn = actorObj["firstName"] as? String ?? ""
+                let ln = actorObj["lastName"] as? String ?? ""
+                let full = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
+                if !full.isEmpty {
+                    actorName = full
+                } else {
+                    actorName = actorObj["email"] as? String ?? "Employee"
+                }
+            } else if let un = log["userName"] as? String, !un.isEmpty {
+                actorName = un
+            }
+
+            var message = ""
+            if let newVal = log["newValue"] as? [String: Any], let desc = newVal["description"] as? String, !desc.isEmpty {
+                message = desc
+            } else {
+                switch action.uppercased() {
+                case "LOGIN":
+                    message = "\(actorName) logged in to HRMS."
+                case "LOGOUT":
+                    message = "\(actorName) logged out of HRMS."
+                case "DOWNLOAD":
+                    message = "\(actorName) downloaded a payslip."
+                case "APPROVE":
+                    message = "\(actorName) approved a leave request."
+                case "REJECT":
+                    message = "\(actorName) rejected a request."
+                case "CLOCK_IN":
+                    message = "\(actorName) clocked in."
+                case "CLOCK_OUT":
+                    message = "\(actorName) clocked out."
+                default:
+                    message = "\(actorName) performed \(action.lowercased()) on the system."
+                }
+            }
+
             var time = log["createdAt"] as? String ?? "Recent"
             if time.count >= 16 {
                 let startIdx = time.index(time.startIndex, offsetBy: 11)
@@ -4509,7 +4540,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
             row.addArrangedSubview(pill)
 
             let desc = UILabel()
-            desc.text = "\(actor) • \(details)"
+            desc.text = message
             desc.font = .systemFont(ofSize: 12, weight: .semibold)
             desc.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
             desc.numberOfLines = 1

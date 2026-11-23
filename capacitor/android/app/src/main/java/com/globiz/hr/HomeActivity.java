@@ -3072,12 +3072,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupRoleDashboard() {
         UserRole userRole = UserRole.fromString(apiClient.getRole());
-        if (userRole == UserRole.SUPER_ADMIN) {
-            if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.GONE);
-            if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.GONE);
-            if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.VISIBLE);
-            loadSuperAdminDashboardData();
-        } else if (userRole == UserRole.ADMIN) {
+        if (userRole == UserRole.SUPER_ADMIN || userRole == UserRole.ADMIN) {
             if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.GONE);
             if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.VISIBLE);
             if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.GONE);
@@ -3125,10 +3120,10 @@ public class HomeActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     hideSkeletonLoading();
                     if (result != null) {
-                        int total = result.optInt("totalEmployees", 24);
-                        int present = result.optInt("presentToday", 18);
-                        int absent = result.optInt("absentToday", 4);
-                        int late = result.optInt("lateToday", 2);
+                        int total = result.optInt("totalEmployees", 0);
+                        int present = result.optInt("presentToday", 0);
+                        int absent = result.optInt("absentToday", 0);
+                        int late = result.optInt("lateToday", 0);
 
                         if (tvAdminTotalEmployees != null) tvAdminTotalEmployees.setText(String.valueOf(total));
                         if (tvAdminPresentToday != null) tvAdminPresentToday.setText(String.valueOf(present));
@@ -3389,8 +3384,54 @@ public class HomeActivity extends AppCompatActivity {
             if (log == null) continue;
 
             String action = log.optString("action", log.optString("event", "AUDIT_EVENT"));
-            String details = log.optString("details", log.optString("message", "Activity logged"));
-            String actor = log.optString("userName", log.optString("actorName", "Employee"));
+            String actorName = "System";
+            JSONObject actorObj = log.optJSONObject("actor");
+            if (actorObj != null) {
+                String fn = actorObj.optString("firstName", "");
+                String ln = actorObj.optString("lastName", "");
+                String full = (fn + " " + ln).trim();
+                if (!full.isEmpty()) {
+                    actorName = full;
+                } else {
+                    actorName = actorObj.optString("email", "Employee");
+                }
+            } else if (log.has("userName")) {
+                actorName = log.optString("userName", "Employee");
+            }
+
+            String message;
+            JSONObject newVal = log.optJSONObject("newValue");
+            if (newVal != null && newVal.has("description")) {
+                message = newVal.optString("description", "");
+            } else {
+                switch (action.toUpperCase()) {
+                    case "LOGIN":
+                        message = actorName + " logged in to HRMS.";
+                        break;
+                    case "LOGOUT":
+                        message = actorName + " logged out of HRMS.";
+                        break;
+                    case "DOWNLOAD":
+                        message = actorName + " downloaded a payslip.";
+                        break;
+                    case "APPROVE":
+                        message = actorName + " approved a leave request.";
+                        break;
+                    case "REJECT":
+                        message = actorName + " rejected a request.";
+                        break;
+                    case "CLOCK_IN":
+                        message = actorName + " clocked in.";
+                        break;
+                    case "CLOCK_OUT":
+                        message = actorName + " clocked out.";
+                        break;
+                    default:
+                        message = actorName + " performed " + action.toLowerCase() + " on the system.";
+                        break;
+                }
+            }
+
             String time = log.optString("createdAt", "Recent");
             if (time.length() >= 16) {
                 time = time.substring(11, 16);
@@ -3417,7 +3458,7 @@ public class HomeActivity extends AppCompatActivity {
             item.addView(textCol, textLp);
 
             TextView descTv = new TextView(this);
-            descTv.setText(actor + " • " + details);
+            descTv.setText(message);
             descTv.setTextColor(Color.parseColor("#1E293B"));
             descTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
             descTv.setTypeface(null, Typeface.BOLD);
