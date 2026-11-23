@@ -3765,7 +3765,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminHeroCard.layer.masksToBounds = true
         adminHeroCard.backgroundColor = .black
         adminHeroCard.translatesAutoresizingMaskIntoConstraints = false
-        adminHeroCard.heightAnchor.constraint(equalToConstant: 160).isActive = true
 
         adminHeroImageView.image = UIImage(named: "admin_hero_wallpaper")
         adminHeroImageView.contentMode = .scaleAspectFill
@@ -3779,11 +3778,16 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminHeroOverlay.translatesAutoresizingMaskIntoConstraints = false
         adminHeroCard.addSubview(adminHeroOverlay)
 
+        let heroMainStack = UIStackView()
+        heroMainStack.axis = .vertical
+        heroMainStack.spacing = 16
+        heroMainStack.translatesAutoresizingMaskIntoConstraints = false
+        adminHeroCard.addSubview(heroMainStack)
+
         let heroContentStack = UIStackView()
         heroContentStack.axis = .vertical
         heroContentStack.spacing = 4
         heroContentStack.translatesAutoresizingMaskIntoConstraints = false
-        adminHeroCard.addSubview(heroContentStack)
 
         adminGreetingLabel.text = "Welcome back, Admin!"
         adminGreetingLabel.font = .systemFont(ofSize: 22, weight: .bold)
@@ -3794,6 +3798,46 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         adminSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
         adminSubtitleLabel.textColor = UIColor(red: 224/255, green: 231/255, blue: 255/255, alpha: 1.0)
         heroContentStack.addArrangedSubview(adminSubtitleLabel)
+
+        heroMainStack.addArrangedSubview(heroContentStack)
+
+        // 2. Admin 4 Real-time Metrics (2x2 Glassmorphism Grid inside Hero Card)
+        let metricsGrid = UIStackView()
+        metricsGrid.axis = .vertical
+        metricsGrid.spacing = 10
+        metricsGrid.translatesAutoresizingMaskIntoConstraints = false
+
+        let row1 = UIStackView()
+        row1.axis = .horizontal
+        row1.spacing = 10
+        row1.distribution = .fillEqually
+
+        adminTotalEmployeesLabel.text = "24"
+        let card1 = createStatCard(title: "Employees", iconName: "person.2.fill", iconColor: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), valueLabel: adminTotalEmployeesLabel, subtext: "Active in Workspace", isGlass: true)
+
+        adminPresentTodayLabel.text = "18"
+        let card2 = createStatCard(title: "Present Today", iconName: "checkmark.circle.fill", iconColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), valueLabel: adminPresentTodayLabel, subtext: "On Duty Today", subtextColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), isGlass: true)
+
+        row1.addArrangedSubview(card1)
+        row1.addArrangedSubview(card2)
+
+        let row2 = UIStackView()
+        row2.axis = .horizontal
+        row2.spacing = 10
+        row2.distribution = .fillEqually
+
+        adminAbsentTodayLabel.text = "4"
+        let card3 = createStatCard(title: "Absent", iconName: "xmark.circle.fill", iconColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), valueLabel: adminAbsentTodayLabel, subtext: "Not Clocked In", subtextColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), isGlass: true)
+
+        adminLateTodayLabel.text = "2"
+        let card4 = createStatCard(title: "Late Arrivals", iconName: "clock.fill", iconColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), valueLabel: adminLateTodayLabel, subtext: "Clocked after 09:00", subtextColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), isGlass: true)
+
+        row2.addArrangedSubview(card3)
+        row2.addArrangedSubview(card4)
+
+        metricsGrid.addArrangedSubview(row1)
+        metricsGrid.addArrangedSubview(row2)
+        heroMainStack.addArrangedSubview(metricsGrid)
 
         NSLayoutConstraint.activate([
             adminHeroImageView.topAnchor.constraint(equalTo: adminHeroCard.topAnchor),
@@ -3806,51 +3850,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
             adminHeroOverlay.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor),
             adminHeroOverlay.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor),
 
-            heroContentStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 24),
-            heroContentStack.bottomAnchor.constraint(lessThanOrEqualTo: adminHeroCard.bottomAnchor, constant: -24),
-            heroContentStack.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor, constant: 22),
-            heroContentStack.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor, constant: -22)
+            heroMainStack.topAnchor.constraint(equalTo: adminHeroCard.topAnchor, constant: 20),
+            heroMainStack.bottomAnchor.constraint(equalTo: adminHeroCard.bottomAnchor, constant: -18),
+            heroMainStack.leadingAnchor.constraint(equalTo: adminHeroCard.leadingAnchor, constant: 16),
+            heroMainStack.trailingAnchor.constraint(equalTo: adminHeroCard.trailingAnchor, constant: -16)
         ])
 
         adminStackView.addArrangedSubview(adminHeroCard)
-
-        // 2. Admin 4 Real-time Metrics (2x2 Grid)
-        let metricsGrid = UIStackView()
-        metricsGrid.axis = .vertical
-        metricsGrid.spacing = 12
-        metricsGrid.translatesAutoresizingMaskIntoConstraints = false
-
-        let row1 = UIStackView()
-        row1.axis = .horizontal
-        row1.spacing = 12
-        row1.distribution = .fillEqually
-
-        adminTotalEmployeesLabel.text = "24"
-        let card1 = createStatCard(title: "Employees", iconName: "person.2.fill", iconColor: UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), valueLabel: adminTotalEmployeesLabel, subtext: "Active in Workspace")
-
-        adminPresentTodayLabel.text = "18"
-        let card2 = createStatCard(title: "Present Today", iconName: "checkmark.circle.fill", iconColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0), valueLabel: adminPresentTodayLabel, subtext: "On Duty Today", subtextColor: UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0))
-
-        row1.addArrangedSubview(card1)
-        row1.addArrangedSubview(card2)
-
-        let row2 = UIStackView()
-        row2.axis = .horizontal
-        row2.spacing = 12
-        row2.distribution = .fillEqually
-
-        adminAbsentTodayLabel.text = "4"
-        let card3 = createStatCard(title: "Absent", iconName: "xmark.circle.fill", iconColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0), valueLabel: adminAbsentTodayLabel, subtext: "Not Clocked In", subtextColor: UIColor(red: 239/255, green: 68/255, blue: 68/255, alpha: 1.0))
-
-        adminLateTodayLabel.text = "2"
-        let card4 = createStatCard(title: "Late Arrivals", iconName: "clock.fill", iconColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0), valueLabel: adminLateTodayLabel, subtext: "Clocked after 09:00", subtextColor: UIColor(red: 245/255, green: 158/255, blue: 11/255, alpha: 1.0))
-
-        row2.addArrangedSubview(card3)
-        row2.addArrangedSubview(card4)
-
-        metricsGrid.addArrangedSubview(row1)
-        metricsGrid.addArrangedSubview(row2)
-        adminStackView.addArrangedSubview(metricsGrid)
 
         // 3. Broadcast Notification Action Card
         let broadcastActionCard = UIView()
@@ -4945,13 +4951,42 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
     }
 
     // Helper UI Builders
-    private func createStatCard(title: String, iconName: String, iconColor: UIColor, valueLabel: UILabel, subtext: String, subtextColor: UIColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)) -> UIView {
+    private func createStatCard(title: String, iconName: String, iconColor: UIColor, valueLabel: UILabel, subtext: String, subtextColor: UIColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), isGlass: Bool = false) -> UIView {
         let card = UIView()
-        card.backgroundColor = .white
-        card.layer.cornerRadius = 20
-        card.layer.borderWidth = 1
-        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.layer.cornerRadius = 18
+        card.layer.masksToBounds = true
         card.translatesAutoresizingMaskIntoConstraints = false
+
+        if isGlass {
+            let blurEffect = UIBlurEffect(style: .systemUltraThinMaterialLight)
+            let blurView = UIVisualEffectView(effect: blurEffect)
+            blurView.translatesAutoresizingMaskIntoConstraints = false
+            card.addSubview(blurView)
+
+            let glassTint = UIView()
+            glassTint.backgroundColor = UIColor(white: 1.0, alpha: 0.72)
+            glassTint.translatesAutoresizingMaskIntoConstraints = false
+            card.addSubview(glassTint)
+
+            card.layer.borderWidth = 1
+            card.layer.borderColor = UIColor(white: 1.0, alpha: 0.45).cgColor
+
+            NSLayoutConstraint.activate([
+                blurView.topAnchor.constraint(equalTo: card.topAnchor),
+                blurView.bottomAnchor.constraint(equalTo: card.bottomAnchor),
+                blurView.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+                blurView.trailingAnchor.constraint(equalTo: card.trailingAnchor),
+
+                glassTint.topAnchor.constraint(equalTo: card.topAnchor),
+                glassTint.bottomAnchor.constraint(equalTo: card.bottomAnchor),
+                glassTint.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+                glassTint.trailingAnchor.constraint(equalTo: card.trailingAnchor)
+            ])
+        } else {
+            card.backgroundColor = .white
+            card.layer.borderWidth = 1
+            card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        }
 
         let col = UIStackView()
         col.axis = .vertical
