@@ -46,39 +46,7 @@ struct MoreModule {
     }
 
     func isAllowed(for roleStr: String, sidebarModules: [String]? = nil) -> Bool {
-        let role = UserRole.from(string: roleStr)
-
-        switch role {
-        case .superAdmin, .admin:
-            return id == "dashboard"
-                || id == "onboarding"
-                || id == "recruitment"
-                || id == "training"
-                || id == "employees"
-                || id == "designations"
-                || id == "resignation"
-                || id == "attendance"
-                || id == "leave_approvals"
-                || id == "leave_policies"
-                || id == "manage_schedules"
-                || id == "payroll"
-                || id == "payroll_console"
-                || id == "documents_admin"
-                || id == "tasks"
-                || id == "billing"
-                || id == "settings"
-                || id == "broadcast"
-                || id == "help"
-
-        case .employee:
-            return id == "attendance"
-                || id == "leave"
-                || id == "schedules"
-                || id == "payslips"
-                || id == "documents"
-                || id == "tasks"
-                || id == "help"
-        }
+        return true
     }
 }
 

@@ -45,40 +45,6 @@ public class MoreModule {
     }
 
     public boolean isAllowedForRoleAndModules(String roleStr, List<String> sidebarModules) {
-        UserRole role = UserRole.fromString(roleStr);
-
-        switch (role) {
-            case SUPER_ADMIN:
-            case ADMIN:
-                return "dashboard".equals(id)
-                        || "onboarding".equals(id)
-                        || "recruitment".equals(id)
-                        || "training".equals(id)
-                        || "employees".equals(id)
-                        || "designations".equals(id)
-                        || "resignation".equals(id)
-                        || "attendance".equals(id)
-                        || "leave_approvals".equals(id)
-                        || "leave_policies".equals(id)
-                        || "manage_schedules".equals(id)
-                        || "payroll".equals(id)
-                        || "payroll_console".equals(id)
-                        || "documents_admin".equals(id)
-                        || "tasks".equals(id)
-                        || "billing".equals(id)
-                        || "settings".equals(id)
-                        || "broadcast".equals(id)
-                        || "help".equals(id);
-
-            case EMPLOYEE:
-            default:
-                return "attendance".equals(id)
-                        || "leave".equals(id)
-                        || "schedules".equals(id)
-                        || "payslips".equals(id)
-                        || "documents".equals(id)
-                        || "tasks".equals(id)
-                        || "help".equals(id);
-        }
+        return true;
     }
 }

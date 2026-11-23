@@ -126,8 +126,6 @@ public class MoreActivity extends AppCompatActivity {
         allModules.add(new MoreModule("leave_approvals", "Leave Approvals", R.drawable.ic_check_circle, 0xFF1E293B, "ATTENDANCE & LEAVE", "ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("leave_policies", "Leave Policies", R.drawable.ic_customize_switch, 0xFF1E293B, "ATTENDANCE & LEAVE", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("manage_schedules", "Manage Schedules", R.drawable.ic_calendar_edit, 0xFF1E293B, "ATTENDANCE & LEAVE", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("leave", "Leave", R.drawable.ic_mod_leave, 0xFF1E293B, "ATTENDANCE & LEAVE", "EMPLOYEE"));
-        allModules.add(new MoreModule("schedules", "My Schedules", R.drawable.ic_calendar, 0xFF1E293B, "ATTENDANCE & LEAVE", "EMPLOYEE"));
 
         // ADMINISTRATION
         allModules.add(new MoreModule("payroll", "Payroll Processing", R.drawable.ic_trend_up, 0xFF1E293B, "ADMINISTRATION", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
@@ -137,23 +135,14 @@ public class MoreActivity extends AppCompatActivity {
         allModules.add(new MoreModule("billing", "Subscription & Billing", R.drawable.ic_org, 0xFF1E293B, "ADMINISTRATION", "ADMIN", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("settings", "Settings", R.drawable.ic_settings_gear, 0xFF1E293B, "ADMINISTRATION", "ADMIN", "SUPER_ADMIN", "OWNER"));
         allModules.add(new MoreModule("broadcast", "Broadcast Notification", R.drawable.ic_announcement, 0xFF1E293B, "ADMINISTRATION", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
-        allModules.add(new MoreModule("payslips", "My Payslips", R.drawable.ic_chart_bar, 0xFF1E293B, "ADMINISTRATION", "EMPLOYEE"));
-        allModules.add(new MoreModule("documents", "Documents", R.drawable.ic_mod_files, 0xFF1E293B, "ADMINISTRATION", "EMPLOYEE"));
 
         // SUPPORT
         allModules.add(new MoreModule("help", "Help & Support", R.drawable.ic_info, 0xFF1E293B, "SUPPORT", "EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"));
     }
 
     private void filterModulesByRole() {
-        String roleStr = ApiClient.getInstance(this).getRole();
-        List<String> sidebarModules = ApiClient.getInstance(this).getSidebarModules();
         rolePermittedModules.clear();
-
-        for (MoreModule module : allModules) {
-            if (module.isAllowedForRoleAndModules(roleStr, sidebarModules)) {
-                rolePermittedModules.add(module);
-            }
-        }
+        rolePermittedModules.addAll(allModules);
         fullSectionedItems.clear();
         fullSectionedItems.addAll(buildSectionedItems(rolePermittedModules));
         applySearch(etSearch != null && etSearch.getText() != null ? etSearch.getText().toString().trim() : "");

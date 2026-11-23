@@ -184,8 +184,6 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             MoreModule(id: "leave_approvals", title: "Leave Approvals", systemIcon: "calendar.badge.checkmark", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
             MoreModule(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
             MoreModule(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
-            MoreModule(id: "leave", title: "Leave", systemIcon: "calendar.badge.clock", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ATTENDANCE & LEAVE"),
-            MoreModule(id: "schedules", title: "My Schedules", systemIcon: "calendar", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ATTENDANCE & LEAVE"),
 
             // ADMINISTRATION
             MoreModule(id: "payroll", title: "Payroll Processing", systemIcon: "tablecells", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
@@ -195,8 +193,6 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             MoreModule(id: "billing", title: "Subscription & Billing", systemIcon: "creditcard", iconColor: nil, allowedRoles: ["ADMIN", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
             MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["ADMIN", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
             MoreModule(id: "broadcast", title: "Broadcast Notification", systemIcon: "megaphone", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
-            MoreModule(id: "payslips", title: "My Payslips", systemIcon: "banknote", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ADMINISTRATION"),
-            MoreModule(id: "documents", title: "Documents", systemIcon: "folder", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ADMINISTRATION"),
 
             // SUPPORT
             MoreModule(id: "help", title: "Help & Support", systemIcon: "questionmark.circle", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "SUPPORT")
@@ -204,15 +200,10 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
     }
 
     private func filterModulesByRole() {
-        let role = AuthService.shared.getRole()
-        let sidebarModules = AuthService.shared.getSidebarModules()
-
-        let permitted = allModules.filter { $0.isAllowed(for: role, sidebarModules: sidebarModules) }
-
         var sectionMap: [String: [MoreModule]] = [:]
         var sectionOrder: [String] = []
 
-        for m in permitted {
+        for m in allModules {
             let s = m.section.isEmpty ? "GENERAL" : m.section
             if sectionMap[s] == nil {
                 sectionMap[s] = []
