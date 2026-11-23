@@ -9,12 +9,14 @@ public class MoreModule {
     private final int iconResId;
     private final Integer tintColor;
     private final List<String> allowedRoles;
+    private final String section;
 
-    public MoreModule(String id, String title, int iconResId, Integer tintColor, String... allowedRoles) {
+    public MoreModule(String id, String title, int iconResId, Integer tintColor, String section, String... allowedRoles) {
         this.id = id;
         this.title = title;
         this.iconResId = iconResId;
         this.tintColor = tintColor;
+        this.section = section != null ? section : "";
         this.allowedRoles = Arrays.asList(allowedRoles);
     }
 
@@ -34,6 +36,10 @@ public class MoreModule {
         return tintColor;
     }
 
+    public String getSection() {
+        return section;
+    }
+
     public boolean isAllowedForRole(String role) {
         return isAllowedForRoleAndModules(role, null);
     }
@@ -44,24 +50,34 @@ public class MoreModule {
         switch (role) {
             case SUPER_ADMIN:
             case ADMIN:
-                // Admin and Super Admin have complete operational and management modules in More
-                return "attendance".equals(id)
+                return "dashboard".equals(id)
+                        || "onboarding".equals(id)
+                        || "recruitment".equals(id)
+                        || "training".equals(id)
                         || "employees".equals(id)
-                        || "approvals".equals(id)
+                        || "designations".equals(id)
+                        || "resignation".equals(id)
+                        || "attendance".equals(id)
                         || "leave_approvals".equals(id)
-                        || "payroll".equals(id)
-                        || "tasks".equals(id)
-                        || "manage_schedules".equals(id)
                         || "leave_policies".equals(id)
+                        || "manage_schedules".equals(id)
+                        || "payroll".equals(id)
+                        || "payroll_console".equals(id)
                         || "documents_admin".equals(id)
-                        || "broadcast".equals(id)
+                        || "tasks".equals(id)
+                        || "billing".equals(id)
                         || "settings".equals(id)
+                        || "broadcast".equals(id)
                         || "help".equals(id);
 
             case EMPLOYEE:
             default:
-                // Employee only has personal self-service modules in More
-                return "payslips".equals(id)
+                return "attendance".equals(id)
+                        || "leave".equals(id)
+                        || "schedules".equals(id)
+                        || "payslips".equals(id)
+                        || "documents".equals(id)
+                        || "tasks".equals(id)
                         || "help".equals(id);
         }
     }

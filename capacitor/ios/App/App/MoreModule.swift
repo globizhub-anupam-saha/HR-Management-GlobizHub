@@ -34,27 +34,49 @@ struct MoreModule {
     let systemIcon: String
     let iconColor: UIColor?
     let allowedRoles: [String]
+    let section: String
+
+    init(id: String, title: String, systemIcon: String, iconColor: UIColor? = nil, allowedRoles: [String] = [], section: String = "") {
+        self.id = id
+        self.title = title
+        self.systemIcon = systemIcon
+        self.iconColor = iconColor
+        self.allowedRoles = allowedRoles
+        self.section = section
+    }
 
     func isAllowed(for roleStr: String, sidebarModules: [String]? = nil) -> Bool {
         let role = UserRole.from(string: roleStr)
 
         switch role {
         case .superAdmin, .admin:
-            return id == "attendance"
+            return id == "dashboard"
+                || id == "onboarding"
+                || id == "recruitment"
+                || id == "training"
                 || id == "employees"
-                || id == "approvals"
+                || id == "designations"
+                || id == "resignation"
+                || id == "attendance"
                 || id == "leave_approvals"
-                || id == "payroll"
-                || id == "tasks"
-                || id == "manage_schedules"
                 || id == "leave_policies"
+                || id == "manage_schedules"
+                || id == "payroll"
+                || id == "payroll_console"
                 || id == "documents_admin"
-                || id == "broadcast"
+                || id == "tasks"
+                || id == "billing"
                 || id == "settings"
+                || id == "broadcast"
                 || id == "help"
 
         case .employee:
-            return id == "payslips"
+            return id == "attendance"
+                || id == "leave"
+                || id == "schedules"
+                || id == "payslips"
+                || id == "documents"
+                || id == "tasks"
                 || id == "help"
         }
     }

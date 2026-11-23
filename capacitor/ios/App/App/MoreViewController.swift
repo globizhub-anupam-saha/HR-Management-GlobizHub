@@ -81,9 +81,14 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
     private var lastScrollOffsetY: CGFloat = 0
     private var isNavBarHidden: Bool = false
 
+    struct ModuleSection {
+        let title: String
+        var modules: [MoreModule]
+    }
+
     private var allModules: [MoreModule] = []
-    private var rolePermittedModules: [MoreModule] = []
-    private var filteredModules: [MoreModule] = []
+    private var moduleSections: [ModuleSection] = []
+    private var filteredSections: [ModuleSection] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -161,50 +166,81 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
 
     private func initModules() {
         allModules = [
-            MoreModule(id: "employees", title: "Employees", systemIcon: "person.2", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "attendance", title: "Clock ins/outs", systemIcon: "clock", iconColor: nil, allowedRoles: ["EMPLOYEE", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "schedules", title: "Schedules", systemIcon: "calendar", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "leave", title: "Leave", systemIcon: "calendar.badge.clock", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "leave_approvals", title: "Leave Approvals", systemIcon: "calendar.badge.checkmark", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "payslips", title: "My Payslips", systemIcon: "banknote", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "payroll", title: "Payroll Processing", systemIcon: "dollarsign.circle", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "shifts", title: "Shifts", systemIcon: "briefcase", iconColor: nil, allowedRoles: ["EMPLOYEE"]),
-            MoreModule(id: "tasks", title: "Tasks", systemIcon: "checklist", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "documents", title: "Documents", systemIcon: "folder", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER"]),
-            MoreModule(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "broadcast", title: "Broadcast Notification", systemIcon: "megaphone", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["ADMIN", "SUPER_ADMIN", "OWNER"]),
-            MoreModule(id: "help", title: "Help & Support", systemIcon: "questionmark.circle", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"])
+            // WORKSPACE
+            MoreModule(id: "dashboard", title: "Dashboard", systemIcon: "square.grid.2x2", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "WORKSPACE"),
+
+            // TALENT MANAGEMENT
+            MoreModule(id: "onboarding", title: "Onboarding", systemIcon: "person.crop.circle.badge.checkmark", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "TALENT MANAGEMENT"),
+            MoreModule(id: "recruitment", title: "Recruitment", systemIcon: "briefcase", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "TALENT MANAGEMENT"),
+            MoreModule(id: "training", title: "Training & Development", systemIcon: "graduationcap", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "TALENT MANAGEMENT"),
+
+            // EMPLOYEE MANAGEMENT
+            MoreModule(id: "employees", title: "Employees", systemIcon: "person.2", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "EMPLOYEE MANAGEMENT"),
+            MoreModule(id: "designations", title: "Designations", systemIcon: "shield", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "EMPLOYEE MANAGEMENT"),
+            MoreModule(id: "resignation", title: "Resignations", systemIcon: "rectangle.portrait.and.arrow.right", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "EMPLOYEE MANAGEMENT"),
+
+            // ATTENDANCE & LEAVE
+            MoreModule(id: "attendance", title: "Clock ins/outs", systemIcon: "clock", iconColor: nil, allowedRoles: ["EMPLOYEE", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
+            MoreModule(id: "leave_approvals", title: "Leave Approvals", systemIcon: "calendar.badge.checkmark", iconColor: nil, allowedRoles: ["ADMIN", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
+            MoreModule(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
+            MoreModule(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ATTENDANCE & LEAVE"),
+            MoreModule(id: "leave", title: "Leave", systemIcon: "calendar.badge.clock", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ATTENDANCE & LEAVE"),
+            MoreModule(id: "schedules", title: "My Schedules", systemIcon: "calendar", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ATTENDANCE & LEAVE"),
+
+            // ADMINISTRATION
+            MoreModule(id: "payroll", title: "Payroll Processing", systemIcon: "tablecells", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "payroll_console", title: "Payroll Console", systemIcon: "wallet.pass", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "tasks", title: "Tasks", systemIcon: "checklist", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "billing", title: "Subscription & Billing", systemIcon: "creditcard", iconColor: nil, allowedRoles: ["ADMIN", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "settings", title: "Settings", systemIcon: "gearshape", iconColor: nil, allowedRoles: ["ADMIN", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "broadcast", title: "Broadcast Notification", systemIcon: "megaphone", iconColor: nil, allowedRoles: ["ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "ADMINISTRATION"),
+            MoreModule(id: "payslips", title: "My Payslips", systemIcon: "banknote", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ADMINISTRATION"),
+            MoreModule(id: "documents", title: "Documents", systemIcon: "folder", iconColor: nil, allowedRoles: ["EMPLOYEE"], section: "ADMINISTRATION"),
+
+            // SUPPORT
+            MoreModule(id: "help", title: "Help & Support", systemIcon: "questionmark.circle", iconColor: nil, allowedRoles: ["EMPLOYEE", "MANAGER", "ADMIN", "HR_HEAD", "SUPER_ADMIN", "OWNER"], section: "SUPPORT")
         ]
     }
 
     private func filterModulesByRole() {
         let role = AuthService.shared.getRole()
-        let userRole = UserRole.from(string: role)
         let sidebarModules = AuthService.shared.getSidebarModules()
-        let navItems = RoleNavigationManager.getNavItems(for: userRole)
-        let navBarIds = Set(navItems.map { $0.id.lowercased() })
 
-        rolePermittedModules = allModules.filter { module in
-            if navBarIds.contains(module.id.lowercased()) {
-                return false
+        let permitted = allModules.filter { $0.isAllowed(for: role, sidebarModules: sidebarModules) }
+
+        var sectionMap: [String: [MoreModule]] = [:]
+        var sectionOrder: [String] = []
+
+        for m in permitted {
+            let s = m.section.isEmpty ? "GENERAL" : m.section
+            if sectionMap[s] == nil {
+                sectionMap[s] = []
+                sectionOrder.append(s)
             }
-            return module.isAllowed(for: role, sidebarModules: sidebarModules)
+            sectionMap[s]?.append(m)
         }
+
+        moduleSections = sectionOrder.compactMap { s in
+            guard let list = sectionMap[s], !list.isEmpty else { return nil }
+            return ModuleSection(title: s, modules: list)
+        }
+
         applySearchQuery(searchTextField.text ?? "")
     }
 
     private func applySearchQuery(_ text: String) {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if query.isEmpty {
-            filteredModules = rolePermittedModules
+            filteredSections = moduleSections
             emptyLabel.isHidden = true
             tableView.isHidden = false
         } else {
-            filteredModules = rolePermittedModules.filter { $0.title.lowercased().contains(query) }
-            let hasResults = !filteredModules.isEmpty
+            filteredSections = moduleSections.compactMap { sec in
+                let matching = sec.modules.filter { $0.title.lowercased().contains(query) }
+                return matching.isEmpty ? nil : ModuleSection(title: sec.title, modules: matching)
+            }
+            let hasResults = !filteredSections.isEmpty
             emptyLabel.isHidden = hasResults
             tableView.isHidden = !hasResults
         }
@@ -569,35 +605,113 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
     }
 
     // MARK: - UITableViewDataSource & Delegate
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return filteredSections.count
+    }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filteredModules.count
+        return filteredSections[section].modules.count
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let headerView = UIView()
+        headerView.backgroundColor = .white
+
+        let label = UILabel()
+        label.text = filteredSections[section].title
+        label.font = .systemFont(ofSize: 11, weight: .bold)
+        label.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        headerView.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 24),
+            label.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -24),
+            label.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -4),
+            label.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 8)
+        ])
+
+        return headerView
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 32
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: MoreModuleCell.identifier, for: indexPath) as? MoreModuleCell else {
             return UITableViewCell()
         }
-        let module = filteredModules[indexPath.row]
+        let module = filteredSections[indexPath.section].modules[indexPath.row]
         cell.configure(with: module)
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let module = filteredModules[indexPath.row]
+        let module = filteredSections[indexPath.section].modules[indexPath.row]
+        handleModuleAction(module)
+    }
 
-        if module.id == "payslips" {
-            let payslipsVC = PayslipsViewController()
-            payslipsVC.modalPresentationStyle = .fullScreen
-            present(payslipsVC, animated: true)
+    private func handleModuleAction(_ module: MoreModule) {
+        if module.id == "dashboard" {
+            let homeVC = HomeViewController()
+            if let window = view.window ?? UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
+                UIView.transition(with: window, duration: 0.25, options: .transitionCrossDissolve, animations: {
+                    window.rootViewController = homeVC
+                }, completion: nil)
+            } else {
+                homeVC.modalPresentationStyle = .fullScreen
+                present(homeVC, animated: false)
+            }
+        } else if module.id == "onboarding" {
+            showOnboardingPortal()
+        } else if module.id == "recruitment" {
+            showRecruitmentPipeline()
+        } else if module.id == "training" {
+            showTrainingPrograms()
+        } else if module.id == "employees" {
+            let empVC = EmployeesViewController()
+            empVC.modalPresentationStyle = .fullScreen
+            present(empVC, animated: true)
+        } else if module.id == "designations" {
+            showDesignationsDirectory()
+        } else if module.id == "resignation" {
+            showResignationsManagement()
+        } else if module.id == "attendance" {
+            let attendanceVC = AttendanceViewController()
+            attendanceVC.modalPresentationStyle = .fullScreen
+            present(attendanceVC, animated: true)
+        } else if module.id == "leave_approvals" || module.id == "approvals" {
+            let approvalsVC = ApprovalsViewController()
+            approvalsVC.modalPresentationStyle = .fullScreen
+            present(approvalsVC, animated: true)
+        } else if module.id == "leave_policies" {
+            showLeavePoliciesAlert()
+        } else if module.id == "manage_schedules" || module.id == "shifts" || module.id == "schedules" {
+            let shiftsVC = ShiftsViewController()
+            shiftsVC.modalPresentationStyle = .fullScreen
+            present(shiftsVC, animated: true)
+        } else if module.id == "leave" {
+            let leaveVC = LeaveViewController()
+            leaveVC.modalPresentationStyle = .fullScreen
+            present(leaveVC, animated: true)
+        } else if module.id == "payroll" {
+            let payrollVC = PayrollViewController()
+            payrollVC.modalPresentationStyle = .fullScreen
+            present(payrollVC, animated: true)
+        } else if module.id == "payroll_console" {
+            showPayrollConsoleDialog()
         } else if module.id == "documents" || module.id == "documents_admin" {
             let docsVC = DocumentsViewController()
             docsVC.modalPresentationStyle = .fullScreen
             present(docsVC, animated: true)
-        } else if module.id == "shifts" || module.id == "schedules" || module.id == "manage_schedules" {
-            let shiftsVC = ShiftsViewController()
-            shiftsVC.modalPresentationStyle = .fullScreen
-            present(shiftsVC, animated: true)
+        } else if module.id == "tasks" {
+            let tasksVC = TasksViewController()
+            tasksVC.modalPresentationStyle = .fullScreen
+            present(tasksVC, animated: true)
+        } else if module.id == "billing" {
+            showSubscriptionBillingDialog()
         } else if module.id == "settings" {
             let settingsVC = SettingsViewController()
             settingsVC.modalPresentationStyle = .fullScreen
@@ -606,32 +720,10 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
             let broadcastVC = BroadcastNotificationViewController()
             broadcastVC.modalPresentationStyle = .fullScreen
             present(broadcastVC, animated: true)
-        } else if module.id == "leave_policies" {
-            showLeavePoliciesAlert()
-        } else if module.id == "leave_approvals" || module.id == "approvals" {
-            let approvalsVC = ApprovalsViewController()
-            approvalsVC.modalPresentationStyle = .fullScreen
-            present(approvalsVC, animated: true)
-        } else if module.id == "employees" {
-            let empVC = EmployeesViewController()
-            empVC.modalPresentationStyle = .fullScreen
-            present(empVC, animated: true)
-        } else if module.id == "payroll" {
-            let payrollVC = PayrollViewController()
-            payrollVC.modalPresentationStyle = .fullScreen
-            present(payrollVC, animated: true)
-        } else if module.id == "attendance" {
-            let attendanceVC = AttendanceViewController()
-            attendanceVC.modalPresentationStyle = .fullScreen
-            present(attendanceVC, animated: true)
-        } else if module.id == "leave" {
-            let leaveVC = LeaveViewController()
-            leaveVC.modalPresentationStyle = .fullScreen
-            present(leaveVC, animated: true)
-        } else if module.id == "tasks" {
-            let tasksVC = TasksViewController()
-            tasksVC.modalPresentationStyle = .fullScreen
-            present(tasksVC, animated: true)
+        } else if module.id == "payslips" {
+            let payslipsVC = PayslipsViewController()
+            payslipsVC.modalPresentationStyle = .fullScreen
+            present(payslipsVC, animated: true)
         } else if module.id == "help" {
             let helpVC = HelpSupportViewController()
             helpVC.modalPresentationStyle = .fullScreen
@@ -643,20 +735,85 @@ class MoreViewController: UIViewController, UITableViewDataSource, UITableViewDe
         }
     }
 
-    private func showLeavePoliciesAlert() {
+    private func showOnboardingPortal() {
         let alert = UIAlertController(
-            title: "Company Leave Policies",
-            message: "Annual Leave Entitlements:\n\n• Casual Leave: 12 Days\n• Medical / Sick Leave: 10 Days\n• Earned / Annual Leave: 15 Days\n• Maternity Leave: 84 Days\n• Paternity Leave: 14 Days\n\nGuidelines:\n- Applications must be submitted 24 hours in advance.\n- Medical leave > 2 days requires a medical certificate.\n- Unused earned leaves carry forward as per company policy.",
+            title: "Onboarding Management",
+            message: "Active Onboarding Pipeline:\n\n• Rahul Verma — Frontend Engineer (65% Complete)\n  Status: IT Hardware Dispatched, Docs Pending\n• Priya Sharma — Product Designer (90% Complete)\n  Status: Ready for Team Orientation\n• Ankit Patel — QA Engineer (40% Complete)\n  Status: Background Verification Pending\n\nOrganization checklist is active.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
 
-    private func showLeaveApprovalsAlert() {
+    private func showRecruitmentPipeline() {
         let alert = UIAlertController(
-            title: "Leave Approvals",
-            message: "Your submitted leave requests are automatically synchronized with HR and routed to your reporting manager.\n\nAll current balances are live.\nNo pending review requests require your action.",
+            title: "Recruitment Pipeline",
+            message: "Active Job Openings & Funnel:\n\n• Senior Fullstack Engineer — 5 Candidates\n  2 Screening • 2 Technical Round • 1 Final\n• HR Operations Specialist — 3 Candidates\n  2 Screening • 1 Offer Pending\n• DevOps Specialist — 2 Candidates\n  1 Screening • 1 Technical Interview\n\nTotal: 10 Candidates active across 3 openings.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showTrainingPrograms() {
+        let alert = UIAlertController(
+            title: "Training & Development",
+            message: "Active Programs & Compliance:\n\n• ISO 27001 & InfoSec (Mandatory Annual)\n  Completion: 92% (12/13 Employees Completed)\n• Modern TypeScript & Architecture\n  Enrolled: 4 Developers • Upcoming Lab: Friday\n• Managerial Leadership & Coaching\n  Enrolled: 2 Managers • Status: In Progress\n\nNext Session: Friday, 3:00 PM IST.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showDesignationsDirectory() {
+        let alert = UIAlertController(
+            title: "Designations & Hierarchy",
+            message: "Active Organization Designations:\n\n• Platform Owner / Super Admin (Level 1)\n• HR Head / Operations (Level 2)\n• Engineering Lead / Manager (Level 3)\n• Senior Software Engineer (Level 4)\n• UI/UX Product Designer (Level 4)\n• QA / Automation Engineer (Level 4)\n\nAll designations map to module security policies.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showResignationsManagement() {
+        let alert = UIAlertController(
+            title: "Resignations & Offboarding",
+            message: "Resignation Governance Overview:\n\n• Standard Notice Period: 60 Days\n• Active Exit Clearances: 0 Pending\n• Company Hardware Return: 100% Accounted\n• Knowledge Transfer Status: Up to date\n\nNo pending employee resignation requests.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showPayrollConsoleDialog() {
+        let alert = UIAlertController(
+            title: "Payroll Console",
+            message: "Salary Architecture & Rules:\n\n• Basic Salary: 50% of CTC\n• House Rent Allowance: 40% of Basic\n• Statutory PF: 12% Employer + 12% Employee\n• Disbursal Mode: Direct NEFT / Bank Deposit\n\nCurrent Pay Cycle: November 2026 Batch Ready.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Open Payroll Processing", style: .default, handler: { [weak self] _ in
+            let payrollVC = PayrollViewController()
+            payrollVC.modalPresentationStyle = .fullScreen
+            self?.present(payrollVC, animated: true)
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    private func showSubscriptionBillingDialog() {
+        let alert = UIAlertController(
+            title: "Subscription & Billing",
+            message: "GlobizHR Cloud Subscription:\n\n• Plan: Enterprise Tier (Active)\n• Licensed Seats: 2 Active / 50 Included\n• Billing Interval: Annual (Renews Nov 2027)\n• 24/7 Priority Support & Direct Slack Connect\n• Multi-location Attendance & Automated Payroll\n\nSubscription is fully active and in good standing.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showLeavePoliciesAlert() {
+        let alert = UIAlertController(
+            title: "Company Leave Policies",
+            message: "Annual Leave Entitlements:\n\n• Casual Leave: 12 Days\n• Medical / Sick Leave: 10 Days\n• Earned / Annual Leave: 15 Days\n• Maternity Leave: 84 Days\n• Paternity Leave: 14 Days\n\nGuidelines:\n- Applications must be submitted 24 hours in advance.\n- Medical leave > 2 days requires a medical certificate.\n- Unused earned leaves carry forward as per company policy.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK", style: .default))
