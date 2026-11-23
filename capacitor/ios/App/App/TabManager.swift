@@ -32,13 +32,13 @@ class TabManager {
             list.append(TabItem(id: "settings", title: "Settings", systemIcon: "gearshape", isLocked: false, isEnabled: false))
 
         case .admin:
-            list.append(TabItem(id: "attendance", title: "Attendance", systemIcon: "clock", isLocked: false, isEnabled: true))
-            list.append(TabItem(id: "approvals", title: "Approvals", systemIcon: "calendar.badge.checkmark", isLocked: false, isEnabled: true))
             list.append(TabItem(id: "employees", title: "Employees", systemIcon: "person.2", isLocked: false, isEnabled: true))
+            list.append(TabItem(id: "approvals", title: "Approvals", systemIcon: "calendar.badge.checkmark", isLocked: false, isEnabled: true))
+            list.append(TabItem(id: "payroll", title: "Payroll", systemIcon: "dollarsign.circle", isLocked: false, isEnabled: true))
+            list.append(TabItem(id: "attendance", title: "Attendance", systemIcon: "clock", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "tasks", title: "Tasks", systemIcon: "checkmark.square", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "manage_schedules", title: "Manage Schedules", systemIcon: "calendar.badge.plus", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "leave_policies", title: "Leave Policies", systemIcon: "slider.horizontal.3", isLocked: false, isEnabled: false))
-            list.append(TabItem(id: "payroll", title: "Payroll", systemIcon: "dollarsign.circle", isLocked: false, isEnabled: false))
             list.append(TabItem(id: "documents_admin", title: "Documents (Admin)", systemIcon: "folder.badge.gearshape", isLocked: false, isEnabled: false))
 
         case .employee:

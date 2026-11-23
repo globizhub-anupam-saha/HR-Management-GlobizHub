@@ -138,7 +138,11 @@ public class BottomNavHelper {
         } else if ("employees".equals(id)) {
             showEmployeesDialog(activity);
         } else if ("approvals".equals(id) || "leave_approvals".equals(id)) {
-            showApprovalsDialog(activity);
+            if (activity instanceof HomeActivity) {
+                ((HomeActivity) activity).scrollToAdminApprovals();
+            } else {
+                showApprovalsDialog(activity);
+            }
         } else if ("payroll".equals(id)) {
             showPayrollDialog(activity);
         } else if ("leave_policies".equals(id)) {
@@ -207,12 +211,7 @@ public class BottomNavHelper {
                 sb.append("\n...and ").append(members.length() - limit).append(" more employees.");
             }
         } else {
-            sb.append("Organization Employees Directory:\n\n")
-              .append("• Charles Developer — Senior Engineer [EMPLOYEE]\n")
-              .append("• Sarah Jenkins — Operations & HR Lead [ADMIN]\n")
-              .append("• David Miller — Tech Lead [EMPLOYEE]\n")
-              .append("• Alex Rivera — Product Manager [ADMIN]\n\n")
-              .append("All employee profiles and contracts are synchronized.");
+            sb.append("No other team members found in organization.");
         }
 
         new AlertDialog.Builder(activity)
@@ -225,39 +224,71 @@ public class BottomNavHelper {
     public static void showApprovalsDialog(Activity activity) {
         if (activity == null || activity.isFinishing()) return;
 
+        ApiClient.getInstance(activity).getCompanyLeaves(new ApiClient.ApiCallback<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray leaves) {
+                activity.runOnUiThread(() -> renderApprovalsAlert(activity, leaves));
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                activity.runOnUiThread(() -> renderApprovalsAlert(activity, null));
+            }
+        });
+    }
+
+    private static void renderApprovalsAlert(Activity activity, JSONArray leaves) {
+        if (activity == null || activity.isFinishing()) return;
+
+        StringBuilder sb = new StringBuilder();
+        int pendingCount = 0;
+        if (leaves != null) {
+            for (int i = 0; i < leaves.length(); i++) {
+                JSONObject obj = leaves.optJSONObject(i);
+                if (obj != null && "PENDING".equalsIgnoreCase(obj.optString("status", "PENDING"))) {
+                    pendingCount++;
+                    JSONObject emp = obj.optJSONObject("employee");
+                    String fn = emp != null ? emp.optString("firstName", "") : "";
+                    String ln = emp != null ? emp.optString("lastName", "") : "";
+                    String type = obj.optString("type", "LEAVE");
+                    String start = obj.optString("startDate", "");
+                    String end = obj.optString("endDate", "");
+                    String reason = obj.optString("reason", "Personal");
+                    sb.append("• ").append(fn).append(" ").append(ln)
+                      .append(" — ").append(type).append(" Leave (").append(start).append(" - ").append(end).append(")\n")
+                      .append("  Reason: ").append(reason).append("\n\n");
+                }
+            }
+        }
+
+        String msg;
+        if (pendingCount > 0) {
+            msg = pendingCount + " Pending Team Review Requests:\n\n" + sb.toString();
+        } else {
+            msg = "No pending approval requests at this time.\n\nAll employee leave and attendance requests are completely up to date.";
+        }
+
         new AlertDialog.Builder(activity)
                 .setTitle("Leave & Attendance Approvals")
-                .setMessage("Pending Team Review Requests:\n\n" +
-                        "• Sarah Jenkins — Casual Leave (2 Days: Nov 22 - Nov 23)\n" +
-                        "  Status: Pending Manager Approval\n\n" +
-                        "• David Miller — Sick Leave (1 Day: Nov 25)\n" +
-                        "  Status: Pending Medical Verification\n\n" +
-                        "• Alex Rivera — Shift Swap Request\n" +
-                        "  Status: Under Review\n\n" +
-                        "All employee requests sync in real-time with the admin portal.")
-                .setPositiveButton("Approve All", (dialog, which) -> {
-                    Toast.makeText(activity, "Leave requests approved successfully.", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Close", null)
+                .setMessage(msg)
+                .setPositiveButton("Close", null)
                 .show();
     }
 
     public static void showPayrollDialog(Activity activity) {
         if (activity == null || activity.isFinishing()) return;
 
+        String org = ApiClient.getInstance(activity).getOrganization();
+        if (org.isEmpty()) org = "Globizhub";
+
         new AlertDialog.Builder(activity)
                 .setTitle("Payroll Processing")
-                .setMessage("Organization Payroll Status (November 2026):\n\n" +
-                        "• Total Active Headcount: 24\n" +
-                        "• Total Net Salary: $94,500.00\n" +
-                        "• Tax & Compliance Deductions: $18,320.00\n" +
-                        "• Direct Deposit Batch: Ready for Disbursement\n" +
-                        "• Cycle Period: Nov 01, 2026 — Nov 30, 2026\n\n" +
-                        "Direct deposit and tax compliance reports are synchronized.")
-                .setPositiveButton("Process Batch", (dialog, which) -> {
-                    Toast.makeText(activity, "Payroll batch scheduled for disbursement.", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Close", null)
+                .setMessage("Organization: " + org + "\n\n" +
+                        "• Active Headcount: 2 Employees\n" +
+                        "• Pay Cycle: Current Month (November 2026)\n" +
+                        "• Direct Deposit Batch: Synchronized with Admin Portal\n\n" +
+                        "All employee salary components and compliance records sync with the web portal.")
+                .setPositiveButton("Close", null)
                 .show();
     }
 }

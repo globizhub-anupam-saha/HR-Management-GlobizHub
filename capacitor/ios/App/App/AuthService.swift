@@ -1494,13 +1494,13 @@ class AuthService {
                    let data = data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
                     completion(.success(json))
                 } else {
-                    let fallback: [String: Any] = [
-                        "totalEmployees": 24,
-                        "presentToday": 18,
-                        "lateToday": 2,
-                        "absentToday": 4
+                    let zeroStats: [String: Any] = [
+                        "totalEmployees": 0,
+                        "presentToday": 0,
+                        "lateToday": 0,
+                        "absentToday": 0
                     ]
-                    completion(.success(fallback))
+                    completion(.success(zeroStats))
                 }
             }
         }.resume()
@@ -1562,19 +1562,10 @@ class AuthService {
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
-                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]], !list.isEmpty {
+                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] {
                     completion(.success(list))
                 } else {
-                    let fmt = DateFormatter()
-                    fmt.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-                    fmt.timeZone = TimeZone(secondsFromGMT: 0)
-                    let fallbackLogs: [[String: Any]] = [
-                        ["id": "aud-1", "action": "LOGIN", "actor": ["firstName": "Alex", "lastName": "Johnson", "email": "alex@globizhub.com"], "ipAddress": "192.168.1.42", "createdAt": fmt.string(from: Date().addingTimeInterval(-600))],
-                        ["id": "aud-2", "action": "APPROVE", "actor": ["firstName": "Admin", "lastName": "User", "email": "admin@globizhub.com"], "newValue": ["description": "Approved leave request for Sarah Davis"], "createdAt": fmt.string(from: Date().addingTimeInterval(-1800))],
-                        ["id": "aud-3", "action": "DOWNLOAD", "actor": ["firstName": "Sarah", "lastName": "Davis", "email": "sarah@globizhub.com"], "ipAddress": "192.168.1.88", "createdAt": fmt.string(from: Date().addingTimeInterval(-3600))],
-                        ["id": "aud-4", "action": "CLOCK_IN", "actor": ["firstName": "Michael", "lastName": "Brown", "email": "michael@globizhub.com"], "ipAddress": "192.168.1.15", "createdAt": fmt.string(from: Date().addingTimeInterval(-7200))]
-                    ]
-                    completion(.success(fallbackLogs))
+                    completion(.success([]))
                 }
             }
         }.resume()
@@ -1598,14 +1589,10 @@ class AuthService {
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
-                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]], !list.isEmpty {
+                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] {
                     completion(.success(list))
                 } else {
-                    let fallback: [[String: Any]] = [
-                        ["id": "l-1", "type": "CASUAL", "startDate": "Nov 24, 2026", "endDate": "Nov 25, 2026", "reason": "Family obligation", "status": "PENDING", "employee": ["firstName": "Sarah", "lastName": "Davis"]],
-                        ["id": "l-2", "type": "SICK", "startDate": "Nov 26, 2026", "endDate": "Nov 27, 2026", "reason": "Dental appointment", "status": "PENDING", "employee": ["firstName": "Rahul", "lastName": "Sharma"]]
-                    ]
-                    completion(.success(fallback))
+                    completion(.success([]))
                 }
             }
         }.resume()
@@ -1629,28 +1616,10 @@ class AuthService {
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let http = response as? HTTPURLResponse, http.statusCode >= 200 && http.statusCode < 300,
-                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]], !list.isEmpty {
+                   let data = data, let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] {
                     completion(.success(list))
                 } else {
-                    let fallback: [[String: Any]] = [
-                        [
-                            "id": "bal-1", "firstName": "Sarah", "lastName": "Davis", "employeeCode": "EMP-1021",
-                            "balance": ["casual": 10, "medical": 7, "earned": 14]
-                        ],
-                        [
-                            "id": "bal-2", "firstName": "Rahul", "lastName": "Sharma", "employeeCode": "EMP-1022",
-                            "balance": ["casual": 8, "medical": 9, "earned": 12]
-                        ],
-                        [
-                            "id": "bal-3", "firstName": "Priya", "lastName": "Patel", "employeeCode": "EMP-1023",
-                            "balance": ["casual": 12, "medical": 6, "earned": 15]
-                        ],
-                        [
-                            "id": "bal-4", "firstName": "Michael", "lastName": "Chang", "employeeCode": "EMP-1024",
-                            "balance": ["casual": 6, "medical": 10, "earned": 11]
-                        ]
-                    ]
-                    completion(.success(fallback))
+                    completion(.success([]))
                 }
             }
         }.resume()

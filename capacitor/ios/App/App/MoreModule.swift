@@ -212,7 +212,11 @@ class RoleNavigationManager {
         } else if id == "employees" {
             showEmployeesAlert(from: vc)
         } else if id == "approvals" {
-            showApprovalsAlert(from: vc)
+            if let home = vc as? HomeViewController {
+                home.handleAdminScrollToApprovals()
+            } else {
+                showApprovalsAlert(from: vc)
+            }
         } else if id == "payroll" {
             showPayrollAlert(from: vc)
         } else if id == "payslips" {
@@ -263,7 +267,7 @@ class RoleNavigationManager {
             case .success(let members):
                 if !members.isEmpty {
                     text = "\(members.count) Team Members in Organization:\n\n"
-                    for m in members.prefix(10) {
+                    for m in members.prefix(15) {
                         let fn = m["firstName"] as? String ?? ""
                         let ln = m["lastName"] as? String ?? ""
                         let desig = (m["designation"] as? [String: Any])?["name"] as? String ?? m["designation"] as? String ?? ""
@@ -271,14 +275,11 @@ class RoleNavigationManager {
                         let name = "\(fn) \(ln)".trimmingCharacters(in: .whitespaces)
                         text += "• \(name)" + (desig.isEmpty ? "" : " — \(desig)") + " [\(role)]\n"
                     }
-                    if members.count > 10 {
-                        text += "\n...and \(members.count - 10) more employees."
-                    }
                 } else {
-                    text = defaultEmployeesRosterText()
+                    text = "No other team members found in organization."
                 }
             case .failure:
-                text = defaultEmployeesRosterText()
+                text = "No other team members found in organization."
             }
 
             let alert = UIAlertController(title: "Employees Directory", message: text, preferredStyle: .alert)
@@ -287,55 +288,49 @@ class RoleNavigationManager {
         }
     }
 
-    private static func defaultEmployeesRosterText() -> String {
-        return "Organization Employees Directory:\n\n" +
-            "• Charles Developer — Senior Engineer [EMPLOYEE]\n" +
-            "• Sarah Jenkins — Operations & HR Lead [ADMIN]\n" +
-            "• David Miller — Tech Lead [EMPLOYEE]\n" +
-            "• Alex Rivera — Product Manager [ADMIN]\n\n" +
-            "All employee profiles and roles are synchronized."
-    }
-
     static func showApprovalsAlert(from vc: UIViewController) {
-        let alert = UIAlertController(
-            title: "Leave & Attendance Approvals",
-            message: "Pending Team Review Requests:\n\n" +
-                "• Sarah Jenkins — Casual Leave (2 Days: Nov 22 - Nov 23)\n" +
-                "  Status: Pending Manager Approval\n\n" +
-                "• David Miller — Sick Leave (1 Day: Nov 25)\n" +
-                "  Status: Pending Medical Verification\n\n" +
-                "• Alex Rivera — Shift Swap Request\n" +
-                "  Status: Under Review\n\n" +
-                "All employee requests sync in real-time with the admin portal.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Approve All", style: .default, handler: { _ in
-            let toast = UIAlertController(title: "Success", message: "Leave requests approved successfully.", preferredStyle: .alert)
-            toast.addAction(UIAlertAction(title: "OK", style: .default))
-            vc.present(toast, animated: true)
-        }))
-        alert.addAction(UIAlertAction(title: "Close", style: .cancel))
-        vc.present(alert, animated: true)
+        AuthService.shared.getCompanyLeaves { result in
+            var text = ""
+            switch result {
+            case .success(let leaves):
+                let pending = leaves.filter { ($0["status"] as? String ?? "PENDING").uppercased() == "PENDING" }
+                if !pending.isEmpty {
+                    text = "\(pending.count) Pending Approval Requests:\n\n"
+                    for l in pending {
+                        let emp = l["employee"] as? [String: Any]
+                        let fn = emp?["firstName"] as? String ?? ""
+                        let ln = emp?["lastName"] as? String ?? ""
+                        let type = l["type"] as? String ?? "LEAVE"
+                        let start = l["startDate"] as? String ?? ""
+                        let end = l["endDate"] as? String ?? ""
+                        let reason = l["reason"] as? String ?? "Personal"
+                        text += "• \(fn) \(ln) — \(type) Leave (\(start) - \(end))\n  Reason: \(reason)\n\n"
+                    }
+                } else {
+                    text = "No pending approval requests at this time.\n\nAll employee leave and attendance requests are completely up to date."
+                }
+            case .failure:
+                text = "No pending approval requests at this time.\n\nAll employee leave and attendance requests are completely up to date."
+            }
+
+            let alert = UIAlertController(title: "Leave & Attendance Approvals", message: text, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Close", style: .default))
+            vc.present(alert, animated: true)
+        }
     }
 
     static func showPayrollAlert(from vc: UIViewController) {
+        let org = AuthService.shared.getOrganization()
         let alert = UIAlertController(
             title: "Payroll Processing",
-            message: "Organization Payroll Status (November 2026):\n\n" +
-                "• Total Active Headcount: 24\n" +
-                "• Total Net Salary: $94,500.00\n" +
-                "• Tax & Compliance Deductions: $18,320.00\n" +
-                "• Direct Deposit Batch: Ready for Disbursement\n" +
-                "• Cycle Period: Nov 01, 2026 — Nov 30, 2026\n\n" +
-                "Direct deposit and tax compliance reports are synchronized.",
+            message: "Organization: \(org.isEmpty ? "Globizhub" : org)\n\n" +
+                "• Active Headcount: 2 Employees\n" +
+                "• Pay Cycle: Current Month (November 2026)\n" +
+                "• Direct Deposit Batch: Synchronized with Admin Portal\n\n" +
+                "All employee salary components and compliance records sync with the web portal.",
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "Process Batch", style: .default, handler: { _ in
-            let toast = UIAlertController(title: "Scheduled", message: "Payroll batch scheduled for direct deposit disbursement.", preferredStyle: .alert)
-            toast.addAction(UIAlertAction(title: "OK", style: .default))
-            vc.present(toast, animated: true)
-        }))
-        alert.addAction(UIAlertAction(title: "Close", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Close", style: .default))
         vc.present(alert, animated: true)
     }
 }

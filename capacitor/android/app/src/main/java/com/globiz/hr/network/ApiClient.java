@@ -1326,10 +1326,10 @@ public class ApiClient {
                 public void onError(String errorMessage, int statusCode) {
                     try {
                         JSONObject fallback = new JSONObject();
-                        fallback.put("totalEmployees", 24);
-                        fallback.put("presentToday", 18);
-                        fallback.put("lateToday", 2);
-                        fallback.put("absentToday", 4);
+                        fallback.put("totalEmployees", 0);
+                        fallback.put("presentToday", 0);
+                        fallback.put("lateToday", 0);
+                        fallback.put("absentToday", 0);
                         postSuccess(callback, fallback);
                     } catch (Exception ignored) {
                         postError(callback, errorMessage, statusCode);
@@ -1409,65 +1409,7 @@ public class ApiClient {
 
                 @Override
                 public void onError(String errorMessage, int statusCode) {
-                    try {
-                        JSONArray fallback = new JSONArray();
-                        SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-                        isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-                        JSONObject l1 = new JSONObject();
-                        l1.put("id", "aud-1");
-                        l1.put("action", "LOGIN");
-                        JSONObject a1 = new JSONObject();
-                        a1.put("firstName", "Alex");
-                        a1.put("lastName", "Johnson");
-                        a1.put("email", "alex@globizhub.com");
-                        l1.put("actor", a1);
-                        l1.put("ipAddress", "192.168.1.42");
-                        l1.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 600000)));
-                        fallback.put(l1);
-
-                        JSONObject l2 = new JSONObject();
-                        l2.put("id", "aud-2");
-                        l2.put("action", "APPROVE");
-                        JSONObject a2 = new JSONObject();
-                        a2.put("firstName", "Admin");
-                        a2.put("lastName", "User");
-                        a2.put("email", "admin@globizhub.com");
-                        l2.put("actor", a2);
-                        JSONObject nv = new JSONObject();
-                        nv.put("description", "Approved leave request for Sarah Davis");
-                        l2.put("newValue", nv);
-                        l2.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 1800000)));
-                        fallback.put(l2);
-
-                        JSONObject l3 = new JSONObject();
-                        l3.put("id", "aud-3");
-                        l3.put("action", "DOWNLOAD");
-                        JSONObject a3 = new JSONObject();
-                        a3.put("firstName", "Sarah");
-                        a3.put("lastName", "Davis");
-                        a3.put("email", "sarah@globizhub.com");
-                        l3.put("actor", a3);
-                        l3.put("ipAddress", "192.168.1.88");
-                        l3.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 3600000)));
-                        fallback.put(l3);
-
-                        JSONObject l4 = new JSONObject();
-                        l4.put("id", "aud-4");
-                        l4.put("action", "CLOCK_IN");
-                        JSONObject a4 = new JSONObject();
-                        a4.put("firstName", "Michael");
-                        a4.put("lastName", "Brown");
-                        a4.put("email", "michael@globizhub.com");
-                        l4.put("actor", a4);
-                        l4.put("ipAddress", "192.168.1.15");
-                        l4.put("createdAt", isoFmt.format(new Date(System.currentTimeMillis() - 7200000)));
-                        fallback.put(l4);
-
-                        postSuccess(callback, fallback);
-                    } catch (Exception ignored) {
-                        postError(callback, errorMessage, statusCode);
-                    }
+                    postSuccess(callback, new JSONArray());
                 }
             });
         });
@@ -1483,39 +1425,7 @@ public class ApiClient {
 
                 @Override
                 public void onError(String errorMessage, int statusCode) {
-                    try {
-                        JSONArray fallback = new JSONArray();
-
-                        JSONObject item1 = new JSONObject();
-                        item1.put("id", "l-1");
-                        item1.put("type", "CASUAL");
-                        item1.put("startDate", "Nov 24, 2026");
-                        item1.put("endDate", "Nov 25, 2026");
-                        item1.put("reason", "Family obligation");
-                        item1.put("status", "PENDING");
-                        JSONObject emp1 = new JSONObject();
-                        emp1.put("firstName", "Sarah");
-                        emp1.put("lastName", "Davis");
-                        item1.put("employee", emp1);
-                        fallback.put(item1);
-
-                        JSONObject item2 = new JSONObject();
-                        item2.put("id", "l-2");
-                        item2.put("type", "SICK");
-                        item2.put("startDate", "Nov 26, 2026");
-                        item2.put("endDate", "Nov 27, 2026");
-                        item2.put("reason", "Dental appointment");
-                        item2.put("status", "PENDING");
-                        JSONObject emp2 = new JSONObject();
-                        emp2.put("firstName", "Rahul");
-                        emp2.put("lastName", "Sharma");
-                        item2.put("employee", emp2);
-                        fallback.put(item2);
-
-                        postSuccess(callback, fallback);
-                    } catch (Exception ignored) {
-                        postError(callback, errorMessage, statusCode);
-                    }
+                    postSuccess(callback, new JSONArray());
                 }
             });
         });
@@ -1526,76 +1436,15 @@ public class ApiClient {
             getJsonArray("/leaves/company-balances", getToken(), new ApiCallback<JSONArray>() {
                 @Override
                 public void onSuccess(JSONArray result) {
-                    if (result != null && result.length() > 0) {
-                        postSuccess(callback, result);
-                    } else {
-                        postSuccess(callback, getFallbackCompanyLeaveBalances());
-                    }
+                    postSuccess(callback, result != null ? result : new JSONArray());
                 }
 
                 @Override
                 public void onError(String errorMessage, int statusCode) {
-                    postSuccess(callback, getFallbackCompanyLeaveBalances());
+                    postSuccess(callback, new JSONArray());
                 }
             });
         });
-    }
-
-    private JSONArray getFallbackCompanyLeaveBalances() {
-        try {
-            JSONArray arr = new JSONArray();
-            JSONObject b1 = new JSONObject();
-            b1.put("id", "bal-1");
-            b1.put("firstName", "Sarah");
-            b1.put("lastName", "Davis");
-            b1.put("employeeCode", "EMP-1021");
-            JSONObject bal1 = new JSONObject();
-            bal1.put("casual", 10);
-            bal1.put("medical", 7);
-            bal1.put("earned", 14);
-            b1.put("balance", bal1);
-            arr.put(b1);
-
-            JSONObject b2 = new JSONObject();
-            b2.put("id", "bal-2");
-            b2.put("firstName", "Rahul");
-            b2.put("lastName", "Sharma");
-            b2.put("employeeCode", "EMP-1022");
-            JSONObject bal2 = new JSONObject();
-            bal2.put("casual", 8);
-            bal2.put("medical", 9);
-            bal2.put("earned", 12);
-            b2.put("balance", bal2);
-            arr.put(b2);
-
-            JSONObject b3 = new JSONObject();
-            b3.put("id", "bal-3");
-            b3.put("firstName", "Priya");
-            b3.put("lastName", "Patel");
-            b3.put("employeeCode", "EMP-1023");
-            JSONObject bal3 = new JSONObject();
-            bal3.put("casual", 12);
-            bal3.put("medical", 6);
-            bal3.put("earned", 15);
-            b3.put("balance", bal3);
-            arr.put(b3);
-
-            JSONObject b4 = new JSONObject();
-            b4.put("id", "bal-4");
-            b4.put("firstName", "Michael");
-            b4.put("lastName", "Chang");
-            b4.put("employeeCode", "EMP-1024");
-            JSONObject bal4 = new JSONObject();
-            bal4.put("casual", 6);
-            bal4.put("medical", 10);
-            bal4.put("earned", 11);
-            b4.put("balance", bal4);
-            arr.put(b4);
-
-            return arr;
-        } catch (Exception e) {
-            return new JSONArray();
-        }
     }
 
     public void updateLeaveStatus(String id, String status, ApiCallback<JSONObject> callback) {

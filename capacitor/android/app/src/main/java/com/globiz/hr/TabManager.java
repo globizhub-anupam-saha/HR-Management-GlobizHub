@@ -84,13 +84,13 @@ public class TabManager {
                 break;
 
             case ADMIN:
-                list.add(new TabItem("attendance", "Attendance", R.drawable.ic_attendance, false, true));
-                list.add(new TabItem("approvals", "Approvals", R.drawable.ic_check_circle, false, true));
                 list.add(new TabItem("employees", "Employees", R.drawable.ic_users_group, false, true));
+                list.add(new TabItem("approvals", "Approvals", R.drawable.ic_check_circle, false, true));
+                list.add(new TabItem("payroll", "Payroll", R.drawable.ic_trend_up, false, true));
+                list.add(new TabItem("attendance", "Attendance", R.drawable.ic_attendance, false, false));
                 list.add(new TabItem("tasks", "Tasks", R.drawable.ic_mod_tasks, false, false));
                 list.add(new TabItem("manage_schedules", "Manage Schedules", R.drawable.ic_calendar_edit, false, false));
                 list.add(new TabItem("leave_policies", "Leave Policies", R.drawable.ic_customize_switch, false, false));
-                list.add(new TabItem("payroll", "Payroll", R.drawable.ic_trend_up, false, false));
                 list.add(new TabItem("documents_admin", "Documents (Admin)", R.drawable.ic_mod_files, false, false));
                 break;
 

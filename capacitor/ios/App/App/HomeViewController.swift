@@ -4893,15 +4893,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         present(alert, animated: true)
     }
 
-    @objc private func handleAdminScrollToApprovals() {
+    @objc func handleAdminScrollToApprovals() {
         let frame = adminPendingLeavesCard.convert(adminPendingLeavesCard.bounds, to: scrollView)
         scrollView.scrollRectToVisible(frame, animated: true)
     }
 
-    @objc private func handleAdminTeamDirectory() {
-        let alert = UIAlertController(title: "Team Directory", message: "Workspace active employee directory and roster.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Close", style: .default))
-        present(alert, animated: true)
+    @objc func handleAdminTeamDirectory() {
+        RoleNavigationManager.showEmployeesAlert(from: self)
     }
 
     @objc private func handleSuperAdminRecalculate() {

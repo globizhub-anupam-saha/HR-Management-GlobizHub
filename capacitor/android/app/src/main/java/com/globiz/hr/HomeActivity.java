@@ -1307,14 +1307,7 @@ public class HomeActivity extends AppCompatActivity {
             btnAdminBroadcastNotice.setOnClickListener(v -> showAdminBroadcastNoticeDialog());
         }
         if (btnAdminLeaveApprovals != null) {
-            btnAdminLeaveApprovals.setOnClickListener(v -> {
-                if (cvAdminPendingLeavesCard != null) {
-                    ScrollView sv = findViewById(R.id.scrollView);
-                    if (sv != null) {
-                        sv.smoothScrollTo(0, cvAdminPendingLeavesCard.getTop());
-                    }
-                }
-            });
+            btnAdminLeaveApprovals.setOnClickListener(v -> scrollToAdminApprovals());
         }
         if (btnAdminTeamDirectory != null) {
             btnAdminTeamDirectory.setOnClickListener(v -> showTeamRosterDialog());
@@ -1355,6 +1348,15 @@ public class HomeActivity extends AppCompatActivity {
 
         // Setup role-based dynamic bottom navigation bar
         BottomNavHelper.setupBottomNav(this, "home");
+    }
+
+    public void scrollToAdminApprovals() {
+        if (cvAdminPendingLeavesCard != null) {
+            ScrollView sv = findViewById(R.id.scrollView);
+            if (sv != null) {
+                sv.smoothScrollTo(0, cvAdminPendingLeavesCard.getTop());
+            }
+        }
     }
 
     private void showTeamRosterDialog() {
