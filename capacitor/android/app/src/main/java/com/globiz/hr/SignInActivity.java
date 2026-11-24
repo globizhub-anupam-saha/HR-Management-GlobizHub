@@ -63,35 +63,45 @@ public class SignInActivity extends AppCompatActivity {
         // Load Remember Device preference
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         boolean remember = prefs.getBoolean(KEY_REMEMBER_DEVICE, true);
-        cbRememberDevice.setChecked(remember);
+        if (cbRememberDevice != null) {
+            cbRememberDevice.setChecked(remember);
+        }
         if (remember) {
             String savedEmail = prefs.getString(KEY_SAVED_EMAIL, "");
-            if (!savedEmail.isEmpty()) {
+            if (savedEmail != null && !savedEmail.isEmpty() && etEmail != null) {
                 etEmail.setText(savedEmail);
-                etPassword.requestFocus();
+                if (etPassword != null) {
+                    etPassword.requestFocus();
+                }
             }
         }
 
         // Pre-fill email if passed from Registration
         String prefillEmail = getIntent().getStringExtra(EXTRA_PREFILL_EMAIL);
-        if (prefillEmail != null && !prefillEmail.trim().isEmpty()) {
+        if (prefillEmail != null && !prefillEmail.trim().isEmpty() && etEmail != null) {
             etEmail.setText(prefillEmail.trim());
-            etPassword.requestFocus();
+            if (etPassword != null) {
+                etPassword.requestFocus();
+            }
         }
 
         setupPasswordToggle();
         setupFooterLink();
 
-        tvForgotPassword.setOnClickListener(v -> {
-            String email = etEmail.getText().toString().trim();
-            Intent intent = new Intent(SignInActivity.this, ForgotPasswordActivity.class);
-            if (!email.isEmpty()) {
-                intent.putExtra(ForgotPasswordActivity.EXTRA_EMAIL, email);
-            }
-            startActivity(intent);
-        });
+        if (tvForgotPassword != null) {
+            tvForgotPassword.setOnClickListener(v -> {
+                String email = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+                Intent intent = new Intent(SignInActivity.this, ForgotPasswordActivity.class);
+                if (!email.isEmpty()) {
+                    intent.putExtra(ForgotPasswordActivity.EXTRA_EMAIL, email);
+                }
+                startActivity(intent);
+            });
+        }
 
-        btnDoSignIn.setOnClickListener(v -> performLogin());
+        if (btnDoSignIn != null) {
+            btnDoSignIn.setOnClickListener(v -> performLogin());
+        }
     }
 
     private void setupPasswordToggle() {
@@ -141,6 +151,7 @@ public class SignInActivity extends AppCompatActivity {
         ApiClient.getInstance(this).login(email, password, new ApiClient.ApiCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject result) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
                 String token = result.optString("access_token", "");
                 if (token.isEmpty()) {
@@ -183,8 +194,9 @@ public class SignInActivity extends AppCompatActivity {
 
             @Override
             public void onError(String errorMessage, int statusCode) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
-                Toast.makeText(SignInActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                Toast.makeText(SignInActivity.this, errorMessage != null ? errorMessage : "Sign in failed", Toast.LENGTH_LONG).show();
             }
         });
     }

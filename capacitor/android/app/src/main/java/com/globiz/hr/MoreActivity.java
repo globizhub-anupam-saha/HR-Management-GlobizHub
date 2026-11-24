@@ -62,7 +62,7 @@ public class MoreActivity extends AppCompatActivity {
         ApiClient.getInstance(this).getProfile(new ApiClient.ApiCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject user) {
-                if (user == null) return;
+                if (user == null || isFinishing() || isDestroyed()) return;
                 boolean isOverridden = getSharedPreferences("TeamHub_Role_Override", MODE_PRIVATE).getBoolean("is_role_overridden", false);
                 if (!isOverridden && user.has("role")) {
                     String userRole = user.optString("role", "");
@@ -84,6 +84,7 @@ public class MoreActivity extends AppCompatActivity {
                     }
                 }
                 runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     filterModulesByRole();
                 });
             }

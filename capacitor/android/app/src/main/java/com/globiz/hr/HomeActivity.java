@@ -509,11 +509,8 @@ public class HomeActivity extends AppCompatActivity {
         tvAdminSubtitle = findViewById(R.id.tvAdminSubtitle);
         btnOpenBroadcastNotificationPage = findViewById(R.id.btnOpenBroadcastNotificationPage);
         tvAdminTotalEmployees = findViewById(R.id.tvAdminTotalEmployees);
-        if (tvAdminTotalEmployees != null) {
-            View card = (View) tvAdminTotalEmployees.getParent();
-            if (card != null) {
-                card.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, EmployeesActivity.class)));
-            }
+        if (tvAdminTotalEmployees != null && tvAdminTotalEmployees.getParent() instanceof View) {
+            ((View) tvAdminTotalEmployees.getParent()).setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, EmployeesActivity.class)));
         }
         tvAdminPresentToday = findViewById(R.id.tvAdminPresentToday);
         if (tvAdminPresentToday != null && tvAdminPresentToday.getParent() instanceof View) {
@@ -3031,22 +3028,27 @@ public class HomeActivity extends AppCompatActivity {
             heroMediaPlayer.setDataSource(this, videoUri);
             heroMediaPlayer.setVolume(0f, 0f); // Muted for ambient background video
             heroMediaPlayer.setLooping(true); // Infinite seamless loop
+            heroMediaPlayer.setOnErrorListener((mp, what, extra) -> true);
 
             heroMediaPlayer.setOnVideoSizeChangedListener((mp, vWidth, vHeight) -> {
-                heroVideoWidth = vWidth;
-                heroVideoHeight = vHeight;
-                int currentWidth = textureViewHeroVideo != null ? textureViewHeroVideo.getWidth() : width;
-                int currentHeight = textureViewHeroVideo != null ? textureViewHeroVideo.getHeight() : height;
-                adjustHeroVideoAspectRatio(currentWidth, currentHeight);
+                try {
+                    heroVideoWidth = vWidth;
+                    heroVideoHeight = vHeight;
+                    int currentWidth = textureViewHeroVideo != null ? textureViewHeroVideo.getWidth() : width;
+                    int currentHeight = textureViewHeroVideo != null ? textureViewHeroVideo.getHeight() : height;
+                    adjustHeroVideoAspectRatio(currentWidth, currentHeight);
+                } catch (Exception ignored) {}
             });
 
             heroMediaPlayer.setOnPreparedListener(mp -> {
-                heroVideoWidth = mp.getVideoWidth();
-                heroVideoHeight = mp.getVideoHeight();
-                int currentWidth = textureViewHeroVideo != null ? textureViewHeroVideo.getWidth() : width;
-                int currentHeight = textureViewHeroVideo != null ? textureViewHeroVideo.getHeight() : height;
-                adjustHeroVideoAspectRatio(currentWidth, currentHeight);
-                mp.start();
+                try {
+                    heroVideoWidth = mp.getVideoWidth();
+                    heroVideoHeight = mp.getVideoHeight();
+                    int currentWidth = textureViewHeroVideo != null ? textureViewHeroVideo.getWidth() : width;
+                    int currentHeight = textureViewHeroVideo != null ? textureViewHeroVideo.getHeight() : height;
+                    adjustHeroVideoAspectRatio(currentWidth, currentHeight);
+                    mp.start();
+                } catch (Exception ignored) {}
             });
 
             heroMediaPlayer.prepareAsync();
