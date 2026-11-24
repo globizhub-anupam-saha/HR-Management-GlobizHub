@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -90,6 +92,9 @@ public class BottomNavHelper {
                 tv.setText(item.title);
                 tv.setTextColor(isActive ? 0xFF0056FD : 0xFF475569);
                 tv.setTypeface(null, isActive ? Typeface.BOLD : Typeface.NORMAL);
+                tv.setMaxLines(1);
+                tv.setEllipsize(TextUtils.TruncateAt.END);
+                tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f);
             }
 
             tabView.setOnClickListener(v -> handleTabClick(activity, item.id));

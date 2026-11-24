@@ -1204,7 +1204,7 @@
                                     android:layout_weight="1"
                                     android:background="@drawable/bg_glass_stat_card"
                                     android:orientation="vertical"
-                                    android:padding="16dp">
+                                    android:padding="12dp">
 
                                     <TextView
                                         android:layout_width="wrap_content"
@@ -1212,16 +1212,18 @@
                                         android:text="Employees"
                                         android:textColor="#CBD5E1"
                                         android:textSize="12sp"
-                                        android:textStyle="bold" />
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
 
                                     <TextView
                                         android:id="@+id/tvAdminTotalEmployees"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="8dp"
+                                        android:layout_marginTop="6dp"
                                         android:text="24"
                                         android:textColor="#FFFFFF"
-                                        android:textSize="26sp"
+                                        android:textSize="22sp"
                                         android:textStyle="bold" />
 
                                     <TextView
@@ -1230,7 +1232,9 @@
                                         android:layout_marginTop="2dp"
                                         android:text="Active in Workspace"
                                         android:textColor="#94A3B8"
-                                        android:textSize="11sp" />
+                                        android:textSize="11sp"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
                                 </LinearLayout>
 
                                 <!-- Metric 2: Present Today -->
@@ -1241,7 +1245,7 @@
                                     android:layout_weight="1"
                                     android:background="@drawable/bg_glass_stat_card"
                                     android:orientation="vertical"
-                                    android:padding="16dp">
+                                    android:padding="12dp">
 
                                     <TextView
                                         android:layout_width="wrap_content"
@@ -1249,16 +1253,18 @@
                                         android:text="Present Today"
                                         android:textColor="#CBD5E1"
                                         android:textSize="12sp"
-                                        android:textStyle="bold" />
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
 
                                     <TextView
                                         android:id="@+id/tvAdminPresentToday"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="8dp"
+                                        android:layout_marginTop="6dp"
                                         android:text="18"
                                         android:textColor="#FFFFFF"
-                                        android:textSize="26sp"
+                                        android:textSize="22sp"
                                         android:textStyle="bold" />
 
                                     <TextView
@@ -1268,7 +1274,9 @@
                                         android:text="On Duty Today"
                                         android:textColor="#34D399"
                                         android:textSize="11sp"
-                                        android:textStyle="bold" />
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
                                 </LinearLayout>
                             </LinearLayout>
 
@@ -1286,7 +1294,7 @@
                                     android:layout_weight="1"
                                     android:background="@drawable/bg_glass_stat_card"
                                     android:orientation="vertical"
-                                    android:padding="16dp">
+                                    android:padding="12dp">
 
                                     <TextView
                                         android:layout_width="wrap_content"
@@ -1294,16 +1302,18 @@
                                         android:text="Absent"
                                         android:textColor="#CBD5E1"
                                         android:textSize="12sp"
-                                        android:textStyle="bold" />
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
 
                                     <TextView
                                         android:id="@+id/tvAdminAbsentToday"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="8dp"
+                                        android:layout_marginTop="6dp"
                                         android:text="4"
                                         android:textColor="#FFFFFF"
-                                        android:textSize="26sp"
+                                        android:textSize="22sp"
                                         android:textStyle="bold" />
 
                                     <TextView
@@ -1312,7 +1322,9 @@
                                         android:layout_marginTop="2dp"
                                         android:text="Not Clocked In"
                                         android:textColor="#F87171"
-                                        android:textSize="11sp" />
+                                        android:textSize="11sp"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
                                 </LinearLayout>
 
                                 <!-- Metric 4: Late Arrivals -->
@@ -1323,7 +1335,7 @@
                                     android:layout_weight="1"
                                     android:background="@drawable/bg_glass_stat_card"
                                     android:orientation="vertical"
-                                    android:padding="16dp">
+                                    android:padding="12dp">
 
                                     <TextView
                                         android:layout_width="wrap_content"
@@ -1331,16 +1343,18 @@
                                         android:text="Late Arrivals"
                                         android:textColor="#CBD5E1"
                                         android:textSize="12sp"
-                                        android:textStyle="bold" />
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
 
                                     <TextView
                                         android:id="@+id/tvAdminLateToday"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="8dp"
+                                        android:layout_marginTop="6dp"
                                         android:text="2"
                                         android:textColor="#FFFFFF"
-                                        android:textSize="26sp"
+                                        android:textSize="22sp"
                                         android:textStyle="bold" />
 
                                     <TextView
@@ -1349,7 +1363,9 @@
                                         android:layout_marginTop="2dp"
                                         android:text="Clocked after 09:00"
                                         android:textColor="#FBBF24"
-                                        android:textSize="11sp" />
+                                        android:textSize="11sp"
+                                        android:singleLine="true"
+                                        android:ellipsize="end" />
                                 </LinearLayout>
                             </LinearLayout>
                         </LinearLayout>
@@ -1482,10 +1498,12 @@
                             <LinearLayout
                                 android:id="@+id/btnAdminShortcutEmployees"
                                 android:layout_width="0dp"
-                                android:layout_height="72dp"
+                                android:layout_height="68dp"
                                 android:layout_marginEnd="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/bg_card_unselected"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
                                 android:clickable="true"
                                 android:focusable="true"
                                 android:gravity="center"
@@ -1503,19 +1521,23 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Employees"
                                     android:textColor="#1E293B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:singleLine="true"
+                                    android:ellipsize="end" />
                             </LinearLayout>
 
                             <!-- Payroll -->
                             <LinearLayout
                                 android:id="@+id/btnAdminShortcutPayroll"
                                 android:layout_width="0dp"
-                                android:layout_height="72dp"
+                                android:layout_height="68dp"
                                 android:layout_marginStart="4dp"
                                 android:layout_marginEnd="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/bg_card_unselected"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
                                 android:clickable="true"
                                 android:focusable="true"
                                 android:gravity="center"
@@ -1533,18 +1555,22 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Payroll"
                                     android:textColor="#1E293B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:singleLine="true"
+                                    android:ellipsize="end" />
                             </LinearLayout>
 
                             <!-- Approvals -->
                             <LinearLayout
                                 android:id="@+id/btnAdminShortcutApprovals"
                                 android:layout_width="0dp"
-                                android:layout_height="72dp"
+                                android:layout_height="68dp"
                                 android:layout_marginStart="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/bg_card_unselected"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
                                 android:clickable="true"
                                 android:focusable="true"
                                 android:gravity="center"
@@ -1562,8 +1588,10 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Approvals"
                                     android:textColor="#1E293B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:singleLine="true"
+                                    android:ellipsize="end" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -1578,10 +1606,12 @@
                             <LinearLayout
                                 android:id="@+id/btnAdminShortcutSchedules"
                                 android:layout_width="0dp"
-                                android:layout_height="72dp"
+                                android:layout_height="68dp"
                                 android:layout_marginEnd="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/bg_card_unselected"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
                                 android:clickable="true"
                                 android:focusable="true"
                                 android:gravity="center"
@@ -1599,19 +1629,23 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Schedules"
                                     android:textColor="#1E293B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:singleLine="true"
+                                    android:ellipsize="end" />
                             </LinearLayout>
 
                             <!-- Documents -->
                             <LinearLayout
                                 android:id="@+id/btnAdminShortcutDocuments"
                                 android:layout_width="0dp"
-                                android:layout_height="72dp"
+                                android:layout_height="68dp"
                                 android:layout_marginStart="4dp"
                                 android:layout_marginEnd="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/bg_card_unselected"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
                                 android:clickable="true"
                                 android:focusable="true"
                                 android:gravity="center"
@@ -1629,18 +1663,22 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Documents"
                                     android:textColor="#1E293B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:singleLine="true"
+                                    android:ellipsize="end" />
                             </LinearLayout>
 
                             <!-- Settings -->
                             <LinearLayout
                                 android:id="@+id/btnAdminShortcutSettings"
                                 android:layout_width="0dp"
-                                android:layout_height="72dp"
+                                android:layout_height="68dp"
                                 android:layout_marginStart="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/bg_card_unselected"
+                                android:paddingStart="4dp"
+                                android:paddingEnd="4dp"
                                 android:clickable="true"
                                 android:focusable="true"
                                 android:gravity="center"
@@ -1658,8 +1696,10 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Settings"
                                     android:textColor="#1E293B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:singleLine="true"
+                                    android:ellipsize="end" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>

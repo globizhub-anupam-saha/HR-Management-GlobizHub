@@ -4,8 +4,8 @@
     android:layout_height="32dp"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:paddingStart="24dp"
-    android:paddingEnd="24dp"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
     android:background="#FFFFFF">
 
     <TextView
@@ -16,6 +16,8 @@
         android:textSize="11sp"
         android:textStyle="bold"
         android:textAllCaps="true"
-        android:letterSpacing="0.05" />
+        android:letterSpacing="0.05"
+        android:singleLine="true"
+        android:ellipsize="end" />
 
 </LinearLayout>
