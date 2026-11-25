@@ -190,6 +190,30 @@ public class HomeActivity extends AppCompatActivity {
     private View layoutEmployeeDashboard;
     private View layoutAdminDashboard;
     private View layoutSuperAdminDashboard;
+    private View layoutPendingApprovalDashboard;
+    private View layoutRejectedDashboard;
+    private View layoutSuspendedDashboard;
+
+    // Pending Approval Views
+    private TextView tvPendingGreeting;
+    private TextView tvPendingSubtitle;
+    private TextView tvPendingProgressPercent;
+    private TextView tvPendingStatusText;
+    private ProgressBar pbPendingProgress;
+    private TextView tvOfferStatusBadge;
+    private TextView tvOfferStatusSubtitle;
+    private View btnSignOffer;
+    private TextView tvProfileVerificationBadge;
+    private TextView tvProfileVerificationSubtitle;
+    private View btnSubmitVerification;
+    private View btnRefreshStatus;
+    private View btnSignOutPending;
+
+    // Rejected / Suspended Views
+    private TextView tvRejectedReason;
+    private View btnCheckStatusAgain;
+    private View btnSignOutRejected;
+    private View btnSignOutSuspended;
 
     // Admin Dashboard Views
     private TextView tvAdminGreeting;
@@ -503,6 +527,30 @@ public class HomeActivity extends AppCompatActivity {
         layoutEmployeeDashboard = findViewById(R.id.layoutEmployeeDashboard);
         layoutAdminDashboard = findViewById(R.id.layoutAdminDashboard);
         layoutSuperAdminDashboard = findViewById(R.id.layoutSuperAdminDashboard);
+        layoutPendingApprovalDashboard = findViewById(R.id.layoutPendingApprovalDashboard);
+        layoutRejectedDashboard = findViewById(R.id.layoutRejectedDashboard);
+        layoutSuspendedDashboard = findViewById(R.id.layoutSuspendedDashboard);
+
+        // Pending Approval Views
+        tvPendingGreeting = findViewById(R.id.tvPendingGreeting);
+        tvPendingSubtitle = findViewById(R.id.tvPendingSubtitle);
+        tvPendingProgressPercent = findViewById(R.id.tvPendingProgressPercent);
+        tvPendingStatusText = findViewById(R.id.tvPendingStatusText);
+        pbPendingProgress = findViewById(R.id.pbPendingProgress);
+        tvOfferStatusBadge = findViewById(R.id.tvOfferStatusBadge);
+        tvOfferStatusSubtitle = findViewById(R.id.tvOfferStatusSubtitle);
+        btnSignOffer = findViewById(R.id.btnSignOffer);
+        tvProfileVerificationBadge = findViewById(R.id.tvProfileVerificationBadge);
+        tvProfileVerificationSubtitle = findViewById(R.id.tvProfileVerificationSubtitle);
+        btnSubmitVerification = findViewById(R.id.btnSubmitVerification);
+        btnRefreshStatus = findViewById(R.id.btnRefreshStatus);
+        btnSignOutPending = findViewById(R.id.btnSignOutPending);
+
+        // Rejected / Suspended Views
+        tvRejectedReason = findViewById(R.id.tvRejectedReason);
+        btnCheckStatusAgain = findViewById(R.id.btnCheckStatusAgain);
+        btnSignOutRejected = findViewById(R.id.btnSignOutRejected);
+        btnSignOutSuspended = findViewById(R.id.btnSignOutSuspended);
 
         // Admin Views
         tvAdminGreeting = findViewById(R.id.tvAdminGreeting);
@@ -3097,15 +3145,22 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupRoleDashboard() {
         UserRole userRole = UserRole.fromString(apiClient.getRole());
+        hideAllDashboards();
+
         if (userRole == UserRole.SUPER_ADMIN || userRole == UserRole.ADMIN) {
-            if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.GONE);
             if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.VISIBLE);
-            if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.GONE);
             loadAdminDashboardData();
+        } else if (apiClient.isRejected()) {
+            if (layoutRejectedDashboard != null) layoutRejectedDashboard.setVisibility(View.VISIBLE);
+            setupRejectedDashboard();
+        } else if (apiClient.isSuspendedOrInactive()) {
+            if (layoutSuspendedDashboard != null) layoutSuspendedDashboard.setVisibility(View.VISIBLE);
+            setupSuspendedDashboard();
+        } else if (apiClient.isPendingApproval()) {
+            if (layoutPendingApprovalDashboard != null) layoutPendingApprovalDashboard.setVisibility(View.VISIBLE);
+            setupPendingApprovalDashboard();
         } else {
             if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.VISIBLE);
-            if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.GONE);
-            if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.GONE);
 
             loadUserProfile();
             loadAttendanceStats();
@@ -3119,6 +3174,211 @@ public class HomeActivity extends AppCompatActivity {
             updateNotificationBadge();
             renderMonthlyHeatmap();
         }
+    }
+
+    private void hideAllDashboards() {
+        if (layoutEmployeeDashboard != null) layoutEmployeeDashboard.setVisibility(View.GONE);
+        if (layoutAdminDashboard != null) layoutAdminDashboard.setVisibility(View.GONE);
+        if (layoutSuperAdminDashboard != null) layoutSuperAdminDashboard.setVisibility(View.GONE);
+        if (layoutPendingApprovalDashboard != null) layoutPendingApprovalDashboard.setVisibility(View.GONE);
+        if (layoutRejectedDashboard != null) layoutRejectedDashboard.setVisibility(View.GONE);
+        if (layoutSuspendedDashboard != null) layoutSuspendedDashboard.setVisibility(View.GONE);
+    }
+
+    private void setupPendingApprovalDashboard() {
+        hideSkeletonLoading();
+        if (tvPendingGreeting != null) {
+            String firstName = apiClient.getFirstName();
+            if (firstName == null || firstName.trim().isEmpty()) firstName = "Employee";
+            tvPendingGreeting.setText("Welcome, " + firstName);
+        }
+
+        if (tvPendingSubtitle != null) {
+            String desig = apiClient.getDesignation();
+            String org = apiClient.getOrganization();
+            if (desig == null || desig.isEmpty() || "EMPLOYEE".equalsIgnoreCase(desig)) desig = "New Team Member";
+            if (org == null || org.isEmpty()) org = "GlobizHub Inc.";
+            tvPendingSubtitle.setText(desig + " • " + org);
+        }
+
+        if (btnSignOutPending != null) {
+            btnSignOutPending.setOnClickListener(v -> executeSignOut());
+        }
+
+        if (btnRefreshStatus != null) {
+            btnRefreshStatus.setOnClickListener(v -> refreshAccountStatus());
+        }
+
+        // Fetch latest onboarding case from backend
+        apiClient.getMyOnboarding(new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                runOnUiThread(() -> {
+                    if (result == null) return;
+                    JSONObject caseObj = result.optJSONObject("case");
+                    if (caseObj == null) caseObj = result;
+
+                    boolean offerSigned = caseObj.optBoolean("offerSigned", false);
+                    String status = caseObj.optString("status", apiClient.getOnboardingStatus());
+                    String bgvStatus = caseObj.optString("bgvStatus", apiClient.getBgvStatus());
+
+                    if (offerSigned) {
+                        if (tvOfferStatusBadge != null) {
+                            tvOfferStatusBadge.setText("Signed");
+                            tvOfferStatusBadge.setTextColor(0xFF059669);
+                        }
+                        if (tvOfferStatusSubtitle != null) {
+                            tvOfferStatusSubtitle.setText("Employment offer letter signed and accepted.");
+                        }
+                        if (btnSignOffer != null) {
+                            btnSignOffer.setVisibility(View.GONE);
+                        }
+                    } else {
+                        if (tvOfferStatusBadge != null) {
+                            tvOfferStatusBadge.setText("Action");
+                            tvOfferStatusBadge.setTextColor(0xFF2563EB);
+                        }
+                        if (tvOfferStatusSubtitle != null) {
+                            tvOfferStatusSubtitle.setText("Review your offer terms and digitally sign to accept.");
+                        }
+                        if (btnSignOffer != null) {
+                            btnSignOffer.setVisibility(View.VISIBLE);
+                            btnSignOffer.setOnClickListener(v -> showSignOfferDialog());
+                        }
+                    }
+
+                    if ("PENDING_VERIFICATION".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
+                        if (tvProfileVerificationBadge != null) {
+                            tvProfileVerificationBadge.setText("Submitted");
+                            tvProfileVerificationBadge.setTextColor(0xFF059669);
+                        }
+                        if (tvProfileVerificationSubtitle != null) {
+                            tvProfileVerificationSubtitle.setText("Verification profile submitted for review.");
+                        }
+                        if (btnSubmitVerification != null) {
+                            btnSubmitVerification.setVisibility(View.GONE);
+                        }
+                        if (tvPendingProgressPercent != null) tvPendingProgressPercent.setText("Step 3 of 3");
+                        if (pbPendingProgress != null) pbPendingProgress.setProgress(85);
+                        if (tvPendingStatusText != null) tvPendingStatusText.setText("Awaiting Administrator Review & Approval");
+                    } else {
+                        if (tvProfileVerificationBadge != null) {
+                            tvProfileVerificationBadge.setText("Action");
+                            tvProfileVerificationBadge.setTextColor(0xFF2563EB);
+                        }
+                        if (tvProfileVerificationSubtitle != null) {
+                            tvProfileVerificationSubtitle.setText("Submit your details and documents for administrator verification.");
+                        }
+                        if (btnSubmitVerification != null) {
+                            btnSubmitVerification.setVisibility(View.VISIBLE);
+                            btnSubmitVerification.setOnClickListener(v -> submitForVerification());
+                        }
+                        if (tvPendingProgressPercent != null) tvPendingProgressPercent.setText(offerSigned ? "Step 2 of 3" : "Step 1 of 3");
+                        if (pbPendingProgress != null) pbPendingProgress.setProgress(offerSigned ? 50 : 25);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                // Keep loaded UI state
+            }
+        });
+    }
+
+    private void showSignOfferDialog() {
+        String orgName = apiClient.getOrganization();
+        if (orgName == null || orgName.isEmpty()) orgName = "GlobizHub";
+
+        new AlertDialog.Builder(this)
+                .setTitle("Accept Employment Offer")
+                .setMessage("By signing this offer, you confirm that you have reviewed the position details, compensation, and company policies, and agree to join " + orgName + ".\n\nDo you wish to sign and accept this offer?")
+                .setPositiveButton("Sign & Accept", (dialog, which) -> {
+                    apiClient.signOffer(new ApiClient.ApiCallback<JSONObject>() {
+                        @Override
+                        public void onSuccess(JSONObject result) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(HomeActivity.this, "Offer letter accepted successfully!", Toast.LENGTH_SHORT).show();
+                                setupPendingApprovalDashboard();
+                            });
+                        }
+
+                        @Override
+                        public void onError(String errorMessage, int statusCode) {
+                            runOnUiThread(() -> Toast.makeText(HomeActivity.this, "Failed to sign offer: " + errorMessage, Toast.LENGTH_SHORT).show());
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void submitForVerification() {
+        apiClient.submitForVerification(new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                runOnUiThread(() -> {
+                    Toast.makeText(HomeActivity.this, "Submitted for administrator verification!", Toast.LENGTH_SHORT).show();
+                    setupPendingApprovalDashboard();
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> Toast.makeText(HomeActivity.this, "Submission failed: " + errorMessage, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void refreshAccountStatus() {
+        Toast.makeText(this, "Checking onboarding status...", Toast.LENGTH_SHORT).show();
+        apiClient.getProfile(new ApiClient.ApiCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                runOnUiThread(() -> {
+                    if (apiClient.isApprovedEmployee()) {
+                        Toast.makeText(HomeActivity.this, "Your onboarding has been approved! Welcome to the team.", Toast.LENGTH_LONG).show();
+                        setupRoleDashboard();
+                    } else if (apiClient.isRejected()) {
+                        Toast.makeText(HomeActivity.this, "Onboarding status: Access Restricted.", Toast.LENGTH_SHORT).show();
+                        setupRoleDashboard();
+                    } else {
+                        Toast.makeText(HomeActivity.this, "Status: Still awaiting administrator approval.", Toast.LENGTH_SHORT).show();
+                        setupPendingApprovalDashboard();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage, int statusCode) {
+                runOnUiThread(() -> Toast.makeText(HomeActivity.this, "Failed to refresh: " + errorMessage, Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void setupRejectedDashboard() {
+        hideSkeletonLoading();
+        if (btnSignOutRejected != null) {
+            btnSignOutRejected.setOnClickListener(v -> executeSignOut());
+        }
+        if (btnCheckStatusAgain != null) {
+            btnCheckStatusAgain.setOnClickListener(v -> refreshAccountStatus());
+        }
+    }
+
+    private void setupSuspendedDashboard() {
+        hideSkeletonLoading();
+        if (btnSignOutSuspended != null) {
+            btnSignOutSuspended.setOnClickListener(v -> executeSignOut());
+        }
+    }
+
+    private void executeSignOut() {
+        apiClient.clearAuth();
+        Intent intent = new Intent(this, SignInActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void loadAdminDashboardData() {

@@ -104,7 +104,23 @@ public class BottomNavHelper {
     public static void handleTabClick(Activity activity, String tabId) {
         if (activity == null || activity.isFinishing()) return;
 
+        ApiClient apiClient = ApiClient.getInstance(activity);
         String id = tabId.toLowerCase();
+
+        if (!apiClient.isApprovedEmployee()) {
+            if (!"home".equals(id)) {
+                if (apiClient.isPendingApproval()) {
+                    Toast.makeText(activity, "Access restricted until onboarding is approved by an administrator.", Toast.LENGTH_SHORT).show();
+                } else if (apiClient.isRejected()) {
+                    Toast.makeText(activity, "Your onboarding was not approved. Please contact HR.", Toast.LENGTH_SHORT).show();
+                } else if (apiClient.isSuspendedOrInactive()) {
+                    Toast.makeText(activity, "Your account is currently inactive or suspended.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(activity, "Access restricted.", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+        }
         if ("home".equals(id)) {
             if (!(activity instanceof HomeActivity)) {
                 Intent intent = new Intent(activity, HomeActivity.class);

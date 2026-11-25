@@ -57,9 +57,18 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
     private var pendingRejectionLeaveId: String?
     private var rejectionTextView: UITextView?
 
+    // Category Switcher & Headers
+    private var activeCategory: String = "EMPLOYEES"
+    private let btnCategoryEmployees = UIButton(type: .system)
+    private let btnCategoryLeaves = UIButton(type: .system)
+    private let headerTitleLabel = UILabel()
+    private let headerSubLabel = UILabel()
+
     // MARK: - Data State
     private var allLeaves: [[String: Any]] = []
     private var filteredLeaves: [[String: Any]] = []
+    private var allOnboardingCases: [[String: Any]] = []
+    private var filteredOnboardingCases: [[String: Any]] = []
     private var selectedStatus: String = "PENDING"
     private var searchQuery: String = ""
     private var isLoadingLeaves: Bool = false
@@ -73,6 +82,7 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
 
         setupTopBar()
         setupScrollView()
+        setupCategorySwitcher()
         setupHeaderBanner()
         setupKpiCards()
         setupFilterTabs()
@@ -239,6 +249,90 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
         ])
     }
 
+    // MARK: - Category Switcher
+    private func setupCategorySwitcher() {
+        let switcherContainer = UIView()
+        switcherContainer.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        switcherContainer.layer.cornerRadius = 10
+        switcherContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let switcherStack = UIStackView()
+        switcherStack.axis = .horizontal
+        switcherStack.distribution = .fillEqually
+        switcherStack.spacing = 6
+        switcherStack.translatesAutoresizingMaskIntoConstraints = false
+        switcherContainer.addSubview(switcherStack)
+
+        btnCategoryEmployees.setTitle("Employee Onboarding", for: .normal)
+        btnCategoryEmployees.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
+        btnCategoryEmployees.layer.cornerRadius = 8
+        btnCategoryEmployees.addTarget(self, action: #selector(didTapCategoryEmployees), for: .touchUpInside)
+
+        btnCategoryLeaves.setTitle("Leave Approvals", for: .normal)
+        btnCategoryLeaves.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
+        btnCategoryLeaves.layer.cornerRadius = 8
+        btnCategoryLeaves.addTarget(self, action: #selector(didTapCategoryLeaves), for: .touchUpInside)
+
+        updateCategoryButtonStyles()
+
+        switcherStack.addArrangedSubview(btnCategoryEmployees)
+        switcherStack.addArrangedSubview(btnCategoryLeaves)
+
+        NSLayoutConstraint.activate([
+            switcherContainer.heightAnchor.constraint(equalToConstant: 44),
+            switcherStack.topAnchor.constraint(equalTo: switcherContainer.topAnchor, constant: 4),
+            switcherStack.leadingAnchor.constraint(equalTo: switcherContainer.leadingAnchor, constant: 4),
+            switcherStack.trailingAnchor.constraint(equalTo: switcherContainer.trailingAnchor, constant: -4),
+            switcherStack.bottomAnchor.constraint(equalTo: switcherContainer.bottomAnchor, constant: -4)
+        ])
+
+        contentStackView.addArrangedSubview(switcherContainer)
+    }
+
+    private func updateCategoryButtonStyles() {
+        if activeCategory == "EMPLOYEES" {
+            btnCategoryEmployees.backgroundColor = .white
+            btnCategoryEmployees.setTitleColor(UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), for: .normal)
+            btnCategoryEmployees.layer.shadowColor = UIColor.black.cgColor
+            btnCategoryEmployees.layer.shadowOpacity = 0.05
+            btnCategoryEmployees.layer.shadowOffset = CGSize(width: 0, height: 1)
+            btnCategoryEmployees.layer.shadowRadius = 2
+
+            btnCategoryLeaves.backgroundColor = .clear
+            btnCategoryLeaves.setTitleColor(UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), for: .normal)
+            btnCategoryLeaves.layer.shadowOpacity = 0
+        } else {
+            btnCategoryLeaves.backgroundColor = .white
+            btnCategoryLeaves.setTitleColor(UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0), for: .normal)
+            btnCategoryLeaves.layer.shadowColor = UIColor.black.cgColor
+            btnCategoryLeaves.layer.shadowOpacity = 0.05
+            btnCategoryLeaves.layer.shadowOffset = CGSize(width: 0, height: 1)
+            btnCategoryLeaves.layer.shadowRadius = 2
+
+            btnCategoryEmployees.backgroundColor = .clear
+            btnCategoryEmployees.setTitleColor(UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), for: .normal)
+            btnCategoryEmployees.layer.shadowOpacity = 0
+        }
+    }
+
+    @objc private func didTapCategoryEmployees() {
+        guard activeCategory != "EMPLOYEES" else { return }
+        activeCategory = "EMPLOYEES"
+        updateCategoryButtonStyles()
+        headerTitleLabel.text = "Employee Onboarding Cases"
+        headerSubLabel.text = "Review employee verification profiles and grant access."
+        loadApprovalsData()
+    }
+
+    @objc private func didTapCategoryLeaves() {
+        guard activeCategory != "LEAVES" else { return }
+        activeCategory = "LEAVES"
+        updateCategoryButtonStyles()
+        headerTitleLabel.text = "Company Leave Requests"
+        headerSubLabel.text = "Review and manage pending time-off requests from your team members."
+        loadApprovalsData()
+    }
+
     // MARK: - Header Banner
     private func setupHeaderBanner() {
         let container = UIView()
@@ -254,18 +348,16 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
 
-        let titleLabel = UILabel()
-        titleLabel.text = "Company Leave Requests"
-        titleLabel.font = .systemFont(ofSize: 17, weight: .bold)
-        titleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
-        stack.addArrangedSubview(titleLabel)
+        headerTitleLabel.text = activeCategory == "EMPLOYEES" ? "Employee Onboarding Cases" : "Company Leave Requests"
+        headerTitleLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        headerTitleLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        stack.addArrangedSubview(headerTitleLabel)
 
-        let subLabel = UILabel()
-        subLabel.text = "Review and manage pending time-off requests from your team members."
-        subLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        subLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
-        subLabel.numberOfLines = 0
-        stack.addArrangedSubview(subLabel)
+        headerSubLabel.text = activeCategory == "EMPLOYEES" ? "Review employee verification profiles and grant access." : "Review and manage pending time-off requests from your team members."
+        headerSubLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        headerSubLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        headerSubLabel.numberOfLines = 0
+        stack.addArrangedSubview(headerSubLabel)
 
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
@@ -547,6 +639,38 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
 
     private func loadApprovalsData() {
         if isLoadingLeaves { return }
+        if activeCategory == "EMPLOYEES" {
+            loadOnboardingCasesData()
+        } else {
+            loadLeaveApprovalsData()
+        }
+    }
+
+    private func loadOnboardingCasesData() {
+        isLoadingLeaves = true
+        loadingIndicator.startAnimating()
+
+        AuthService.shared.getOnboardingCases { [weak self] result in
+            guard let self = self else { return }
+            self.isLoadingLeaves = false
+            self.loadingIndicator.stopAnimating()
+            self.refreshControl.endRefreshing()
+
+            switch result {
+            case .success(let cases):
+                self.allOnboardingCases = cases
+                self.updateKpiCounts()
+                self.applyFilters()
+            case .failure(let error):
+                print("Failed to fetch onboarding cases: \(error)")
+                self.allOnboardingCases = []
+                self.updateKpiCounts()
+                self.applyFilters()
+            }
+        }
+    }
+
+    private func loadLeaveApprovalsData() {
         isLoadingLeaves = true
         loadingIndicator.startAnimating()
 
@@ -623,60 +747,104 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
         var pendingCount = 0
         var approvedCount = 0
         var rejectedCount = 0
+        var totalCount = 0
 
-        for l in allLeaves {
-            let status = (l["status"] as? String ?? "").uppercased()
-            if status == "PENDING" {
-                pendingCount += 1
-            } else if status == "APPROVED" {
-                approvedCount += 1
-            } else if status == "REJECTED" {
-                rejectedCount += 1
+        if activeCategory == "EMPLOYEES" {
+            for c in allOnboardingCases {
+                let status = (c["status"] as? String ?? "").uppercased()
+                let bgv = (c["bgvStatus"] as? String ?? "").uppercased()
+                if bgv == "FAILED" || status == "REJECTED" {
+                    rejectedCount += 1
+                } else if status == "COMPLETED" || bgv == "PASSED" {
+                    approvedCount += 1
+                } else {
+                    pendingCount += 1
+                }
             }
+            totalCount = allOnboardingCases.count
+        } else {
+            for l in allLeaves {
+                let status = (l["status"] as? String ?? "").uppercased()
+                if status == "PENDING" {
+                    pendingCount += 1
+                } else if status == "APPROVED" {
+                    approvedCount += 1
+                } else if status == "REJECTED" {
+                    rejectedCount += 1
+                }
+            }
+            totalCount = allLeaves.count
         }
 
         countPendingLabel.text = "\(pendingCount)"
         countApprovedLabel.text = "\(approvedCount)"
         countRejectedLabel.text = "\(rejectedCount)"
-        countAllLabel.text = "\(allLeaves.count)"
+        countAllLabel.text = "\(totalCount)"
 
         // Update tab titles with counts
         filterButtons["PENDING"]?.setTitle("Pending (\(pendingCount))", for: .normal)
         filterButtons["APPROVED"]?.setTitle("Approved (\(approvedCount))", for: .normal)
         filterButtons["REJECTED"]?.setTitle("Rejected (\(rejectedCount))", for: .normal)
-        filterButtons["ALL"]?.setTitle("All (\(allLeaves.count))", for: .normal)
+        filterButtons["ALL"]?.setTitle("All (\(totalCount))", for: .normal)
     }
 
     private func applyFilters() {
-        filteredLeaves = allLeaves.filter { item in
-            let status = (item["status"] as? String ?? "").uppercased()
+        if activeCategory == "EMPLOYEES" {
+            filteredOnboardingCases = allOnboardingCases.filter { item in
+                let status = (item["status"] as? String ?? "").uppercased()
+                let bgv = (item["bgvStatus"] as? String ?? "").uppercased()
 
-            // Status filter
-            if selectedStatus != "ALL" && status != selectedStatus {
-                return false
+                if selectedStatus == "PENDING" {
+                    if status == "COMPLETED" || bgv == "FAILED" { return false }
+                } else if selectedStatus == "APPROVED" {
+                    if status != "COMPLETED" && bgv != "PASSED" { return false }
+                } else if selectedStatus == "REJECTED" {
+                    if bgv != "FAILED" && status != "REJECTED" { return false }
+                }
+
+                if !searchQuery.isEmpty {
+                    let emp = item["employee"] as? [String: Any]
+                    let fn = (emp?["firstName"] as? String ?? "").lowercased()
+                    let ln = (emp?["lastName"] as? String ?? "").lowercased()
+                    let email = (emp?["email"] as? String ?? "").lowercased()
+                    let desig = ((emp?["designation"] as? [String: Any])?["name"] as? String ?? "").lowercased()
+                    let dept = ((emp?["department"] as? [String: Any])?["name"] as? String ?? "").lowercased()
+                    let q = searchQuery.lowercased()
+                    if !fn.contains(q) && !ln.contains(q) && !email.contains(q) && !desig.contains(q) && !dept.contains(q) {
+                        return false
+                    }
+                }
+                return true
             }
+        } else {
+            filteredLeaves = allLeaves.filter { item in
+                let status = (item["status"] as? String ?? "").uppercased()
 
-            // Search query filter
-            if !searchQuery.isEmpty {
-                let emp = item["employee"] as? [String: Any]
-                let firstName = (emp?["firstName"] as? String ?? "").lowercased()
-                let lastName = (emp?["lastName"] as? String ?? "").lowercased()
-                let code = (emp?["employeeCode"] as? String ?? "").lowercased()
-                let email = (emp?["email"] as? String ?? "").lowercased()
-                let leaveType = (item["type"] as? String ?? "").lowercased()
-                let reason = (item["reason"] as? String ?? "").lowercased()
+                if selectedStatus != "ALL" && status != selectedStatus {
+                    return false
+                }
 
-                let matches = firstName.contains(searchQuery) ||
-                              lastName.contains(searchQuery) ||
-                              code.contains(searchQuery) ||
-                              email.contains(searchQuery) ||
-                              leaveType.contains(searchQuery) ||
-                              reason.contains(searchQuery)
+                if !searchQuery.isEmpty {
+                    let emp = item["employee"] as? [String: Any]
+                    let firstName = (emp?["firstName"] as? String ?? "").lowercased()
+                    let lastName = (emp?["lastName"] as? String ?? "").lowercased()
+                    let code = (emp?["employeeCode"] as? String ?? "").lowercased()
+                    let email = (emp?["email"] as? String ?? "").lowercased()
+                    let leaveType = (item["type"] as? String ?? "").lowercased()
+                    let reason = (item["reason"] as? String ?? "").lowercased()
 
-                if !matches { return false }
+                    let matches = firstName.contains(searchQuery) ||
+                                  lastName.contains(searchQuery) ||
+                                  code.contains(searchQuery) ||
+                                  email.contains(searchQuery) ||
+                                  leaveType.contains(searchQuery) ||
+                                  reason.contains(searchQuery)
+
+                    if !matches { return false }
+                }
+
+                return true
             }
-
-            return true
         }
 
         renderApprovalsList()
@@ -687,15 +855,261 @@ class ApprovalsViewController: UIViewController, UIScrollViewDelegate, UITextFie
             sub.removeFromSuperview()
         }
 
-        if filteredLeaves.isEmpty {
-            emptyStateView.isHidden = false
+        if activeCategory == "EMPLOYEES" {
+            if filteredOnboardingCases.isEmpty {
+                emptyStateView.isHidden = false
+            } else {
+                emptyStateView.isHidden = true
+                for c in filteredOnboardingCases {
+                    let card = createOnboardingCard(caseItem: c)
+                    approvalsListContainer.addArrangedSubview(card)
+                }
+            }
         } else {
-            emptyStateView.isHidden = true
-            for leave in filteredLeaves {
-                let card = createLeaveApprovalCard(leave: leave)
-                approvalsListContainer.addArrangedSubview(card)
+            if filteredLeaves.isEmpty {
+                emptyStateView.isHidden = false
+            } else {
+                emptyStateView.isHidden = true
+                for leave in filteredLeaves {
+                    let card = createLeaveApprovalCard(leave: leave)
+                    approvalsListContainer.addArrangedSubview(card)
+                }
             }
         }
+    }
+
+    private func createOnboardingCard(caseItem: [String: Any]) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 14
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.02
+        card.layer.shadowOffset = CGSize(width: 0, height: 1)
+        card.layer.shadowRadius = 3
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let cardStack = UIStackView()
+        cardStack.axis = .vertical
+        cardStack.spacing = 12
+        cardStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(cardStack)
+
+        let caseId = caseItem["id"] as? String ?? ""
+        let status = (caseItem["status"] as? String ?? "PENDING_VERIFICATION").uppercased()
+        let bgvStatus = (caseItem["bgvStatus"] as? String ?? "PENDING").uppercased()
+        let offerSigned = caseItem["offerSigned"] as? Bool ?? false
+
+        let emp = caseItem["employee"] as? [String: Any]
+        let firstName = emp?["firstName"] as? String ?? "Employee"
+        let lastName = emp?["lastName"] as? String ?? ""
+        let fullName = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespacesAndNewlines)
+        let email = emp?["email"] as? String ?? ""
+        let dept = (emp?["department"] as? [String: Any])?["name"] as? String ?? "Operations"
+        let desig = (emp?["designation"] as? [String: Any])?["name"] as? String ?? "Team Member"
+
+        // Top Row: Avatar + Name + Status Pill
+        let topRow = UIStackView()
+        topRow.axis = .horizontal
+        topRow.spacing = 10
+        topRow.alignment = .center
+
+        let avatarView = UIView()
+        avatarView.backgroundColor = UIColor(red: 238/255, green: 242/255, blue: 255/255, alpha: 1.0)
+        avatarView.layer.cornerRadius = 20
+        avatarView.translatesAutoresizingMaskIntoConstraints = false
+        let initialsLabel = UILabel()
+        initialsLabel.text = String(firstName.prefix(1)).uppercased()
+        initialsLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        initialsLabel.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        initialsLabel.translatesAutoresizingMaskIntoConstraints = false
+        avatarView.addSubview(initialsLabel)
+        NSLayoutConstraint.activate([
+            avatarView.widthAnchor.constraint(equalToConstant: 40),
+            avatarView.heightAnchor.constraint(equalToConstant: 40),
+            initialsLabel.centerXAnchor.constraint(equalTo: avatarView.centerXAnchor),
+            initialsLabel.centerYAnchor.constraint(equalTo: avatarView.centerYAnchor)
+        ])
+        topRow.addArrangedSubview(avatarView)
+
+        let nameStack = UIStackView()
+        nameStack.axis = .vertical
+        nameStack.spacing = 2
+        let nameLabel = UILabel()
+        nameLabel.text = fullName
+        nameLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        nameLabel.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        nameStack.addArrangedSubview(nameLabel)
+
+        let emailLabel = UILabel()
+        emailLabel.text = email
+        emailLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        emailLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        nameStack.addArrangedSubview(emailLabel)
+        topRow.addArrangedSubview(nameStack)
+
+        let statusPill = UILabel()
+        statusPill.font = .systemFont(ofSize: 10, weight: .bold)
+        statusPill.layer.cornerRadius = 6
+        statusPill.layer.masksToBounds = true
+        statusPill.textAlignment = .center
+
+        if bgvStatus == "FAILED" {
+            statusPill.text = "  REJECTED  "
+            statusPill.backgroundColor = UIColor(red: 254/255, green: 226/255, blue: 226/255, alpha: 1.0)
+            statusPill.textColor = UIColor(red: 220/255, green: 38/255, blue: 38/255, alpha: 1.0)
+        } else if status == "COMPLETED" {
+            statusPill.text = "  APPROVED  "
+            statusPill.backgroundColor = UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0)
+            statusPill.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        } else {
+            statusPill.text = "  PENDING APPROVAL  "
+            statusPill.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+            statusPill.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+        }
+        topRow.addArrangedSubview(statusPill)
+        cardStack.addArrangedSubview(topRow)
+
+        // Progress bar
+        let progressTrack = UIView()
+        progressTrack.backgroundColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0)
+        progressTrack.layer.cornerRadius = 3
+        progressTrack.translatesAutoresizingMaskIntoConstraints = false
+        progressTrack.heightAnchor.constraint(equalToConstant: 6).isActive = true
+
+        let progressBar = UIView()
+        progressBar.backgroundColor = status == "COMPLETED" ? UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0) : UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        progressBar.layer.cornerRadius = 3
+        progressBar.translatesAutoresizingMaskIntoConstraints = false
+        progressTrack.addSubview(progressBar)
+
+        let multiplier: CGFloat = status == "COMPLETED" ? 1.0 : (status == "PENDING_VERIFICATION" ? 0.85 : (offerSigned ? 0.6 : 0.3))
+        NSLayoutConstraint.activate([
+            progressBar.topAnchor.constraint(equalTo: progressTrack.topAnchor),
+            progressBar.bottomAnchor.constraint(equalTo: progressTrack.bottomAnchor),
+            progressBar.leadingAnchor.constraint(equalTo: progressTrack.leadingAnchor),
+            progressBar.widthAnchor.constraint(equalTo: progressTrack.widthAnchor, multiplier: multiplier)
+        ])
+        cardStack.addArrangedSubview(progressTrack)
+
+        // Chips Row
+        let chipsRow = UIStackView()
+        chipsRow.axis = .horizontal
+        chipsRow.spacing = 8
+        chipsRow.distribution = .fillProportionally
+
+        let offerChip = createChip(title: offerSigned ? "Offer Signed" : "Offer Pending", isGreen: offerSigned)
+        let bgvChip = createChip(title: "BGV: \(bgvStatus)", isGreen: bgvStatus == "PASSED")
+        let roleChip = createChip(title: desig, isGreen: false)
+        chipsRow.addArrangedSubview(offerChip)
+        chipsRow.addArrangedSubview(bgvChip)
+        chipsRow.addArrangedSubview(roleChip)
+        cardStack.addArrangedSubview(chipsRow)
+
+        // Action Buttons (if pending)
+        if status != "COMPLETED" && bgvStatus != "FAILED" {
+            let actionsRow = UIStackView()
+            actionsRow.axis = .horizontal
+            actionsRow.spacing = 10
+            actionsRow.distribution = .fillEqually
+
+            let btnApprove = UIButton(type: .system)
+            btnApprove.setTitle("Approve Employee", for: .normal)
+            btnApprove.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
+            btnApprove.backgroundColor = UIColor(red: 16/255, green: 185/255, blue: 129/255, alpha: 1.0)
+            btnApprove.setTitleColor(.white, for: .normal)
+            btnApprove.layer.cornerRadius = 8
+            btnApprove.heightAnchor.constraint(equalToConstant: 40).isActive = true
+            btnApprove.addAction(UIAction { [weak self] _ in
+                self?.confirmApproveOnboarding(caseId: caseId, employeeName: fullName)
+            }, for: .touchUpInside)
+
+            let btnReject = UIButton(type: .system)
+            btnReject.setTitle("Reject", for: .normal)
+            btnReject.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
+            btnReject.backgroundColor = UIColor(red: 244/255, green: 63/255, blue: 94/255, alpha: 1.0)
+            btnReject.setTitleColor(.white, for: .normal)
+            btnReject.layer.cornerRadius = 8
+            btnReject.heightAnchor.constraint(equalToConstant: 40).isActive = true
+            btnReject.addAction(UIAction { [weak self] _ in
+                self?.promptRejectOnboarding(caseId: caseId, employeeName: fullName)
+            }, for: .touchUpInside)
+
+            actionsRow.addArrangedSubview(btnApprove)
+            actionsRow.addArrangedSubview(btnReject)
+            cardStack.addArrangedSubview(actionsRow)
+        }
+
+        NSLayoutConstraint.activate([
+            cardStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+            cardStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            cardStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            cardStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
+        ])
+
+        return card
+    }
+
+    private func createChip(title: String, isGreen: Bool) -> UIView {
+        let label = UILabel()
+        label.text = " \(title) "
+        label.font = .systemFont(ofSize: 11, weight: .medium)
+        label.textColor = isGreen ? UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0) : UIColor(red: 71/255, green: 85/255, blue: 105/255, alpha: 1.0)
+        label.backgroundColor = isGreen ? UIColor(red: 209/255, green: 250/255, blue: 229/255, alpha: 1.0) : UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        label.layer.cornerRadius = 4
+        label.layer.masksToBounds = true
+        return label
+    }
+
+    private func confirmApproveOnboarding(caseId: String, employeeName: String) {
+        let alert = UIAlertController(title: "Approve Employee", message: "Grant full workspace access and activate employee account for \(employeeName)?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Approve", style: .default, handler: { [weak self] _ in
+            AuthService.shared.approveOnboardingCase(caseId: caseId) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        let s = UIAlertController(title: "Success", message: "Employee \(employeeName) has been approved and activated.", preferredStyle: .alert)
+                        s.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self?.present(s, animated: true)
+                        self?.loadApprovalsData()
+                    case .failure(let err):
+                        let e = UIAlertController(title: "Error", message: err.localizedDescription, preferredStyle: .alert)
+                        e.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self?.present(e, animated: true)
+                    }
+                }
+            }
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alert, animated: true)
+    }
+
+    private func promptRejectOnboarding(caseId: String, employeeName: String) {
+        let alert = UIAlertController(title: "Reject Onboarding", message: "Enter reason for rejecting \(employeeName)'s onboarding:", preferredStyle: .alert)
+        alert.addTextField { tf in
+            tf.placeholder = "Reason for rejection"
+        }
+        alert.addAction(UIAlertAction(title: "Reject", style: .destructive, handler: { [weak self] _ in
+            let reason = alert.textFields?.first?.text
+            AuthService.shared.rejectOnboardingCase(caseId: caseId, reason: reason) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        let s = UIAlertController(title: "Rejected", message: "Onboarding case for \(employeeName) has been rejected.", preferredStyle: .alert)
+                        s.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self?.present(s, animated: true)
+                        self?.loadApprovalsData()
+                    case .failure(let err):
+                        let e = UIAlertController(title: "Error", message: err.localizedDescription, preferredStyle: .alert)
+                        e.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self?.present(e, animated: true)
+                    }
+                }
+            }
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alert, animated: true)
     }
 
     // MARK: - Card Construction

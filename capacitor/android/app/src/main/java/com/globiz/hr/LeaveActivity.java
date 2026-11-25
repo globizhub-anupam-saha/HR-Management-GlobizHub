@@ -75,6 +75,11 @@ public class LeaveActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!ApiClient.getInstance(this).isApprovedEmployee()) {
+            Toast.makeText(this, "Access restricted until onboarding approval.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         BottomNavHelper.setupBottomNav(this, "leave");
         AppHeaderHelper.refreshHeaderState(this);
         loadLeaveBalances();

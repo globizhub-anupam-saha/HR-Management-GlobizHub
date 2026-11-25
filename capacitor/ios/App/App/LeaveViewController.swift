@@ -54,6 +54,10 @@ class LeaveViewController: UIViewController, UIScrollViewDelegate {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if !AuthService.shared.isApprovedEmployee() {
+            dismiss(animated: false, completion: nil)
+            return
+        }
         setupBottomNavBar()
         updateHeaderState()
         loadLeaveData()

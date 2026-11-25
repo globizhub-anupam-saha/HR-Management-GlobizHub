@@ -36,13 +36,18 @@ public class ApprovalsActivity extends AppCompatActivity {
     private ApiClient apiClient;
 
     // Data State
+    private String currentCategory = "EMPLOYEES"; // "EMPLOYEES" or "LEAVES"
     private final List<JSONObject> allLeaves = new ArrayList<>();
     private final List<JSONObject> filteredLeaves = new ArrayList<>();
+    private final List<JSONObject> allOnboardingCases = new ArrayList<>();
+    private final List<JSONObject> filteredOnboardingCases = new ArrayList<>();
     private String selectedStatus = "PENDING";
     private String searchTerm = "";
     private boolean isLoading = false;
 
     // Views
+    private TextView btnCatEmployees, btnCatLeaves;
+    private TextView tvApprovalsBannerTitle, tvApprovalsBannerSubtitle;
     private TextView tvCountPending, tvCountApproved, tvCountRejected, tvCountAll;
     private View cardPending, cardApproved, cardRejected, cardAll;
     private TextView tabPending, tabApproved, tabRejected, tabAll;
@@ -82,6 +87,18 @@ public class ApprovalsActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        btnCatEmployees = findViewById(R.id.btnCatEmployees);
+        btnCatLeaves = findViewById(R.id.btnCatLeaves);
+        tvApprovalsBannerTitle = findViewById(R.id.tvApprovalsBannerTitle);
+        tvApprovalsBannerSubtitle = findViewById(R.id.tvApprovalsBannerSubtitle);
+
+        if (btnCatEmployees != null) {
+            btnCatEmployees.setOnClickListener(v -> switchCategory("EMPLOYEES"));
+        }
+        if (btnCatLeaves != null) {
+            btnCatLeaves.setOnClickListener(v -> switchCategory("LEAVES"));
+        }
+
         tvCountPending = findViewById(R.id.tvCountPending);
         tvCountApproved = findViewById(R.id.tvCountApproved);
         tvCountRejected = findViewById(R.id.tvCountRejected);
@@ -107,6 +124,35 @@ public class ApprovalsActivity extends AppCompatActivity {
         viewNotificationDot = findViewById(R.id.viewNotificationDot);
         btnAvatar = findViewById(R.id.btnAvatar);
         tvAvatarInitials = findViewById(R.id.tvAvatarInitials);
+    }
+
+    private void switchCategory(String category) {
+        if (currentCategory.equals(category)) return;
+        currentCategory = category;
+        updateCategoryUI();
+        selectedStatus = "PENDING";
+        updateFilterTabsUI();
+        loadApprovalsData();
+    }
+
+    private void updateCategoryUI() {
+        boolean isEmp = "EMPLOYEES".equalsIgnoreCase(currentCategory);
+        if (btnCatEmployees != null) {
+            btnCatEmployees.setBackgroundResource(isEmp ? R.drawable.bg_blue_capsule_btn : 0);
+            btnCatEmployees.setTextColor(isEmp ? Color.WHITE : Color.parseColor("#64748B"));
+        }
+        if (btnCatLeaves != null) {
+            btnCatLeaves.setBackgroundResource(!isEmp ? R.drawable.bg_blue_capsule_btn : 0);
+            btnCatLeaves.setTextColor(!isEmp ? Color.WHITE : Color.parseColor("#64748B"));
+        }
+        if (tvApprovalsBannerTitle != null) {
+            tvApprovalsBannerTitle.setText(isEmp ? "Employee Onboarding Approvals" : "Company Leave Requests");
+        }
+        if (tvApprovalsBannerSubtitle != null) {
+            tvApprovalsBannerSubtitle.setText(isEmp
+                    ? "Review employee registration details, verify documents, and grant workspace access."
+                    : "Review and manage pending time-off requests from your team members.");
+        }
     }
 
     private void setupHeader() {
@@ -193,98 +239,364 @@ public class ApprovalsActivity extends AppCompatActivity {
         isLoading = true;
         progressBar.setVisibility(View.VISIBLE);
 
-        apiClient.getCompanyLeaves(new ApiClient.ApiCallback<JSONArray>() {
-            @Override
-            public void onSuccess(JSONArray result) {
-                runOnUiThread(() -> {
-                    isLoading = false;
-                    progressBar.setVisibility(View.GONE);
-                    allLeaves.clear();
-                    if (result != null) {
-                        for (int i = 0; i < result.length(); i++) {
-                            JSONObject item = result.optJSONObject(i);
-                            if (item != null) allLeaves.add(item);
+        if ("EMPLOYEES".equalsIgnoreCase(currentCategory)) {
+            apiClient.getOnboardingCases("ALL", new ApiClient.ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    runOnUiThread(() -> {
+                        isLoading = false;
+                        progressBar.setVisibility(View.GONE);
+                        allOnboardingCases.clear();
+                        if (result != null) {
+                            for (int i = 0; i < result.length(); i++) {
+                                JSONObject item = result.optJSONObject(i);
+                                if (item != null) allOnboardingCases.add(item);
+                            }
                         }
-                    }
-                    updateKpiCounts();
-                    applyFilters();
-                });
-            }
+                        updateKpiCounts();
+                        applyFilters();
+                    });
+                }
 
-            @Override
-            public void onError(String errorMessage, int statusCode) {
-                runOnUiThread(() -> {
-                    isLoading = false;
-                    progressBar.setVisibility(View.GONE);
-                    Toast.makeText(ApprovalsActivity.this, "Failed to load leave requests: " + errorMessage, Toast.LENGTH_SHORT).show();
-                    applyFilters();
-                });
-            }
-        });
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    runOnUiThread(() -> {
+                        isLoading = false;
+                        progressBar.setVisibility(View.GONE);
+                        allOnboardingCases.clear();
+                        updateKpiCounts();
+                        applyFilters();
+                    });
+                }
+            });
+        } else {
+            apiClient.getCompanyLeaves(new ApiClient.ApiCallback<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray result) {
+                    runOnUiThread(() -> {
+                        isLoading = false;
+                        progressBar.setVisibility(View.GONE);
+                        allLeaves.clear();
+                        if (result != null) {
+                            for (int i = 0; i < result.length(); i++) {
+                                JSONObject item = result.optJSONObject(i);
+                                if (item != null) allLeaves.add(item);
+                            }
+                        }
+                        updateKpiCounts();
+                        applyFilters();
+                    });
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    runOnUiThread(() -> {
+                        isLoading = false;
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(ApprovalsActivity.this, "Failed to load leave requests: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        applyFilters();
+                    });
+                }
+            });
+        }
     }
 
     private void updateKpiCounts() {
         int pending = 0;
         int approved = 0;
         int rejected = 0;
+        int total = 0;
 
-        for (JSONObject leave : allLeaves) {
-            String status = leave.optString("status", "").toUpperCase(Locale.ROOT);
-            if ("PENDING".equals(status)) {
-                pending++;
-            } else if ("APPROVED".equals(status)) {
-                approved++;
-            } else if ("REJECTED".equals(status)) {
-                rejected++;
+        if ("EMPLOYEES".equalsIgnoreCase(currentCategory)) {
+            total = allOnboardingCases.size();
+            for (JSONObject c : allOnboardingCases) {
+                String status = c.optString("status", "").toUpperCase(Locale.ROOT);
+                String bgv = c.optString("bgvStatus", "").toUpperCase(Locale.ROOT);
+                if ("FAILED".equals(bgv)) {
+                    rejected++;
+                } else if ("COMPLETED".equals(status)) {
+                    approved++;
+                } else {
+                    pending++;
+                }
+            }
+        } else {
+            total = allLeaves.size();
+            for (JSONObject leave : allLeaves) {
+                String status = leave.optString("status", "").toUpperCase(Locale.ROOT);
+                if ("PENDING".equals(status)) {
+                    pending++;
+                } else if ("APPROVED".equals(status)) {
+                    approved++;
+                } else if ("REJECTED".equals(status)) {
+                    rejected++;
+                }
             }
         }
 
         tvCountPending.setText(String.valueOf(pending));
         tvCountApproved.setText(String.valueOf(approved));
         tvCountRejected.setText(String.valueOf(rejected));
-        tvCountAll.setText(String.valueOf(allLeaves.size()));
+        tvCountAll.setText(String.valueOf(total));
 
         tabPending.setText("Pending (" + pending + ")");
         tabApproved.setText("Approved (" + approved + ")");
         tabRejected.setText("Rejected (" + rejected + ")");
-        tabAll.setText("All (" + allLeaves.size() + ")");
+        tabAll.setText("All (" + total + ")");
     }
 
     private void applyFilters() {
-        filteredLeaves.clear();
+        if ("EMPLOYEES".equalsIgnoreCase(currentCategory)) {
+            filteredOnboardingCases.clear();
+            for (JSONObject c : allOnboardingCases) {
+                String status = c.optString("status", "").toUpperCase(Locale.ROOT);
+                String bgv = c.optString("bgvStatus", "").toUpperCase(Locale.ROOT);
 
-        for (JSONObject leave : allLeaves) {
-            String status = leave.optString("status", "").toUpperCase(Locale.ROOT);
+                boolean matchesStatus = false;
+                if ("ALL".equalsIgnoreCase(selectedStatus)) {
+                    matchesStatus = true;
+                } else if ("PENDING".equalsIgnoreCase(selectedStatus)) {
+                    matchesStatus = !"COMPLETED".equals(status) && !"FAILED".equals(bgv);
+                } else if ("APPROVED".equalsIgnoreCase(selectedStatus)) {
+                    matchesStatus = "COMPLETED".equals(status);
+                } else if ("REJECTED".equalsIgnoreCase(selectedStatus)) {
+                    matchesStatus = "FAILED".equals(bgv);
+                }
 
-            // Filter by status tab
-            if (!"ALL".equalsIgnoreCase(selectedStatus) && !selectedStatus.equalsIgnoreCase(status)) {
-                continue;
+                if (!matchesStatus) continue;
+
+                if (!searchTerm.isEmpty()) {
+                    JSONObject emp = c.optJSONObject("employee");
+                    String fn = emp != null ? emp.optString("firstName", "").toLowerCase(Locale.ROOT) : "";
+                    String ln = emp != null ? emp.optString("lastName", "").toLowerCase(Locale.ROOT) : "";
+                    String email = emp != null ? emp.optString("email", "").toLowerCase(Locale.ROOT) : "";
+                    JSONObject dept = emp != null ? emp.optJSONObject("department") : null;
+                    String deptName = dept != null ? dept.optString("name", "").toLowerCase(Locale.ROOT) : "";
+
+                    boolean matches = fn.contains(searchTerm) || ln.contains(searchTerm) || email.contains(searchTerm) || deptName.contains(searchTerm);
+                    if (!matches) continue;
+                }
+
+                filteredOnboardingCases.add(c);
+            }
+            renderOnboardingList();
+        } else {
+            filteredLeaves.clear();
+
+            for (JSONObject leave : allLeaves) {
+                String status = leave.optString("status", "").toUpperCase(Locale.ROOT);
+
+                if (!"ALL".equalsIgnoreCase(selectedStatus) && !selectedStatus.equalsIgnoreCase(status)) {
+                    continue;
+                }
+
+                if (!searchTerm.isEmpty()) {
+                    JSONObject emp = leave.optJSONObject("employee");
+                    String firstName = emp != null ? emp.optString("firstName", "").toLowerCase(Locale.ROOT) : "";
+                    String lastName = emp != null ? emp.optString("lastName", "").toLowerCase(Locale.ROOT) : "";
+                    String code = emp != null ? emp.optString("employeeCode", "").toLowerCase(Locale.ROOT) : "";
+                    String email = emp != null ? emp.optString("email", "").toLowerCase(Locale.ROOT) : "";
+                    String leaveType = leave.optString("type", "").toLowerCase(Locale.ROOT);
+                    String reason = leave.optString("reason", "").toLowerCase(Locale.ROOT);
+
+                    boolean matches = firstName.contains(searchTerm) ||
+                            lastName.contains(searchTerm) ||
+                            code.contains(searchTerm) ||
+                            email.contains(searchTerm) ||
+                            leaveType.contains(searchTerm) ||
+                            reason.contains(searchTerm);
+
+                    if (!matches) continue;
+                }
+
+                filteredLeaves.add(leave);
             }
 
-            // Filter by search query
-            if (!searchTerm.isEmpty()) {
-                JSONObject emp = leave.optJSONObject("employee");
-                String firstName = emp != null ? emp.optString("firstName", "").toLowerCase(Locale.ROOT) : "";
-                String lastName = emp != null ? emp.optString("lastName", "").toLowerCase(Locale.ROOT) : "";
-                String code = emp != null ? emp.optString("employeeCode", "").toLowerCase(Locale.ROOT) : "";
-                String email = emp != null ? emp.optString("email", "").toLowerCase(Locale.ROOT) : "";
-                String leaveType = leave.optString("type", "").toLowerCase(Locale.ROOT);
-                String reason = leave.optString("reason", "").toLowerCase(Locale.ROOT);
+            renderApprovalsList();
+        }
+    }
 
-                boolean matches = firstName.contains(searchTerm) ||
-                        lastName.contains(searchTerm) ||
-                        code.contains(searchTerm) ||
-                        email.contains(searchTerm) ||
-                        leaveType.contains(searchTerm) ||
-                        reason.contains(searchTerm);
+    private void renderOnboardingList() {
+        llApprovalsList.removeAllViews();
 
-                if (!matches) continue;
-            }
-
-            filteredLeaves.add(leave);
+        if (filteredOnboardingCases.isEmpty()) {
+            llEmptyState.setVisibility(View.VISIBLE);
+            return;
         }
 
-        renderApprovalsList();
+        llEmptyState.setVisibility(View.GONE);
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        for (JSONObject c : filteredOnboardingCases) {
+            View card = inflater.inflate(R.layout.item_onboarding_approval_card, llApprovalsList, false);
+
+            TextView tvAvatar = card.findViewById(R.id.tvOnbAvatar);
+            TextView tvName = card.findViewById(R.id.tvOnbName);
+            TextView tvSubtitle = card.findViewById(R.id.tvOnbSubtitle);
+            TextView tvStatus = card.findViewById(R.id.tvOnbStatus);
+            TextView tvProgress = card.findViewById(R.id.tvOnbProgress);
+            ProgressBar pbProgress = card.findViewById(R.id.pbOnbProgress);
+            TextView tvOfferSigned = card.findViewById(R.id.tvOnbOfferSigned);
+            TextView tvDepartment = card.findViewById(R.id.tvOnbDepartment);
+            TextView tvDesignation = card.findViewById(R.id.tvOnbDesignation);
+            TextView tvBgvStatus = card.findViewById(R.id.tvOnbBgvStatus);
+            View llRejectionBox = card.findViewById(R.id.llOnbRejectionBox);
+            TextView tvRejectionReason = card.findViewById(R.id.tvOnbRejectionReason);
+            View llActionsRow = card.findViewById(R.id.llOnbActionsRow);
+            TextView btnApprove = card.findViewById(R.id.btnOnbApprove);
+            TextView btnReject = card.findViewById(R.id.btnOnbReject);
+
+            String caseId = c.optString("id", "");
+            String status = c.optString("status", "INVITED").toUpperCase(Locale.ROOT);
+            String bgvStatus = c.optString("bgvStatus", "PENDING").toUpperCase(Locale.ROOT);
+            boolean offerSigned = c.optBoolean("offerSigned", false);
+
+            JSONObject emp = c.optJSONObject("employee");
+            String firstName = emp != null ? emp.optString("firstName", "Staff") : "Staff";
+            String lastName = emp != null ? emp.optString("lastName", "") : "";
+            String fullName = (firstName + " " + lastName).trim();
+            String email = emp != null ? emp.optString("email", "") : "";
+
+            String deptName = "General";
+            JSONObject deptObj = emp != null ? emp.optJSONObject("department") : null;
+            if (deptObj != null && !deptObj.optString("name", "").isEmpty()) {
+                deptName = deptObj.optString("name", "");
+            }
+
+            String desigName = "Employee";
+            JSONObject desObj = emp != null ? emp.optJSONObject("designation") : null;
+            if (desObj != null && !desObj.optString("name", "").isEmpty()) {
+                desigName = desObj.optString("name", "");
+            }
+
+            tvAvatar.setText(firstName.isEmpty() ? "U" : firstName.substring(0, 1).toUpperCase(Locale.ROOT));
+            tvName.setText(fullName.isEmpty() ? "Employee" : fullName);
+            tvSubtitle.setText(email + (deptName.isEmpty() ? "" : " · " + deptName));
+
+            if ("FAILED".equals(bgvStatus)) {
+                tvStatus.setText("REJECTED");
+                tvStatus.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_red));
+                tvStatus.setTextColor(Color.parseColor("#DC2626"));
+            } else if ("COMPLETED".equals(status)) {
+                tvStatus.setText("APPROVED");
+                tvStatus.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_green));
+                tvStatus.setTextColor(Color.parseColor("#059669"));
+            } else if ("PENDING_VERIFICATION".equals(status)) {
+                tvStatus.setText("PENDING APPROVAL");
+                tvStatus.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_orange));
+                tvStatus.setTextColor(Color.parseColor("#D97706"));
+            } else {
+                tvStatus.setText(status.replace("_", " "));
+                tvStatus.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_stat_card_blue));
+                tvStatus.setTextColor(Color.parseColor("#2563EB"));
+            }
+
+            JSONObject metrics = c.optJSONObject("metrics");
+            int progressPercent = metrics != null ? metrics.optInt("progressPercent", 0) : (offerSigned ? 66 : 33);
+            if ("COMPLETED".equals(status)) progressPercent = 100;
+            pbProgress.setProgress(progressPercent);
+            tvProgress.setText(progressPercent + "% Completed");
+
+            tvOfferSigned.setText(offerSigned ? "✓ Offer Signed" : "Offer Pending");
+            tvOfferSigned.setTextColor(offerSigned ? Color.parseColor("#059669") : Color.parseColor("#D97706"));
+            tvDepartment.setText(deptName);
+            tvDesignation.setText(desigName);
+            tvBgvStatus.setText("BGV: " + bgvStatus);
+
+            if ("FAILED".equals(bgvStatus)) {
+                llRejectionBox.setVisibility(View.VISIBLE);
+                tvRejectionReason.setText("Status: Onboarding rejected by administrator");
+            } else {
+                llRejectionBox.setVisibility(View.GONE);
+            }
+
+            if (!"COMPLETED".equals(status) && !"FAILED".equals(bgvStatus)) {
+                llActionsRow.setVisibility(View.VISIBLE);
+
+                final String fFullName = fullName;
+                final String fEmail = email;
+
+                btnApprove.setOnClickListener(v -> {
+                    new AlertDialog.Builder(ApprovalsActivity.this)
+                            .setTitle("Approve Employee")
+                            .setMessage("Approve and activate " + fFullName + " (" + fEmail + ") for complete workspace access?")
+                            .setPositiveButton("Approve", (dialog, which) -> {
+                                btnApprove.setEnabled(false);
+                                btnApprove.setAlpha(0.6f);
+                                apiClient.approveOnboardingCase(caseId, new ApiClient.ApiCallback<JSONObject>() {
+                                    @Override
+                                    public void onSuccess(JSONObject result) {
+                                        runOnUiThread(() -> {
+                                            Toast.makeText(ApprovalsActivity.this, "Employee approved & activated successfully!", Toast.LENGTH_SHORT).show();
+                                            loadApprovalsData();
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onError(String errorMessage, int statusCode) {
+                                        runOnUiThread(() -> {
+                                            btnApprove.setEnabled(true);
+                                            btnApprove.setAlpha(1.0f);
+                                            Toast.makeText(ApprovalsActivity.this, "Failed to approve: " + errorMessage, Toast.LENGTH_SHORT).show();
+                                        });
+                                    }
+                                });
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+
+                btnReject.setOnClickListener(v -> showRejectEmployeeDialog(caseId, fFullName));
+            } else {
+                llActionsRow.setVisibility(View.GONE);
+            }
+
+            llApprovalsList.addView(card);
+        }
+    }
+
+    private void showRejectEmployeeDialog(String caseId, String employeeName) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_reject_leave, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        EditText etReason = dialogView.findViewById(R.id.etRejectionReason);
+        if (etReason != null) {
+            etReason.setHint("Reason for rejecting " + employeeName + "...");
+        }
+        View btnCancel = dialogView.findViewById(R.id.btnCancelReject);
+        View btnConfirm = dialogView.findViewById(R.id.btnConfirmReject);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirm.setOnClickListener(v -> {
+            String reason = etReason != null && etReason.getText() != null ? etReason.getText().toString().trim() : "";
+            dialog.dismiss();
+
+            apiClient.rejectOnboardingCase(caseId, reason, new ApiClient.ApiCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(ApprovalsActivity.this, "Employee onboarding rejected", Toast.LENGTH_SHORT).show();
+                        loadApprovalsData();
+                    });
+                }
+
+                @Override
+                public void onError(String errorMessage, int statusCode) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(ApprovalsActivity.this, "Failed to reject: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
+        });
+
+        dialog.show();
     }
 
     private void renderApprovalsList() {

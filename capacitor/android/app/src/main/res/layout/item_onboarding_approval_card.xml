@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/bg_home_card"
+    android:elevation="1dp"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- TOP ROW: Avatar + Name Stack + Status Pill -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Avatar Initials -->
+        <TextView
+            android:id="@+id/tvOnbAvatar"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_stat_card_blue"
+            android:gravity="center"
+            android:text="U"
+            android:textColor="#0056FD"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Name & Subtitle -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvOnbName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Employee Name"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvOnbSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="employee@globizhub.com • Engineering"
+                android:textColor="#64748B"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Status Pill -->
+        <TextView
+            android:id="@+id/tvOnbStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_stat_card_orange"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp"
+            android:text="PENDING"
+            android:textColor="#D97706"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- PROGRESS ROW: Progress text + Progress Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Onboarding Checklist"
+            android:textColor="#475569"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvOnbProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100% Completed"
+            android:textColor="#0056FD"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/pbOnbProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progress="100"
+        android:progressDrawable="@drawable/bg_progress_bar_custom" />
+
+    <!-- DETAIL CHIPS ROW in HorizontalScrollView -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Offer Signed Chip -->
+            <TextView
+                android:id="@+id/tvOnbOfferSigned"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_stat_card_green"
+                android:paddingStart="8dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp"
+                android:text="✓ Offer Signed"
+                android:textColor="#059669"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <!-- Department Chip -->
+            <TextView
+                android:id="@+id/tvOnbDepartment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_stat_card_blue"
+                android:paddingStart="8dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp"
+                android:text="Engineering"
+                android:textColor="#2563EB"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <!-- Designation Chip -->
+            <TextView
+                android:id="@+id/tvOnbDesignation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_card_unselected"
+                android:paddingStart="8dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp"
+                android:text="Developer"
+                android:textColor="#334155"
+                android:textSize="11sp" />
+
+            <!-- BGV Chip -->
+            <TextView
+                android:id="@+id/tvOnbBgvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_unselected"
+                android:paddingStart="8dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp"
+                android:text="KYC Verified"
+                android:textColor="#334155"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- REJECTION CALLOUT BOX (Visible when rejected) -->
+    <LinearLayout
+        android:id="@+id/llOnbRejectionBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_stat_card_red"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvOnbRejectionReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rejection Reason: Incomplete documentation."
+            android:textColor="#DC2626"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ACTION BUTTONS ROW (Visible when pending approval) -->
+    <LinearLayout
+        android:id="@+id/llOnbActionsRow"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btnOnbApprove"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_emerald_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="Approve Employee"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnOnbReject"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_rose_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="Reject"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

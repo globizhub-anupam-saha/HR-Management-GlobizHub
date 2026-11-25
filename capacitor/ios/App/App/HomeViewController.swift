@@ -29,6 +29,9 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
     private let employeeStackView = UIStackView()
     private let adminStackView = UIStackView()
     private let superAdminStackView = UIStackView()
+    private let pendingApprovalStackView = UIStackView()
+    private let rejectedStackView = UIStackView()
+    private let suspendedStackView = UIStackView()
 
     // Admin Dashboard Views
     private let adminHeroCard = UIView()
@@ -360,36 +363,48 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         let userRole = UserRole.from(string: currentRole)
         switch userRole {
         case .superAdmin, .admin:
-            employeeStackView.isHidden = true
+            hideAllDashboards()
             adminStackView.isHidden = false
-            superAdminStackView.isHidden = true
             loadAdminDashboardData()
         case .employee:
-            employeeStackView.isHidden = false
-            adminStackView.isHidden = true
-            superAdminStackView.isHidden = true
+            if AuthService.shared.isRejected() {
+                hideAllDashboards()
+                rejectedStackView.isHidden = false
+                setupRejectedDashboard()
+            } else if AuthService.shared.isSuspendedOrInactive() {
+                hideAllDashboards()
+                suspendedStackView.isHidden = false
+                setupSuspendedDashboard()
+            } else if AuthService.shared.isPendingApproval() {
+                hideAllDashboards()
+                pendingApprovalStackView.isHidden = false
+                setupPendingApprovalDashboard()
+            } else {
+                hideAllDashboards()
+                employeeStackView.isHidden = false
 
-            loadProfile()
-            loadAttendanceStats()
-            loadRealAttendanceHistoryForHeatmap()
-            loadRealLeaves()
-            loadRealHolidays()
-            loadEmployeeAnnouncements()
-            loadRealSchedule()
-            loadTeamPresence()
-            loadTasks()
-            renderMonthlyHeatmap()
-            heatmapModeSegmented.selectedSegmentIndex = 0
-            didChangeHeatmapMode(heatmapModeSegmented)
-            heroCard.play()
+                loadProfile()
+                loadAttendanceStats()
+                loadRealAttendanceHistoryForHeatmap()
+                loadRealLeaves()
+                loadRealHolidays()
+                loadEmployeeAnnouncements()
+                loadRealSchedule()
+                loadTeamPresence()
+                loadTasks()
+                renderMonthlyHeatmap()
+                heatmapModeSegmented.selectedSegmentIndex = 0
+                didChangeHeatmapMode(heatmapModeSegmented)
+                heroCard.play()
 
-            // Real-time synchronization with Web (polls every 12s while dashboard active)
-            attendanceSyncTimer?.invalidate()
-            attendanceSyncTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: true) { [weak self] _ in
-                guard let self = self else { return }
-                let role = UserRole.from(string: AuthService.shared.getRole())
-                if role == .employee {
-                    self.loadAttendanceStats()
+                // Real-time synchronization with Web (polls every 12s while dashboard active)
+                attendanceSyncTimer?.invalidate()
+                attendanceSyncTimer = Timer.scheduledTimer(withTimeInterval: 12.0, repeats: true) { [weak self] _ in
+                    guard let self = self else { return }
+                    let role = UserRole.from(string: AuthService.shared.getRole())
+                    if role == .employee {
+                        self.loadAttendanceStats()
+                    }
                 }
             }
         }
@@ -575,6 +590,42 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         superAdminStackView.translatesAutoresizingMaskIntoConstraints = false
         superAdminStackView.isHidden = true
         cardsStackView.addArrangedSubview(superAdminStackView)
+
+        pendingApprovalStackView.axis = .vertical
+        pendingApprovalStackView.spacing = 16
+        pendingApprovalStackView.translatesAutoresizingMaskIntoConstraints = false
+        pendingApprovalStackView.isHidden = true
+        cardsStackView.addArrangedSubview(pendingApprovalStackView)
+
+        rejectedStackView.axis = .vertical
+        rejectedStackView.spacing = 16
+        rejectedStackView.translatesAutoresizingMaskIntoConstraints = false
+        rejectedStackView.isHidden = true
+        cardsStackView.addArrangedSubview(rejectedStackView)
+
+        suspendedStackView.axis = .vertical
+        suspendedStackView.spacing = 16
+        suspendedStackView.translatesAutoresizingMaskIntoConstraints = false
+        suspendedStackView.isHidden = true
+        cardsStackView.addArrangedSubview(suspendedStackView)
+
+        pendingApprovalStackView.axis = .vertical
+        pendingApprovalStackView.spacing = 16
+        pendingApprovalStackView.translatesAutoresizingMaskIntoConstraints = false
+        pendingApprovalStackView.isHidden = true
+        cardsStackView.addArrangedSubview(pendingApprovalStackView)
+
+        rejectedStackView.axis = .vertical
+        rejectedStackView.spacing = 16
+        rejectedStackView.translatesAutoresizingMaskIntoConstraints = false
+        rejectedStackView.isHidden = true
+        cardsStackView.addArrangedSubview(rejectedStackView)
+
+        suspendedStackView.axis = .vertical
+        suspendedStackView.spacing = 16
+        suspendedStackView.translatesAutoresizingMaskIntoConstraints = false
+        suspendedStackView.isHidden = true
+        cardsStackView.addArrangedSubview(suspendedStackView)
 
         contentView.addSubview(skeletonOverlay)
 
@@ -3755,6 +3806,583 @@ class HomeViewController: UIViewController, UIScrollViewDelegate, CLLocationMana
         let simpleFmt = DateFormatter()
         simpleFmt.dateFormat = "yyyy-MM-dd"
         return simpleFmt.date(from: string)
+    }
+
+    // MARK: - Dynamic Onboarding & Access Restrictions Dashboards
+    private let pendingGreetingLabel = UILabel()
+    private let pendingSubtitleLabel = UILabel()
+    private let pendingProgressTrack = UIView()
+    private let pendingProgressBar = UIView()
+    private var pendingProgressBarWidthConstraint: NSLayoutConstraint?
+    private let pendingStatusTextLabel = UILabel()
+    private let pendingProgressStepLabel = UILabel()
+    private let pendingOfferStatusBadge = UILabel()
+    private let pendingOfferSubtitleLabel = UILabel()
+    private let pendingSignOfferButton = UIButton(type: .system)
+    private let pendingVerificationBadge = UILabel()
+    private let pendingVerificationSubtitleLabel = UILabel()
+    private let pendingSubmitVerificationButton = UIButton(type: .system)
+    private let pendingRefreshButton = UIButton(type: .system)
+    private let pendingSignOutButton = UIButton(type: .system)
+
+    private func setupPendingApprovalDashboard() {
+        for sub in pendingApprovalStackView.arrangedSubviews {
+            pendingApprovalStackView.removeArrangedSubview(sub)
+            sub.removeFromSuperview()
+        }
+
+        dismissSkeleton()
+
+        // 1. Hero Card: Dark #0F172A, 20pt radius
+        let heroCard = UIView()
+        heroCard.backgroundColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        heroCard.layer.cornerRadius = 20
+        heroCard.translatesAutoresizingMaskIntoConstraints = false
+
+        let heroStack = UIStackView()
+        heroStack.axis = .vertical
+        heroStack.spacing = 12
+        heroStack.translatesAutoresizingMaskIntoConstraints = false
+        heroCard.addSubview(heroStack)
+
+        let topRow = UIStackView()
+        topRow.axis = .horizontal
+        topRow.alignment = .center
+
+        let badge = UILabel()
+        badge.text = "  ONBOARDING IN PROGRESS  "
+        badge.font = .systemFont(ofSize: 10, weight: .bold)
+        badge.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+        badge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+        badge.layer.cornerRadius = 6
+        badge.layer.masksToBounds = true
+        topRow.addArrangedSubview(badge)
+
+        topRow.addArrangedSubview(UIView())
+
+        pendingProgressStepLabel.text = "Step 2 of 3"
+        pendingProgressStepLabel.font = .systemFont(ofSize: 11, weight: .bold)
+        pendingProgressStepLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        topRow.addArrangedSubview(pendingProgressStepLabel)
+        heroStack.addArrangedSubview(topRow)
+
+        let firstName = AuthService.shared.getFirstName()
+        pendingGreetingLabel.text = "Welcome, \(firstName.isEmpty ? "Employee" : firstName)"
+        pendingGreetingLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        pendingGreetingLabel.textColor = .white
+        heroStack.addArrangedSubview(pendingGreetingLabel)
+
+        let desig = AuthService.shared.getDesignation()
+        let org = AuthService.shared.getOrganization()
+        pendingSubtitleLabel.text = "\(desig) • \(org)"
+        pendingSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        pendingSubtitleLabel.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        heroStack.addArrangedSubview(pendingSubtitleLabel)
+
+        // Progress bar
+        pendingProgressTrack.backgroundColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        pendingProgressTrack.layer.cornerRadius = 3
+        pendingProgressTrack.translatesAutoresizingMaskIntoConstraints = false
+        pendingProgressTrack.heightAnchor.constraint(equalToConstant: 6).isActive = true
+
+        pendingProgressBar.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        pendingProgressBar.layer.cornerRadius = 3
+        pendingProgressBar.translatesAutoresizingMaskIntoConstraints = false
+        pendingProgressTrack.addSubview(pendingProgressBar)
+
+        NSLayoutConstraint.activate([
+            pendingProgressBar.topAnchor.constraint(equalTo: pendingProgressTrack.topAnchor),
+            pendingProgressBar.bottomAnchor.constraint(equalTo: pendingProgressTrack.bottomAnchor),
+            pendingProgressBar.leadingAnchor.constraint(equalTo: pendingProgressTrack.leadingAnchor)
+        ])
+        pendingProgressBarWidthConstraint = pendingProgressBar.widthAnchor.constraint(equalTo: pendingProgressTrack.widthAnchor, multiplier: 0.7)
+        pendingProgressBarWidthConstraint?.isActive = true
+        heroStack.addArrangedSubview(pendingProgressTrack)
+
+        pendingStatusTextLabel.text = "Awaiting Administrator Approval"
+        pendingStatusTextLabel.font = .systemFont(ofSize: 12, weight: .bold)
+        pendingStatusTextLabel.textColor = UIColor(red: 56/255, green: 189/255, blue: 248/255, alpha: 1.0)
+        heroStack.addArrangedSubview(pendingStatusTextLabel)
+
+        NSLayoutConstraint.activate([
+            heroStack.topAnchor.constraint(equalTo: heroCard.topAnchor, constant: 20),
+            heroStack.leadingAnchor.constraint(equalTo: heroCard.leadingAnchor, constant: 20),
+            heroStack.trailingAnchor.constraint(equalTo: heroCard.trailingAnchor, constant: -20),
+            heroStack.bottomAnchor.constraint(equalTo: heroCard.bottomAnchor, constant: -20)
+        ])
+        pendingApprovalStackView.addArrangedSubview(heroCard)
+
+        // 2. Checklist Card
+        let checklistCard = UIView()
+        checklistCard.backgroundColor = .white
+        checklistCard.layer.cornerRadius = 14
+        checklistCard.layer.borderWidth = 1
+        checklistCard.layer.borderColor = UIColor(red: 226/255, green: 232/255, blue: 240/255, alpha: 1.0).cgColor
+        checklistCard.translatesAutoresizingMaskIntoConstraints = false
+
+        let checkStack = UIStackView()
+        checkStack.axis = .vertical
+        checkStack.spacing = 14
+        checkStack.translatesAutoresizingMaskIntoConstraints = false
+        checklistCard.addSubview(checkStack)
+
+        let checkTitle = UILabel()
+        checkTitle.text = "Onboarding Checklist"
+        checkTitle.font = .systemFont(ofSize: 16, weight: .bold)
+        checkTitle.textColor = UIColor(red: 15/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        checkStack.addArrangedSubview(checkTitle)
+
+        // Step 1: Offer Letter
+        let step1Box = UIView()
+        step1Box.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+        step1Box.layer.cornerRadius = 10
+        step1Box.translatesAutoresizingMaskIntoConstraints = false
+        let step1Stack = UIStackView()
+        step1Stack.axis = .vertical
+        step1Stack.spacing = 6
+        step1Stack.translatesAutoresizingMaskIntoConstraints = false
+        step1Box.addSubview(step1Stack)
+
+        let step1Header = UIStackView()
+        step1Header.axis = .horizontal
+        let step1Title = UILabel()
+        step1Title.text = "1. Offer Letter & Terms"
+        step1Title.font = .systemFont(ofSize: 14, weight: .bold)
+        step1Title.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        step1Header.addArrangedSubview(step1Title)
+        step1Header.addArrangedSubview(UIView())
+        pendingOfferStatusBadge.font = .systemFont(ofSize: 11, weight: .bold)
+        pendingOfferStatusBadge.text = "Action"
+        pendingOfferStatusBadge.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        step1Header.addArrangedSubview(pendingOfferStatusBadge)
+        step1Stack.addArrangedSubview(step1Header)
+
+        pendingOfferSubtitleLabel.text = "Review your offer terms and digitally sign to accept."
+        pendingOfferSubtitleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        pendingOfferSubtitleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        pendingOfferSubtitleLabel.numberOfLines = 0
+        step1Stack.addArrangedSubview(pendingOfferSubtitleLabel)
+
+        pendingSignOfferButton.setTitle("Review & Sign Offer", for: .normal)
+        pendingSignOfferButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+        pendingSignOfferButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        pendingSignOfferButton.setTitleColor(.white, for: .normal)
+        pendingSignOfferButton.layer.cornerRadius = 6
+        pendingSignOfferButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        pendingSignOfferButton.addAction(UIAction { [weak self] _ in
+            self?.showSignOfferAlert()
+        }, for: .touchUpInside)
+        step1Stack.addArrangedSubview(pendingSignOfferButton)
+
+        NSLayoutConstraint.activate([
+            step1Stack.topAnchor.constraint(equalTo: step1Box.topAnchor, constant: 12),
+            step1Stack.leadingAnchor.constraint(equalTo: step1Box.leadingAnchor, constant: 12),
+            step1Stack.trailingAnchor.constraint(equalTo: step1Box.trailingAnchor, constant: -12),
+            step1Stack.bottomAnchor.constraint(equalTo: step1Box.bottomAnchor, constant: -12)
+        ])
+        checkStack.addArrangedSubview(step1Box)
+
+        // Step 2: Verification Profile
+        let step2Box = UIView()
+        step2Box.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
+        step2Box.layer.cornerRadius = 10
+        step2Box.translatesAutoresizingMaskIntoConstraints = false
+        let step2Stack = UIStackView()
+        step2Stack.axis = .vertical
+        step2Stack.spacing = 6
+        step2Stack.translatesAutoresizingMaskIntoConstraints = false
+        step2Box.addSubview(step2Stack)
+
+        let step2Header = UIStackView()
+        step2Header.axis = .horizontal
+        let step2Title = UILabel()
+        step2Title.text = "2. Verification Profile"
+        step2Title.font = .systemFont(ofSize: 14, weight: .bold)
+        step2Title.textColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        step2Header.addArrangedSubview(step2Title)
+        step2Header.addArrangedSubview(UIView())
+        pendingVerificationBadge.font = .systemFont(ofSize: 11, weight: .bold)
+        pendingVerificationBadge.text = "Submitted"
+        pendingVerificationBadge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+        step2Header.addArrangedSubview(pendingVerificationBadge)
+        step2Stack.addArrangedSubview(step2Header)
+
+        pendingVerificationSubtitleLabel.text = "Your background verification details are logged in the system."
+        pendingVerificationSubtitleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        pendingVerificationSubtitleLabel.textColor = UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0)
+        pendingVerificationSubtitleLabel.numberOfLines = 0
+        step2Stack.addArrangedSubview(pendingVerificationSubtitleLabel)
+
+        pendingSubmitVerificationButton.setTitle("Submit for Verification", for: .normal)
+        pendingSubmitVerificationButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+        pendingSubmitVerificationButton.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        pendingSubmitVerificationButton.setTitleColor(UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0), for: .normal)
+        pendingSubmitVerificationButton.layer.cornerRadius = 6
+        pendingSubmitVerificationButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+        pendingSubmitVerificationButton.isHidden = true
+        pendingSubmitVerificationButton.addAction(UIAction { [weak self] _ in
+            self?.submitForVerification()
+        }, for: .touchUpInside)
+        step2Stack.addArrangedSubview(pendingSubmitVerificationButton)
+
+        NSLayoutConstraint.activate([
+            step2Stack.topAnchor.constraint(equalTo: step2Box.topAnchor, constant: 12),
+            step2Stack.leadingAnchor.constraint(equalTo: step2Box.leadingAnchor, constant: 12),
+            step2Stack.trailingAnchor.constraint(equalTo: step2Box.trailingAnchor, constant: -12),
+            step2Stack.bottomAnchor.constraint(equalTo: step2Box.bottomAnchor, constant: -12)
+        ])
+        checkStack.addArrangedSubview(step2Box)
+
+        // Step 3: Admin Approval
+        let step3Box = UIView()
+        step3Box.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+        step3Box.layer.cornerRadius = 10
+        step3Box.translatesAutoresizingMaskIntoConstraints = false
+        let step3Stack = UIStackView()
+        step3Stack.axis = .vertical
+        step3Stack.spacing = 4
+        step3Stack.translatesAutoresizingMaskIntoConstraints = false
+        step3Box.addSubview(step3Stack)
+
+        let step3Title = UILabel()
+        step3Title.text = "3. Administrator Approval"
+        step3Title.font = .systemFont(ofSize: 14, weight: .bold)
+        step3Title.textColor = UIColor(red: 180/255, green: 83/255, blue: 9/255, alpha: 1.0)
+        step3Stack.addArrangedSubview(step3Title)
+
+        let step3Sub = UILabel()
+        step3Sub.text = "A company administrator will review your onboarding record. Once approved, employee access to punch-in, leaves, schedules, and payroll will be automatically unlocked."
+        step3Sub.font = .systemFont(ofSize: 12, weight: .regular)
+        step3Sub.textColor = UIColor(red: 146/255, green: 64/255, blue: 14/255, alpha: 1.0)
+        step3Sub.numberOfLines = 0
+        step3Stack.addArrangedSubview(step3Sub)
+
+        NSLayoutConstraint.activate([
+            step3Stack.topAnchor.constraint(equalTo: step3Box.topAnchor, constant: 12),
+            step3Stack.leadingAnchor.constraint(equalTo: step3Box.leadingAnchor, constant: 12),
+            step3Stack.trailingAnchor.constraint(equalTo: step3Box.trailingAnchor, constant: -12),
+            step3Stack.bottomAnchor.constraint(equalTo: step3Box.bottomAnchor, constant: -12)
+        ])
+        checkStack.addArrangedSubview(step3Box)
+
+        NSLayoutConstraint.activate([
+            checkStack.topAnchor.constraint(equalTo: checklistCard.topAnchor, constant: 16),
+            checkStack.leadingAnchor.constraint(equalTo: checklistCard.leadingAnchor, constant: 16),
+            checkStack.trailingAnchor.constraint(equalTo: checklistCard.trailingAnchor, constant: -16),
+            checkStack.bottomAnchor.constraint(equalTo: checklistCard.bottomAnchor, constant: -16)
+        ])
+        pendingApprovalStackView.addArrangedSubview(checklistCard)
+
+        // 3. Locked Notice
+        let lockedCard = UIView()
+        lockedCard.backgroundColor = UIColor(red: 239/255, green: 246/255, blue: 255/255, alpha: 1.0)
+        lockedCard.layer.cornerRadius = 12
+        lockedCard.layer.borderWidth = 1
+        lockedCard.layer.borderColor = UIColor(red: 191/255, green: 219/255, blue: 254/255, alpha: 1.0).cgColor
+        lockedCard.translatesAutoresizingMaskIntoConstraints = false
+        let lockedStack = UIStackView()
+        lockedStack.axis = .vertical
+        lockedStack.spacing = 4
+        lockedStack.translatesAutoresizingMaskIntoConstraints = false
+        lockedCard.addSubview(lockedStack)
+
+        let lockedTitle = UILabel()
+        lockedTitle.text = "Employee Modules Locked"
+        lockedTitle.font = .systemFont(ofSize: 13, weight: .bold)
+        lockedTitle.textColor = UIColor(red: 30/255, green: 64/255, blue: 175/255, alpha: 1.0)
+        lockedStack.addArrangedSubview(lockedTitle)
+
+        let lockedBody = UILabel()
+        lockedBody.text = "Attendance clock-in, leave requests, payroll slips, and tasks remain restricted until your onboarding is verified and approved."
+        lockedBody.font = .systemFont(ofSize: 12, weight: .regular)
+        lockedBody.textColor = UIColor(red: 59/255, green: 130/255, blue: 246/255, alpha: 1.0)
+        lockedBody.numberOfLines = 0
+        lockedStack.addArrangedSubview(lockedBody)
+
+        NSLayoutConstraint.activate([
+            lockedStack.topAnchor.constraint(equalTo: lockedCard.topAnchor, constant: 14),
+            lockedStack.leadingAnchor.constraint(equalTo: lockedCard.leadingAnchor, constant: 14),
+            lockedStack.trailingAnchor.constraint(equalTo: lockedCard.trailingAnchor, constant: -14),
+            lockedStack.bottomAnchor.constraint(equalTo: lockedCard.bottomAnchor, constant: -14)
+        ])
+        pendingApprovalStackView.addArrangedSubview(lockedCard)
+
+        // 4. Action Buttons
+        pendingRefreshButton.setTitle("Check Approval Status", for: .normal)
+        pendingRefreshButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        pendingRefreshButton.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        pendingRefreshButton.setTitleColor(.white, for: .normal)
+        pendingRefreshButton.layer.cornerRadius = 10
+        pendingRefreshButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        pendingRefreshButton.addAction(UIAction { [weak self] _ in
+            self?.refreshAccountStatus()
+        }, for: .touchUpInside)
+        pendingApprovalStackView.addArrangedSubview(pendingRefreshButton)
+
+        pendingSignOutButton.setTitle("Sign Out", for: .normal)
+        pendingSignOutButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        pendingSignOutButton.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        pendingSignOutButton.setTitleColor(UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), for: .normal)
+        pendingSignOutButton.layer.cornerRadius = 10
+        pendingSignOutButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        pendingSignOutButton.addAction(UIAction { [weak self] _ in
+            self?.executeSignOut()
+        }, for: .touchUpInside)
+        pendingApprovalStackView.addArrangedSubview(pendingSignOutButton)
+
+        // Fetch onboarding case from backend
+        AuthService.shared.getMyOnboarding { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success(let json):
+                let caseObj = (json["case"] as? [String: Any]) ?? json
+                let offerSigned = caseObj["offerSigned"] as? Bool ?? false
+                let status = caseObj["status"] as? String ?? AuthService.shared.getOnboardingStatus()
+
+                if offerSigned {
+                    self.pendingOfferStatusBadge.text = "Signed"
+                    self.pendingOfferStatusBadge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+                    self.pendingOfferSubtitleLabel.text = "Employment offer letter signed and accepted."
+                    self.pendingSignOfferButton.isHidden = true
+                } else {
+                    self.pendingOfferStatusBadge.text = "Action"
+                    self.pendingOfferStatusBadge.textColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+                    self.pendingOfferSubtitleLabel.text = "Review your offer terms and digitally sign to accept."
+                    self.pendingSignOfferButton.isHidden = false
+                }
+
+                if status.uppercased() == "PENDING_VERIFICATION" || status.uppercased() == "COMPLETED" {
+                    self.pendingVerificationBadge.text = "Submitted"
+                    self.pendingVerificationBadge.textColor = UIColor(red: 5/255, green: 150/255, blue: 105/255, alpha: 1.0)
+                    self.pendingVerificationSubtitleLabel.text = "Verification profile submitted for review."
+                    self.pendingSubmitVerificationButton.isHidden = true
+                    self.pendingProgressStepLabel.text = "Step 3 of 3"
+                    self.pendingStatusTextLabel.text = "Awaiting Administrator Review & Approval"
+                } else {
+                    self.pendingVerificationBadge.text = "Action"
+                    self.pendingVerificationSubtitleLabel.text = "Submit your details and documents for administrator verification."
+                    self.pendingSubmitVerificationButton.isHidden = false
+                    self.pendingProgressStepLabel.text = offerSigned ? "Step 2 of 3" : "Step 1 of 3"
+                }
+            case .failure:
+                break
+            }
+        }
+    }
+
+    private func setupRejectedDashboard() {
+        for sub in rejectedStackView.arrangedSubviews {
+            rejectedStackView.removeArrangedSubview(sub)
+            sub.removeFromSuperview()
+        }
+        dismissSkeleton()
+
+        let card = UIView()
+        card.backgroundColor = UIColor(red: 69/255, green: 10/255, blue: 10/255, alpha: 1.0)
+        card.layer.cornerRadius = 20
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+
+        let badge = UILabel()
+        badge.text = "  ACCESS RESTRICTED  "
+        badge.font = .systemFont(ofSize: 10, weight: .bold)
+        badge.textColor = UIColor(red: 225/255, green: 29/255, blue: 72/255, alpha: 1.0)
+        badge.backgroundColor = UIColor(red: 254/255, green: 226/255, blue: 226/255, alpha: 1.0)
+        badge.layer.cornerRadius = 6
+        badge.layer.masksToBounds = true
+        stack.addArrangedSubview(badge)
+
+        let title = UILabel()
+        title.text = "Onboarding Not Approved"
+        title.font = .systemFont(ofSize: 22, weight: .bold)
+        title.textColor = .white
+        stack.addArrangedSubview(title)
+
+        let body = UILabel()
+        body.text = "Your onboarding request was reviewed and could not be approved by the administrator. Please contact your company HR department for assistance."
+        body.font = .systemFont(ofSize: 13, weight: .regular)
+        body.textColor = UIColor(red: 253/255, green: 164/255, blue: 175/255, alpha: 1.0)
+        body.numberOfLines = 0
+        stack.addArrangedSubview(body)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 20),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -20),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20)
+        ])
+        rejectedStackView.addArrangedSubview(card)
+
+        let btnRefresh = UIButton(type: .system)
+        btnRefresh.setTitle("Refresh Status", for: .normal)
+        btnRefresh.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        btnRefresh.backgroundColor = UIColor(red: 0/255, green: 86/255, blue: 253/255, alpha: 1.0)
+        btnRefresh.setTitleColor(.white, for: .normal)
+        btnRefresh.layer.cornerRadius = 10
+        btnRefresh.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        btnRefresh.addAction(UIAction { [weak self] _ in
+            self?.refreshAccountStatus()
+        }, for: .touchUpInside)
+        rejectedStackView.addArrangedSubview(btnRefresh)
+
+        let btnSignOut = UIButton(type: .system)
+        btnSignOut.setTitle("Sign Out", for: .normal)
+        btnSignOut.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        btnSignOut.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        btnSignOut.setTitleColor(UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), for: .normal)
+        btnSignOut.layer.cornerRadius = 10
+        btnSignOut.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        btnSignOut.addAction(UIAction { [weak self] _ in
+            self?.executeSignOut()
+        }, for: .touchUpInside)
+        rejectedStackView.addArrangedSubview(btnSignOut)
+    }
+
+    private func setupSuspendedDashboard() {
+        for sub in suspendedStackView.arrangedSubviews {
+            suspendedStackView.removeArrangedSubview(sub)
+            sub.removeFromSuperview()
+        }
+        dismissSkeleton()
+
+        let card = UIView()
+        card.backgroundColor = UIColor(red: 30/255, green: 41/255, blue: 59/255, alpha: 1.0)
+        card.layer.cornerRadius = 20
+        card.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+
+        let badge = UILabel()
+        badge.text = "  ACCOUNT INACTIVE  "
+        badge.font = .systemFont(ofSize: 10, weight: .bold)
+        badge.textColor = UIColor(red: 217/255, green: 119/255, blue: 6/255, alpha: 1.0)
+        badge.backgroundColor = UIColor(red: 254/255, green: 243/255, blue: 199/255, alpha: 1.0)
+        badge.layer.cornerRadius = 6
+        badge.layer.masksToBounds = true
+        stack.addArrangedSubview(badge)
+
+        let title = UILabel()
+        title.text = "Account Inactive or Suspended"
+        title.font = .systemFont(ofSize: 22, weight: .bold)
+        title.textColor = .white
+        stack.addArrangedSubview(title)
+
+        let body = UILabel()
+        body.text = "Your employee account is currently suspended or marked inactive. Restricted employee features cannot be accessed. Contact your organization administrator."
+        body.font = .systemFont(ofSize: 13, weight: .regular)
+        body.textColor = UIColor(red: 148/255, green: 163/255, blue: 184/255, alpha: 1.0)
+        body.numberOfLines = 0
+        stack.addArrangedSubview(body)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 20),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -20),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20)
+        ])
+        suspendedStackView.addArrangedSubview(card)
+
+        let btnSignOut = UIButton(type: .system)
+        btnSignOut.setTitle("Sign Out", for: .normal)
+        btnSignOut.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        btnSignOut.backgroundColor = UIColor(red: 241/255, green: 245/255, blue: 249/255, alpha: 1.0)
+        btnSignOut.setTitleColor(UIColor(red: 100/255, green: 116/255, blue: 139/255, alpha: 1.0), for: .normal)
+        btnSignOut.layer.cornerRadius = 10
+        btnSignOut.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        btnSignOut.addAction(UIAction { [weak self] _ in
+            self?.executeSignOut()
+        }, for: .touchUpInside)
+        suspendedStackView.addArrangedSubview(btnSignOut)
+    }
+
+    private func showSignOfferAlert() {
+        let orgName = AuthService.shared.getOrganization()
+        let alert = UIAlertController(title: "Accept Employment Offer", message: "By signing this offer, you confirm that you have reviewed the position details, compensation, and company policies, and agree to join \(orgName).\n\nDo you wish to sign and accept this offer?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Sign & Accept", style: .default, handler: { [weak self] _ in
+            AuthService.shared.signOffer { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success:
+                        self?.setupPendingApprovalDashboard()
+                    case .failure(let err):
+                        let e = UIAlertController(title: "Error", message: err.localizedDescription, preferredStyle: .alert)
+                        e.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                        self?.present(e, animated: true)
+                    }
+                }
+            }
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alert, animated: true)
+    }
+
+    private func submitForVerification() {
+        AuthService.shared.submitForVerification { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.setupPendingApprovalDashboard()
+                case .failure(let err):
+                    let e = UIAlertController(title: "Error", message: err.localizedDescription, preferredStyle: .alert)
+                    e.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self?.present(e, animated: true)
+                }
+            }
+        }
+    }
+
+    private func refreshAccountStatus() {
+        AuthService.shared.getProfile { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if AuthService.shared.isApprovedEmployee() {
+                    let alert = UIAlertController(title: "Approved", message: "Your onboarding has been approved! Welcome to the team.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                        self.hideAllDashboards()
+                        self.employeeStackView.isHidden = false
+                        self.loadProfile()
+                    }))
+                    self.present(alert, animated: true)
+                } else if AuthService.shared.isRejected() {
+                    self.hideAllDashboards()
+                    self.rejectedStackView.isHidden = false
+                    self.setupRejectedDashboard()
+                } else {
+                    self.setupPendingApprovalDashboard()
+                }
+            }
+        }
+    }
+
+    private func executeSignOut() {
+        AuthService.shared.clearAuth()
+        let signInVC = SignInViewController()
+        if let window = view.window ?? UIApplication.shared.windows.first(where: { $0.isKeyWindow }) {
+            UIView.transition(with: window, duration: 0.25, options: .transitionCrossDissolve, animations: {
+                window.rootViewController = signInVC
+            }, completion: nil)
+        } else {
+            signInVC.modalPresentationStyle = .fullScreen
+            present(signInVC, animated: true)
+        }
+    }
+
+    private func hideAllDashboards() {
+        employeeStackView.isHidden = true
+        adminStackView.isHidden = true
+        superAdminStackView.isHidden = true
+        pendingApprovalStackView.isHidden = true
+        rejectedStackView.isHidden = true
+        suspendedStackView.isHidden = true
     }
 
     // MARK: - Admin Dashboard Setup & Real-time Integration

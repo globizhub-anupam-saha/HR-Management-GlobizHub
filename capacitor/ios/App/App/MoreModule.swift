@@ -150,6 +150,25 @@ class RoleNavigationManager {
     ) {
         let id = item.id.lowercased()
 
+        if !AuthService.shared.isApprovedEmployee() {
+            if id != "home" {
+                let msg: String
+                if AuthService.shared.isPendingApproval() {
+                    msg = "Access restricted until your onboarding is approved by an administrator."
+                } else if AuthService.shared.isRejected() {
+                    msg = "Your onboarding was not approved. Please contact HR."
+                } else if AuthService.shared.isSuspendedOrInactive() {
+                    msg = "Your account is currently inactive or suspended."
+                } else {
+                    msg = "Access restricted."
+                }
+                let alert = UIAlertController(title: "Access Restricted", message: msg, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                vc.present(alert, animated: true)
+                return
+            }
+        }
+
         if id == "home" {
             if vc is HomeViewController {
                 scrollHandler?()

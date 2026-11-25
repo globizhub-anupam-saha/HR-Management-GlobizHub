@@ -48,6 +48,77 @@ class AuthService {
     private let localCheckInIsoKey = "TeamHub_LocalCheckInIso"
     private let localCheckOutIsoKey = "TeamHub_LocalCheckOutIso"
 
+    private let employmentStatusKey = "TeamHubAuth_EmploymentStatus"
+    private let onboardingStatusKey = "TeamHubAuth_OnboardingStatus"
+    private let bgvStatusKey = "TeamHubAuth_BgvStatus"
+    private let companyStatusKey = "TeamHubAuth_CompanyStatus"
+
+    func saveAccountStatus(employmentStatus: String?, onboardingStatus: String?, bgvStatus: String?, companyStatus: String?) {
+        if let emp = employmentStatus, !emp.isEmpty {
+            UserDefaults.standard.set(emp.uppercased(), forKey: employmentStatusKey)
+        }
+        if let onb = onboardingStatus, !onb.isEmpty {
+            UserDefaults.standard.set(onb.uppercased(), forKey: onboardingStatusKey)
+        }
+        if let bgv = bgvStatus, !bgv.isEmpty {
+            UserDefaults.standard.set(bgv.uppercased(), forKey: bgvStatusKey)
+        }
+        if let comp = companyStatus, !comp.isEmpty {
+            UserDefaults.standard.set(comp.uppercased(), forKey: companyStatusKey)
+        }
+        UserDefaults.standard.synchronize()
+    }
+
+    func getEmploymentStatus() -> String {
+        return UserDefaults.standard.string(forKey: employmentStatusKey) ?? "ACTIVE"
+    }
+
+    func getOnboardingStatus() -> String {
+        return UserDefaults.standard.string(forKey: onboardingStatusKey) ?? "COMPLETED"
+    }
+
+    func getBgvStatus() -> String {
+        return UserDefaults.standard.string(forKey: bgvStatusKey) ?? "PASSED"
+    }
+
+    func getCompanyStatus() -> String {
+        return UserDefaults.standard.string(forKey: companyStatusKey) ?? "ACTIVE"
+    }
+
+    func isPendingApproval() -> Bool {
+        let role = getRole().uppercased()
+        if role == "ADMIN" || role == "SUPER_ADMIN" || role == "OWNER" {
+            return false
+        }
+        let emp = getEmploymentStatus().uppercased()
+        let onb = getOnboardingStatus().uppercased()
+        return emp == "INVITED" || emp == "ONBOARDING" || (onb != "COMPLETED" && onb != "PASSED" && !onb.isEmpty)
+    }
+
+    func isRejected() -> Bool {
+        let emp = getEmploymentStatus().uppercased()
+        let bgv = getBgvStatus().uppercased()
+        let onb = getOnboardingStatus().uppercased()
+        return emp == "TERMINATED" || bgv == "FAILED" || onb == "REJECTED"
+    }
+
+    func isSuspendedOrInactive() -> Bool {
+        let emp = getEmploymentStatus().uppercased()
+        let comp = getCompanyStatus().uppercased()
+        return emp == "INACTIVE" || emp == "SUSPENDED" || comp == "SUSPENDED"
+    }
+
+    func isApprovedEmployee() -> Bool {
+        let role = getRole().uppercased()
+        if role == "ADMIN" || role == "SUPER_ADMIN" || role == "OWNER" {
+            return true
+        }
+        if isRejected() || isSuspendedOrInactive() || isPendingApproval() {
+            return false
+        }
+        return getEmploymentStatus().uppercased() == "ACTIVE"
+    }
+
     private init() {}
 
     func decodeJwtPayload(token: String) -> [String: Any]? {
@@ -522,6 +593,12 @@ class AuthService {
                             let org = userObj["companyName"] as? String ?? "Globizhub"
                             self.saveUserProfile(firstName: fn, designation: desig, organization: org)
                             self.saveLastName(ln)
+
+                            let empStatus = userObj["employmentStatus"] as? String
+                            let onbStatus = (userObj["onboardingStatus"] as? String) ?? (userObj["onboardingCase"] as? [String: Any])?["status"] as? String
+                            let bgvStatus = (userObj["bgvStatus"] as? String) ?? (userObj["onboardingCase"] as? [String: Any])?["bgvStatus"] as? String
+                            let compStatus = (userObj["companyStatus"] as? String) ?? (userObj["company"] as? [String: Any])?["status"] as? String
+                            self.saveAccountStatus(employmentStatus: empStatus, onboardingStatus: onbStatus, bgvStatus: bgvStatus, companyStatus: compStatus)
                         }
                     }
                     completion(.success(json))
@@ -752,6 +829,11 @@ class AuthService {
                 guard let self = self else { return }
                 if let data = data, let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode),
                    let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    let empStatus = json["employmentStatus"] as? String
+                    let onbStatus = (json["onboardingStatus"] as? String) ?? (json["onboardingCase"] as? [String: Any])?["status"] as? String
+                    let bgvStatus = (json["bgvStatus"] as? String) ?? (json["onboardingCase"] as? [String: Any])?["bgvStatus"] as? String
+                    let compStatus = (json["companyStatus"] as? String) ?? (json["company"] as? [String: Any])?["status"] as? String
+                    self.saveAccountStatus(employmentStatus: empStatus, onboardingStatus: onbStatus, bgvStatus: bgvStatus, companyStatus: compStatus)
                     self.saveCachedProfile(json)
                     completion(.success(json))
                 } else {
@@ -2289,6 +2371,155 @@ class AuthService {
                     self?.clearPendingOfflinePunch()
                 }
                 completion?()
+            }
+        }.resume()
+    }
+
+    // MARK: - Onboarding & Approval Methods
+    func getMyOnboarding(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken(), let url = URL(string: "\(baseURL)/onboarding/me") else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                   let data = data,
+                   let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else {
+                    completion(.failure(.serverError("Failed to fetch onboarding case", (response as? HTTPURLResponse)?.statusCode ?? 500)))
+                }
+            }
+        }.resume()
+    }
+
+    func signOffer(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken(), let url = URL(string: "\(baseURL)/onboarding/me/sign-offer") else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                   let data = data,
+                   let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    self?.saveAccountStatus(employmentStatus: "ONBOARDING", onboardingStatus: "OFFER_ACCEPTED", bgvStatus: nil, companyStatus: nil)
+                    completion(.success(json))
+                } else {
+                    completion(.failure(.serverError("Failed to sign offer", (response as? HTTPURLResponse)?.statusCode ?? 500)))
+                }
+            }
+        }.resume()
+    }
+
+    func submitForVerification(completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken(), let url = URL(string: "\(baseURL)/onboarding/me/submit") else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                   let data = data,
+                   let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    self?.saveAccountStatus(employmentStatus: "ONBOARDING", onboardingStatus: "PENDING_VERIFICATION", bgvStatus: nil, companyStatus: nil)
+                    completion(.success(json))
+                } else {
+                    completion(.failure(.serverError("Failed to submit verification", (response as? HTTPURLResponse)?.statusCode ?? 500)))
+                }
+            }
+        }.resume()
+    }
+
+    func getOnboardingCases(completion: @escaping (Result<[[String: Any]], AuthError>) -> Void) {
+        guard let token = getToken(), let url = URL(string: "\(baseURL)/onboarding/cases") else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                   let data = data,
+                   let array = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] {
+                    completion(.success(array))
+                } else {
+                    completion(.failure(.serverError("Failed to fetch onboarding cases", (response as? HTTPURLResponse)?.statusCode ?? 500)))
+                }
+            }
+        }.resume()
+    }
+
+    func approveOnboardingCase(caseId: String, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken(), let url = URL(string: "\(baseURL)/onboarding/cases/\(caseId)/status") else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let body: [String: Any] = ["status": "COMPLETED", "bgvStatus": "PASSED"]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                   let data = data,
+                   let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else {
+                    completion(.failure(.serverError("Failed to approve onboarding case", (response as? HTTPURLResponse)?.statusCode ?? 500)))
+                }
+            }
+        }.resume()
+    }
+
+    func rejectOnboardingCase(caseId: String, reason: String?, completion: @escaping (Result<[String: Any], AuthError>) -> Void) {
+        guard let token = getToken(), let url = URL(string: "\(baseURL)/onboarding/cases/\(caseId)/status") else {
+            completion(.failure(.unauthorized))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let body: [String: Any] = ["bgvStatus": "FAILED"]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                   let data = data,
+                   let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                    completion(.success(json))
+                } else {
+                    completion(.failure(.serverError("Failed to reject onboarding case", (response as? HTTPURLResponse)?.statusCode ?? 500)))
+                }
             }
         }.resume()
     }

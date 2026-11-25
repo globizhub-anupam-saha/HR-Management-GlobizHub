@@ -94,6 +94,10 @@ class PayrollViewController: UIViewController, UIScrollViewDelegate, UITextField
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if !AuthService.shared.isApprovedEmployee() {
+            dismiss(animated: false, completion: nil)
+            return
+        }
         setupBottomNavBar()
         view.bringSubviewToFront(bottomNavBar)
         updateHeaderState()

@@ -2485,6 +2485,475 @@
                         android:orientation="vertical" />
                 </LinearLayout>
             </LinearLayout>
+
+                <!-- ========================================== -->
+                <!-- PENDING APPROVAL DASHBOARD CONTAINER -->
+                <!-- ========================================== -->
+                <LinearLayout
+                    android:id="@+id/layoutPendingApprovalDashboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <!-- 1. Hero Card: Onboarding Status Banner -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="24dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        app:cardBackgroundColor="#0F172A">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="22dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_stat_card_orange"
+                                    android:paddingStart="10dp"
+                                    android:paddingEnd="10dp"
+                                    android:paddingTop="4dp"
+                                    android:paddingBottom="4dp"
+                                    android:text="ONBOARDING IN PROGRESS"
+                                    android:textColor="#D97706"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:letterSpacing="0.05" />
+
+                                <View
+                                    android:layout_width="0dp"
+                                    android:layout_height="1dp"
+                                    android:layout_weight="1" />
+
+                                <TextView
+                                    android:id="@+id/tvPendingProgressPercent"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_pill_inactive"
+                                    android:paddingStart="8dp"
+                                    android:paddingEnd="8dp"
+                                    android:paddingTop="3dp"
+                                    android:paddingBottom="3dp"
+                                    android:text="Step 2 of 3"
+                                    android:textColor="#94A3B8"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvPendingGreeting"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="Welcome to GlobizHub"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvPendingSubtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Employee Verification &amp; Access Approval"
+                                android:textColor="#94A3B8"
+                                android:textSize="13sp" />
+
+                            <ProgressBar
+                                android:id="@+id/pbPendingProgress"
+                                style="@android:style/Widget.ProgressBar.Horizontal"
+                                android:layout_width="match_parent"
+                                android:layout_height="6dp"
+                                android:layout_marginTop="18dp"
+                                android:max="100"
+                                android:progress="70"
+                                android:progressDrawable="@drawable/bg_blue_button" />
+
+                            <TextView
+                                android:id="@+id/tvPendingStatusText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:text="Awaiting Administrator Approval"
+                                android:textColor="#38BDF8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 2. Onboarding Steps Checklist Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_attendance_card"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Onboarding Checklist"
+                            android:textColor="#0F172A"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <!-- Step 1: Offer Letter -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_stat_card_blue"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="1. Offer Letter &amp; Terms"
+                                    android:textColor="#1E293B"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvOfferStatusBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentEnd="true"
+                                    android:text="Action"
+                                    android:textColor="#2563EB"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </RelativeLayout>
+
+                            <TextView
+                                android:id="@+id/tvOfferStatusSubtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Review your offer terms and digitally sign to accept."
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+
+                            <Button
+                                android:id="@+id/btnSignOffer"
+                                android:layout_width="wrap_content"
+                                android:layout_height="38dp"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_blue_button"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:text="Review &amp; Sign Offer"
+                                android:textAllCaps="false"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Step 2: KYC & Verification Profile -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_card_unselected"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="2. Verification Profile"
+                                    android:textColor="#1E293B"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvProfileVerificationBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentEnd="true"
+                                    android:text="Submitted"
+                                    android:textColor="#059669"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </RelativeLayout>
+
+                            <TextView
+                                android:id="@+id/tvProfileVerificationSubtitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Your background verification details are logged in the system."
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+
+                            <Button
+                                android:id="@+id/btnSubmitVerification"
+                                android:layout_width="wrap_content"
+                                android:layout_height="38dp"
+                                android:layout_marginTop="10dp"
+                                android:background="@drawable/bg_secondary_button"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:text="Submit for Verification"
+                                android:textAllCaps="false"
+                                android:textColor="#1E293B"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+                        <!-- Step 3: Administrator Approval -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_stat_card_orange"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="3. Administrator Approval"
+                                android:textColor="#B45309"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="A company administrator will review your onboarding record. Once approved, employee access to punch-in, leaves, schedules, and payroll will be automatically unlocked."
+                                android:textColor="#92400E"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 3. Restricted Access Notice Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_stat_card_blue"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Employee Modules Locked"
+                            android:textColor="#1E40AF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Attendance clock-in, leave requests, payroll slips, and tasks remain restricted until your onboarding is verified and approved."
+                            android:textColor="#3B82F6"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- 4. Action Buttons -->
+                    <Button
+                        android:id="@+id/btnRefreshStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="20dp"
+                        android:background="@drawable/bg_blue_button"
+                        android:text="Check Approval Status"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnSignOutPending"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="32dp"
+                        android:background="@drawable/bg_card_unselected"
+                        android:text="Sign Out"
+                        android:textAllCaps="false"
+                        android:textColor="#64748B"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <!-- ========================================== -->
+                <!-- REJECTED ONBOARDING DASHBOARD CONTAINER -->
+                <!-- ========================================== -->
+                <LinearLayout
+                    android:id="@+id/layoutRejectedDashboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="24dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        app:cardBackgroundColor="#450A0A">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="22dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_stat_card_red"
+                                android:paddingStart="10dp"
+                                android:paddingEnd="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingBottom="4dp"
+                                android:text="ACCESS RESTRICTED"
+                                android:textColor="#E11D48"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="Onboarding Not Approved"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvRejectedReason"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="Your onboarding request was reviewed and could not be approved by the administrator. Please contact your company HR department for assistance."
+                                android:textColor="#FDA4AF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <Button
+                        android:id="@+id/btnCheckStatusAgain"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="20dp"
+                        android:background="@drawable/bg_blue_button"
+                        android:text="Refresh Status"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnSignOutRejected"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="32dp"
+                        android:background="@drawable/bg_card_unselected"
+                        android:text="Sign Out"
+                        android:textAllCaps="false"
+                        android:textColor="#64748B"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <!-- ========================================== -->
+                <!-- SUSPENDED / INACTIVE DASHBOARD CONTAINER -->
+                <!-- ========================================== -->
+                <LinearLayout
+                    android:id="@+id/layoutSuspendedDashboard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="24dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp"
+                        app:cardBackgroundColor="#1E293B">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="22dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_stat_card_orange"
+                                android:paddingStart="10dp"
+                                android:paddingEnd="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingBottom="4dp"
+                                android:text="ACCOUNT INACTIVE"
+                                android:textColor="#D97706"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="Account Inactive or Suspended"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="Your account is currently suspended or marked inactive. Restricted employee features cannot be accessed. Contact your organization administrator."
+                                android:textColor="#94A3B8"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <Button
+                        android:id="@+id/btnSignOutSuspended"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="32dp"
+                        android:background="@drawable/bg_blue_button"
+                        android:text="Sign Out"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- SKELETON LOADING OVERLAY (Home) -->

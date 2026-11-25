@@ -130,6 +130,42 @@
             android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
+            <!-- 0. Primary Category Switcher: Employee Onboarding vs. Leave Requests -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginBottom="14dp"
+                android:background="@drawable/bg_search_box"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="4dp">
+
+                <TextView
+                    android:id="@+id/btnCatEmployees"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_blue_capsule_btn"
+                    android:gravity="center"
+                    android:text="Employee Onboarding"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnCatLeaves"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:gravity="center"
+                    android:text="Leave Approvals"
+                    android:textColor="#64748B"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
             <!-- 1. Header Banner Card -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -140,18 +176,20 @@
                 android:padding="16dp">
 
                 <TextView
+                    android:id="@+id/tvApprovalsBannerTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Company Leave Requests"
+                    android:text="Employee Onboarding Approvals"
                     android:textColor="#0F172A"
                     android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvApprovalsBannerSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Review and manage pending time-off requests from your team members."
+                    android:text="Review employee registration details, verify documents, and grant workspace access."
                     android:textColor="#64748B"
                     android:textSize="13sp" />
             </LinearLayout>

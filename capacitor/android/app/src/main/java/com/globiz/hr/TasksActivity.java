@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,6 +55,11 @@ public class TasksActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!ApiClient.getInstance(this).isApprovedEmployee()) {
+            Toast.makeText(this, "Access restricted until onboarding approval.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         BottomNavHelper.setupBottomNav(this, "schedules");
         AppHeaderHelper.refreshHeaderState(this);
         loadScheduleData();

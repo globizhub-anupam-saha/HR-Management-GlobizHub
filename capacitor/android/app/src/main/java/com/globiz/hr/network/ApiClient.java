@@ -52,6 +52,11 @@ public class ApiClient {
     private static final String KEY_IS_ON_BREAK = "is_on_break";
     private static final String KEY_BREAK_START = "break_start_iso";
     private static final String KEY_LAST_BREAK_TIME_STR = "last_break_time_str";
+    private static final String KEY_EMPLOYMENT_STATUS = "employment_status";
+    private static final String KEY_ONBOARDING_STATUS = "onboarding_status";
+    private static final String KEY_BGV_STATUS = "bgv_status";
+    private static final String KEY_COMPANY_STATUS = "company_status";
+    private static final String KEY_REJECTION_REASON = "rejection_reason";
 
     private static ApiClient instance;
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -273,6 +278,67 @@ public class ApiClient {
             return "MS";
         }
         return sb.toString();
+    }
+
+    public void saveAccountStatus(String employmentStatus, String onboardingStatus, String bgvStatus, String companyStatus) {
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit()
+                .putString(KEY_EMPLOYMENT_STATUS, employmentStatus != null ? employmentStatus : "ACTIVE")
+                .putString(KEY_ONBOARDING_STATUS, onboardingStatus != null ? onboardingStatus : "COMPLETED")
+                .putString(KEY_BGV_STATUS, bgvStatus != null ? bgvStatus : "PASSED")
+                .putString(KEY_COMPANY_STATUS, companyStatus != null ? companyStatus : "VERIFIED")
+                .apply();
+    }
+
+    public String getEmploymentStatus() {
+        return appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_EMPLOYMENT_STATUS, "ACTIVE");
+    }
+
+    public String getOnboardingStatus() {
+        return appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_ONBOARDING_STATUS, "COMPLETED");
+    }
+
+    public String getBgvStatus() {
+        return appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_BGV_STATUS, "PASSED");
+    }
+
+    public String getCompanyStatus() {
+        return appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_COMPANY_STATUS, "VERIFIED");
+    }
+
+    public boolean isPendingApproval() {
+        String role = getRole();
+        if ("ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role) || "SUPERADMIN".equalsIgnoreCase(role) || "OWNER".equalsIgnoreCase(role)) {
+            return false;
+        }
+        String empStatus = getEmploymentStatus();
+        String onbStatus = getOnboardingStatus();
+        return "ONBOARDING".equalsIgnoreCase(empStatus) ||
+               "INVITED".equalsIgnoreCase(empStatus) ||
+               "PENDING_VERIFICATION".equalsIgnoreCase(onbStatus) ||
+               "IN_PROGRESS".equalsIgnoreCase(onbStatus);
+    }
+
+    public boolean isRejected() {
+        String bgv = getBgvStatus();
+        String empStatus = getEmploymentStatus();
+        return "FAILED".equalsIgnoreCase(bgv) || "REJECTED".equalsIgnoreCase(empStatus);
+    }
+
+    public boolean isSuspendedOrInactive() {
+        String empStatus = getEmploymentStatus();
+        String compStatus = getCompanyStatus();
+        return "TERMINATED".equalsIgnoreCase(empStatus) ||
+               "RESIGNED".equalsIgnoreCase(empStatus) ||
+               "SUSPENDED".equalsIgnoreCase(compStatus);
+    }
+
+    public boolean isApprovedEmployee() {
+        return !isPendingApproval() && !isRejected() && !isSuspendedOrInactive();
     }
 
     public String getPhone() {
@@ -712,6 +778,12 @@ public class ApiClient {
                                 String org = u.optString("companyName", "Globizhub");
                                 saveUserProfile(fn, des, org);
                                 saveLastName(ln);
+
+                                String empStatus = u.optString("employmentStatus", "ACTIVE");
+                                String onbStatus = u.optString("onboardingStatus", "COMPLETED");
+                                String bgvStatus = u.optString("bgvStatus", "PASSED");
+                                String compStatus = u.optString("companyStatus", "VERIFIED");
+                                saveAccountStatus(empStatus, onbStatus, bgvStatus, compStatus);
                             }
                         }
                         postSuccess(callback, result);
@@ -808,6 +880,24 @@ public class ApiClient {
             getJson("/auth/me", token, new ApiCallback<JSONObject>() {
                 @Override
                 public void onSuccess(JSONObject user) {
+                    if (user != null) {
+                        String empStatus = user.optString("employmentStatus", "ACTIVE");
+                        String onbStatus = "COMPLETED";
+                        String bgvStatus = "PASSED";
+                        if (user.has("onboardingCase")) {
+                            JSONObject onbCase = user.optJSONObject("onboardingCase");
+                            if (onbCase != null) {
+                                onbStatus = onbCase.optString("status", "COMPLETED");
+                                bgvStatus = onbCase.optString("bgvStatus", "PASSED");
+                            }
+                        }
+                        String compStatus = "VERIFIED";
+                        if (user.has("company")) {
+                            JSONObject comp = user.optJSONObject("company");
+                            if (comp != null) compStatus = comp.optString("status", "VERIFIED");
+                        }
+                        saveAccountStatus(empStatus, onbStatus, bgvStatus, compStatus);
+                    }
                     saveCachedProfile(user);
                     postSuccess(callback, user);
                 }
@@ -928,6 +1018,75 @@ public class ApiClient {
     public void getMySupportTickets(ApiCallback<JSONArray> callback) {
         executor.execute(() -> {
             getJsonArray("/support/my-tickets", getToken(), callback);
+        });
+    }
+
+    // ==========================================
+    // ONBOARDING & APPROVALS WORKFLOW
+    // ==========================================
+
+    public void getMyOnboarding(ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            getJson("/onboarding/me", getToken(), callback);
+        });
+    }
+
+    public void signOffer(ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/onboarding/me/sign-offer", new JSONObject(), getToken(), callback);
+        });
+    }
+
+    public void toggleOnboardingTask(String taskId, boolean isCompleted, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("isCompleted", isCompleted);
+                patchJson("/onboarding/me/tasks/" + taskId, body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to toggle task: " + e.getMessage(), 0);
+            }
+        });
+    }
+
+    public void submitForVerification(ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            postJson("/onboarding/me/submit", new JSONObject(), getToken(), callback);
+        });
+    }
+
+    public void getOnboardingCases(String statusFilter, ApiCallback<JSONArray> callback) {
+        executor.execute(() -> {
+            String endpoint = "/onboarding/cases";
+            if (statusFilter != null && !statusFilter.isEmpty() && !"ALL".equalsIgnoreCase(statusFilter)) {
+                endpoint += "?status=" + statusFilter;
+            }
+            getJsonArray(endpoint, getToken(), callback);
+        });
+    }
+
+    public void approveOnboardingCase(String caseId, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("status", "COMPLETED");
+                body.put("bgvStatus", "PASSED");
+                patchJson("/onboarding/cases/" + caseId + "/status", body, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to approve: " + e.getMessage(), 0);
+            }
+        });
+    }
+
+    public void rejectOnboardingCase(String caseId, String reason, ApiCallback<JSONObject> callback) {
+        executor.execute(() -> {
+            try {
+                JSONObject patchBody = new JSONObject();
+                patchBody.put("bgvStatus", "FAILED");
+                patchJson("/onboarding/cases/" + caseId + "/status", patchBody, getToken(), callback);
+            } catch (Exception e) {
+                postError(callback, "Failed to reject: " + e.getMessage(), 0);
+            }
         });
     }
 
