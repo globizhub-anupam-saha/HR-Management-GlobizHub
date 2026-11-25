@@ -338,6 +338,10 @@ public class ApiClient {
     }
 
     public boolean isApprovedEmployee() {
+        String role = getRole();
+        if ("ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role) || "SUPERADMIN".equalsIgnoreCase(role) || "OWNER".equalsIgnoreCase(role)) {
+            return true;
+        }
         return !isPendingApproval() && !isRejected() && !isSuspendedOrInactive();
     }
 
